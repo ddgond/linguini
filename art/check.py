@@ -29,7 +29,7 @@ def main() -> int:
         out = ART.parent / "godot" / m["output"]
         if not out.is_file():
             problems.append(f"{m['id']}: {m['output']} is missing")
-        elif manifest.get(m["id"], {}).get("inputs") != input_hash(m["script"], m.get("args")):
+        elif manifest.get(m["id"], {}).get("inputs") != input_hash(m["script"], m.get("args"), m.get("deps")):
             problems.append(f"{m['id']}: {m['output']} is out of date with {m['script']} or art/lib")
     for p in problems:
         print("stale: " + p)

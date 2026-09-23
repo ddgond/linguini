@@ -207,8 +207,8 @@ func _show_launching() -> void:
 	_focus_first()
 
 
-## "Tank cam" on/off plus its overlay style (the OBS-capturable window), and
-## the graphics quality preset.
+## "Tank cam" on/off plus its overlay style (the OBS-capturable window), the
+## graphics quality preset and the room's mood.
 func _tracking_row() -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
@@ -221,6 +221,16 @@ func _tracking_row() -> void:
 	quality.selected = maxi(values.find(Quality.setting), 0)
 	quality.item_selected.connect(func(i: int) -> void: Quality.set_setting(values[i]))
 	row.add_child(quality)
+	var mood := OptionButton.new()
+	mood.name = "MoodPicker"
+	for label: String in Mood.LABELS:
+		mood.add_item("Mood: " + label)
+	mood.selected = Mood.NAMES.find(Mood.current)
+	mood.item_selected.connect(func(i: int) -> void: Mood.set_mood(Mood.NAMES[i]))
+	row.add_child(mood)
+	row = HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	_page.add_child(row)
 	var toggle := Button.new()
 	toggle.toggle_mode = true
 	toggle.button_pressed = Settings.tracking_enabled()

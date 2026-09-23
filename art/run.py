@@ -30,6 +30,7 @@ def main():
     entry = next(m for m in catalog["models"] if m["id"] == model_id)
 
     common.reset_scene()
+    sys.path.insert(0, str((ART / entry["script"]).parent))
     spec = importlib.util.spec_from_file_location(model_id, ART / entry["script"])
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -57,7 +58,7 @@ def main():
         )
         manifest_path = ART / "manifest.json"
         manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
-        manifest[model_id] = {"output": entry["output"], "inputs": input_hash(entry["script"], entry.get("args"))}
+        manifest[model_id] = {"output": entry["output"], "inputs": input_hash(entry["script"], entry.get("args"), entry.get("deps"))}
         manifest_path.write_text(json.dumps(dict(sorted(manifest.items())), indent=2) + "\n")
         print(f"exported {out.relative_to(ROOT)}")
 
@@ -65,6 +66,10 @@ def main():
         _preview_colours(model_id)
         renders = ART / "renders"
         renders.mkdir(exist_ok=True)
+        if hasattr(module, "render"):
+            module.render(objects, renders, model_id)
+            print(f"rendered {model_id} (custom)")
+            return
         views = getattr(module, "RENDER_VIEWS", [(35, 18)])
         for i, (yaw, pitch) in enumerate(views):
             suffix = "" if i == 0 else f"_{i + 1}"

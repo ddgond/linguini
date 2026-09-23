@@ -1,6 +1,6 @@
 {
   "project": "Linguini",
-  "now": "3b",
+  "now": "3c",
   "milestones": [
     {
       "id": "1",
@@ -105,9 +105,46 @@
     {
       "id": "3b",
       "title": "Bedroom and lighting",
-      "status": "planned",
-      "summary": "Modelled furniture, the streamer setup, clutter and lighting mood. Next up: its Q&A.",
-      "items": []
+      "status": "done",
+      "summary": "The tank under a wide window, the streamer's desk opposite, three baked moods (night, rainy evening, golden hour), cosy dressing and fish fandom.",
+      "items": [
+        {
+          "text": "New layout: tank under the window, desk on the right wall, bed and shelf on the left",
+          "status": "done"
+        },
+        {
+          "text": "Room shell and furniture modelled (walls, window, door, desk, chair, bed, shelf, beanbag, rug)",
+          "status": "done"
+        },
+        {
+          "text": "Lightmap baking in the art pipeline (Cycles, one set per mood); draft bakes in, final bakes pending on the main PC",
+          "status": "in-progress"
+        },
+        {
+          "text": "Moods: Night den, Rainy evening, Golden hour, picked on the monitor",
+          "status": "done"
+        },
+        {
+          "text": "Window views per mood, rain on the glass",
+          "status": "done"
+        },
+        {
+          "text": "Live accents: monitor glow, tank lamp, RGB strips, fairy lights",
+          "status": "done"
+        },
+        {
+          "text": "Streamer gear: mic arm, ring light, webcam, stream deck, headphones, chat monitor",
+          "status": "done"
+        },
+        {
+          "text": "Cosy touches and tidy gamer bits: plants, books, blanket, beanbag, controller, hoodie",
+          "status": "done"
+        },
+        {
+          "text": "Fish fandom: Tortellini posters, goldfish plush, food tub, mug, trophy",
+          "status": "done"
+        }
+      ]
     },
     {
       "id": "3c",

@@ -7,10 +7,12 @@ from pathlib import Path
 ART = Path(__file__).resolve().parent.parent
 
 
-def input_hash(script: str, args: dict | None = None) -> str:
+def input_hash(script: str, args: dict | None = None, deps: list | None = None) -> str:
+    """`deps` are extra files (relative to art/) the script imports, such as a
+    multi-file model's own modules."""
     h = hashlib.sha256()
     h.update(repr(sorted((args or {}).items())).encode())
-    files = [ART / script] + sorted((ART / "lib").glob("*.py")) + [ART / "run.py"]
+    files = [ART / script] + [ART / d for d in (deps or [])] + sorted((ART / "lib").glob("*.py")) + [ART / "run.py"]
     for f in files:
         h.update(f.relative_to(ART).as_posix().encode())
         h.update(f.read_bytes())

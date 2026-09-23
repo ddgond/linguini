@@ -25,11 +25,35 @@ def _look_at(obj, target):
     obj.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
 
 
-def render(objects, out_png, yaw_deg=35.0, pitch_deg=18.0, size=640, samples=48, background=(0.86, 0.91, 0.9)):
+def use_cycles(samples):
+    """Cycles with `samples`, on the GPU if ART_DEVICE=GPU and one is found
+    (CUDA, OptiX, HIP, oneAPI or Metal), otherwise the CPU."""
+    import os
+
     scene = bpy.context.scene
     scene.render.engine = "CYCLES"
-    scene.cycles.device = "CPU"
     scene.cycles.samples = samples
+    scene.cycles.device = "CPU"
+    if os.environ.get("ART_DEVICE", "").upper() == "GPU":
+        prefs = bpy.context.preferences.addons["cycles"].preferences
+        for backend in ("OPTIX", "CUDA", "HIP", "ONEAPI", "METAL"):
+            try:
+                prefs.compute_device_type = backend
+            except TypeError:
+                continue
+            prefs.get_devices()
+            gpus = [d for d in prefs.devices if d.type == backend]
+            if gpus:
+                for d in prefs.devices:
+                    d.use = d.type == backend
+                scene.cycles.device = "GPU"
+                print(f"Cycles on {backend}: {', '.join(d.name for d in gpus)}")
+                break
+
+
+def render(objects, out_png, yaw_deg=35.0, pitch_deg=18.0, size=640, samples=48, background=(0.86, 0.91, 0.9)):
+    scene = bpy.context.scene
+    use_cycles(samples)
     scene.cycles.use_denoising = True
     scene.render.resolution_x = size
     scene.render.resolution_y = size

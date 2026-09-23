@@ -13,7 +13,7 @@ You play from inside a fish tank in a streamer's bedroom. The game stream plays 
 - A tank editor (F2) places, rebinds, duplicates and deletes cards, and saves named presets.
 - A **tank cam** window (F4) shows the room camera's view with a fake ML fish-tracking overlay, ready for OBS to capture.
 - Game audio plays from the speakers next to the monitor, and it's muffled while the camera is underwater.
-- **Art, so far:** a fancy fantail goldfish that swims by vertex shader, a modelled tank and stand, glass with a hint of algae, a rippling water surface, and caustic light. The tank has editable decor: plants, rocks, driftwood, an air stone, a filter and ornaments. Every model comes from a Blender script.
+- **Art, so far:** a fancy fantail goldfish that swims by vertex shader, a modelled tank and stand, glass with a hint of algae, a rippling water surface, and caustic light. The tank has editable decor: plants, rocks, driftwood, an air stone, a filter and ornaments. The tank sits under the window of a cosy streamer's bedroom, with lighting baked in Blender for three moods. Every model comes from a Blender script.
 - **Quality presets:** Low, Medium and High, auto-picked for your GPU.
 
 Still to come in milestone 3: 3b the bedroom and its lighting, 3c card faces, the UI and the tank cam's look, and 3d feel and sound. `tools/tracker/` shows progress live.
@@ -65,6 +65,16 @@ The catalogue is `godot/data/decor.json`. It holds each piece's name, anchor and
 - **Card zones:** decor may overlap them. A solid piece there makes that card harder to reach.
 
 Esc or **Done** leaves the editor. Changes stay in the tank until you quit, even if they aren't saved.
+
+## Room mood
+
+**Mood** on the monitor's home page sets the bedroom's lighting. The choice is remembered.
+
+- **Night gamer den** (the default): city lights and stars outside, lamps on, the LED strip in purple.
+- **Rainy evening:** a grey, hazy city, with rain running down the window.
+- **Golden hour:** low sun through the window, lamps off.
+
+Each mood has its own baked lightmap and window view. Live lights add the monitor's glow and light the fish, the tank and its decor.
 
 ## Graphics quality
 
@@ -125,6 +135,7 @@ The tests cover:
 - Game audio: channel routing and the underwater filter.
 - Decor: placement by anchor, solid versus soft, saving with presets, the editor, and the default arrangement staying clear of card zones.
 - Art: that the tank and fish models match the game's dimensions, and that the quality presets switch their effects.
+- The bedroom: that it lands around the tank, uses its lightmaps, and switches lightmap, view and rain with the mood picker.
 - The decode path, from an H.264 test stream to the Y/UV planes.
 - Host requests.
 - The fish staying inside the tank under physics.
@@ -239,6 +250,18 @@ python3 art/check.py                           # fails if a .glb is out of date 
   - Animation weights go in a second UV map, which Godot reads as `UV2`.
   - Materials are named, and Godot swaps in its own shaders or recolours by those names.
   - Objects named `*-convcolonly` become collision-only shapes.
+
+### The bedroom and its lightmaps
+
+The room (`art/models/room/`) is one mesh with a second UV map for its lightmap. Cycles bakes the light arriving on every surface, once per mood, into `godot/art/room/lightmap_<mood>.exr`. Godot multiplies in each material's colour. `layout.json` tells Godot where the tank, monitor, speakers, camera and lamps are.
+
+```sh
+nix develop .#art -c art/build.sh room                             # draft bakes: 512 px, 128 samples, a couple of minutes on a laptop
+ART_BAKE=final ART_DEVICE=GPU nix develop .#art -c art/build.sh room   # final bakes: 2048 px at 256 samples, saved at 1024 px; use a fast GPU
+ART_BAKE=none nix develop .#art -c art/build.sh room               # geometry only, keeping the existing bakes
+```
+
+The committed lightmaps are drafts; `layout.json` records which quality they were baked at. Keep the mood table in `godot/scripts/room_moods.gd` in step with `art/models/room/moods.py`.
 
 ### Progress tracker
 
