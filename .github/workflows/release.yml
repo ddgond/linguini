@@ -1,0 +1,74 @@
+name: Release
+
+# Pushing a version tag (v0.1.0, v1.2.3-beta.1, ...) packages the Linux build,
+# publishes it as a GitHub Release, and deploys the landing page to GitHub Pages
+# with download links pointing at that release.
+#
+# One-time setup: Settings > Pages > Build and deployment > Source: GitHub Actions.
+on:
+  push:
+    tags: ["v*"]
+
+env:
+  GODOT_VERSION: 4.7.2
+
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Install Godot and the Linux export template
+        run: |
+          base="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          curl -fsSL -o godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip && sudo mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+          curl -fsSL -o templates.tpz "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q templates.tpz templates/linux_release.x86_64 templates/version.txt -d "$RUNNER_TEMP"
+          echo "GODOT_TEMPLATES=$RUNNER_TEMP/templates" >> "$GITHUB_ENV"
+
+      - name: Package Linux
+        run: packaging/linux/package.sh
+
+      - name: Checksums
+        working-directory: dist/builds
+        run: sha256sum -- * > SHA256SUMS && cat SHA256SUMS
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          prerelease=""
+          [[ "$TAG" == *-* ]] && prerelease="--prerelease"
+          gh release create "$TAG" dist/builds/* --title "Linguini $TAG" --generate-notes --verify-tag $prerelease
+
+      - name: Build the landing page
+        env:
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          python3 site/build.py --version "$TAG" --repo-url "$REPO" \
+            --base-url "$REPO/releases/download/$TAG/"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/site
+
+  pages:
+    needs: package
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

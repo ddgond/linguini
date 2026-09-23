@@ -91,6 +91,23 @@ After building, the script exports the project with the `Linux` preset (`godot/e
 
 It needs Docker, plus a Godot editor with matching export templates. Set `GODOT` and `GODOT_TEMPLATES`, or let it take both from the Nix flake. It keeps its own Godot data directory, so your editor settings aren't touched.
 
+## Releases
+
+Releases are made by GitHub Actions (`.github/workflows/release.yml`) when a version tag is pushed:
+
+```sh
+git tag v0.1.0 && git push origin v0.1.0
+```
+
+That tag push does three things:
+- **Package:** builds `linguini-linux-x86_64.tar.gz` with `packaging/linux/package.sh`.
+- **Release:** publishes it as a GitHub Release for the tag, with `SHA256SUMS` and generated release notes. A tag with a hyphen, such as `v0.2.0-beta.1`, is marked as a pre-release.
+- **Landing page:** rebuilds it with that version and download links pointing at the release, then deploys it to GitHub Pages.
+
+For one-time setup, go to the repository's **Settings › Pages** and set **Source** to **GitHub Actions**.
+
+Ordinary pushes and pull requests run `.github/workflows/build.yml`, which builds the extension and runs the tests.
+
 ## Landing page
 
 `site/build.py` builds a static landing page with download links into `dist/site/`. It uses only the Python standard library.

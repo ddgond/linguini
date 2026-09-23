@@ -172,6 +172,7 @@ def main() -> int:
     page = (SITE / "template.html").read_text()
     replacements = {
         "version": html.escape(version),
+        "platforms": ", ".join(p["name"] for p in PLATFORMS if p["id"] in artifacts) or "Build from source",
         "built": datetime.date.today().isoformat(),
         "download_cards": cards,
         "available_json": html.escape(json.dumps(available)),

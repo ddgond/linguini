@@ -1,7 +1,10 @@
 name: Build
 
+# Every push and pull request: build the extension and run the tests.
+# Tagged releases are packaged by release.yml.
 on:
   push:
+    branches: ["**"]
   pull_request:
 
 env:
@@ -25,38 +28,13 @@ jobs:
         run: |
           curl -sSL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
           unzip -q godot.zip
-          ./Godot_v${GODOT_VERSION}-stable_linux.x86_64 --headless --path godot --import
-          ./Godot_v${GODOT_VERSION}-stable_linux.x86_64 --headless --path godot -s res://tests/run_tests.gd
+          godot="./Godot_v${GODOT_VERSION}-stable_linux.x86_64"
+          "$godot" --headless --path godot --import
+          "$godot" --headless --path godot -s res://tests/run_tests.gd
       - uses: actions/upload-artifact@v4
         with:
           name: linguini-linux
           path: godot/bin/
-
-  package-linux:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: Install Godot and export templates
-        run: |
-          base="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
-          curl -sSL -o godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
-          unzip -q godot.zip && mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
-          curl -sSL -o templates.tpz "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
-          unzip -q templates.tpz -d "$RUNNER_TEMP" && echo "GODOT_TEMPLATES=$RUNNER_TEMP/templates" >> "$GITHUB_ENV"
-      - name: Package
-        run: packaging/linux/package.sh
-      - name: Build the landing page
-        run: python3 site/build.py
-      - uses: actions/upload-artifact@v4
-        with:
-          name: linguini-linux-x86_64
-          path: dist/builds/
-      - uses: actions/upload-artifact@v4
-        with:
-          name: site
-          path: dist/site/
 
   macos:
     runs-on: macos-14
@@ -68,7 +46,8 @@ jobs:
         run: brew install scons pkg-config ffmpeg opus openssl@3 curl expat
       - name: Build extension
         run: |
-          export PKG_CONFIG_PATH="$(brew --prefix openssl@3)/lib/pkgconfig:$(brew --prefix curl)/lib/pkgconfig:$(brew --prefix expat)/lib/pkgconfig:$PKG_CONFIG_PATH"
+          PKG_CONFIG_PATH="$(brew --prefix openssl@3)/lib/pkgconfig:$(brew --prefix curl)/lib/pkgconfig:$(brew --prefix expat)/lib/pkgconfig:$PKG_CONFIG_PATH"
+          export PKG_CONFIG_PATH
           scons -j4 arch=arm64
       - uses: actions/upload-artifact@v4
         with:
