@@ -1,6 +1,7 @@
 extends "res://tests/test_case.gd"
 ## The assembled room: the fish under real physics can't leave the water,
-## swimming into a card zone presses it, and the home menu offers a way out.
+## swimming into a card zone presses it, the follow camera can back out through
+## any glass wall, and the home menu offers a way out.
 
 
 func _main() -> Node3D:
@@ -49,6 +50,21 @@ func test_swimming_into_a_card_presses_it() -> void:
 			pressed = true
 			break
 	check(pressed, "swimming up into B's zone presses B (fish at %s, held %s)" % [fish.position, cards.held()])
+	main.queue_free()
+
+
+func test_camera_backs_out_through_every_glass_wall() -> void:
+	var main := await _main()
+	var cam: FishCamera = main.camera
+	var water := cam.bounds
+	var mid := water.get_center()
+	for dir in [Vector3.LEFT, Vector3.RIGHT, Vector3.FORWARD, Vector3.BACK]:
+		var p: Vector3 = cam._clamp_inside(mid + dir * 2.0, cam.glass_leeway)
+		check(not water.has_point(p) and water.grow(cam.glass_leeway + 0.001).has_point(p),
+			"out through the %s glass, but not far (%s)" % [dir, p])
+	for dir in [Vector3.UP, Vector3.DOWN]:
+		var p: Vector3 = cam._clamp_inside(mid + dir * 2.0, cam.glass_leeway)
+		check(water.has_point(p), "never through the %s (%s)" % ["surface" if dir.y > 0 else "gravel", p])
 	main.queue_free()
 
 

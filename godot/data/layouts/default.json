@@ -28,16 +28,16 @@
 		{ "inputs": ["R3"], "position": [-0.138, 0.52, -0.225] }
 	],
 	"decor": [
-		{ "type": "plant_grass", "position": [0.19, 0.03, -0.13], "yaw": 0, "size": "M", "variant": 0 },
-		{ "type": "plant_broadleaf", "position": [-0.03, 0.03, -0.15], "yaw": 40, "size": "S", "variant": 0 },
-		{ "type": "plant_grass", "position": [-0.575, 0.03, -0.215], "yaw": 120, "size": "M", "variant": 2 },
-		{ "type": "plant_grass", "position": [0.575, 0.03, -0.2], "yaw": 250, "size": "M", "variant": 1 },
-		{ "type": "airstone", "position": [0.08, 0.03, -0.19], "yaw": 0, "size": "M", "variant": 0 },
-		{ "type": "castle", "position": [0.5, 0.03, -0.1], "yaw": -20, "size": "S", "variant": 0 },
-		{ "type": "sign", "position": [0.43, 0.03, 0.07], "yaw": 15, "size": "S", "variant": 0 },
-		{ "type": "bonfire", "position": [0.53, 0.03, 0.18], "yaw": 0, "size": "S", "variant": 0 },
-		{ "type": "filter", "position": [-0.17, 0.6, -0.25], "yaw": 0, "size": "M", "variant": 0 },
-		{ "type": "moss_ball", "position": [0.33, 0.47, 0.1], "yaw": 0, "size": "M", "variant": 0 },
-		{ "type": "lily_pad", "position": [-0.42, 0.56, 0.1], "yaw": 30, "size": "M", "variant": 0 }
+		{ "type": "plant_grass", "position": [-0.325, 0.03, 0.098], "yaw": 0, "size": "M", "variant": 0 },
+		{ "type": "plant_broadleaf", "position": [0.186, 0.03, 0.213], "yaw": 40, "size": "S", "variant": 0 },
+		{ "type": "plant_grass", "position": [0.255, 0.03, 0.101], "yaw": 120, "size": "M", "variant": 2 },
+		{ "type": "plant_grass", "position": [-0.262, 0.03, -0.042], "yaw": 250, "size": "M", "variant": 1 },
+		{ "type": "airstone", "position": [-0.508, 0.03, 0.19], "yaw": 0, "size": "M", "variant": 0 },
+		{ "type": "castle", "position": [0.392, 0.03, -0.136], "yaw": -20, "size": "S", "variant": 0 },
+		{ "type": "sign", "position": [-0.031, 0.03, 0.192], "yaw": 15, "size": "S", "variant": 0 },
+		{ "type": "bonfire", "position": [0.05, 0.03, 0.198], "yaw": 0, "size": "S", "variant": 0 },
+		{ "type": "filter", "position": [0.6, 0.6, 0.13], "yaw": 270, "size": "M", "variant": 0 },
+		{ "type": "moss_ball", "position": [0.356, 0.443, 0.1], "yaw": 0, "size": "M", "variant": 0 },
+		{ "type": "lily_pad", "position": [-0.186, 0.56, 0.189], "yaw": 30, "size": "M", "variant": 0 }
 	]
 }

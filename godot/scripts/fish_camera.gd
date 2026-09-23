@@ -8,9 +8,10 @@ extends Camera3D
 ## - Menu: a fixed spot inside the tank by the right-hand glass, framing the
 ##   monitor so its menus can be used.
 ##
-## The camera stays inside the tank except through the front glass: the tank is
-## only 50 cm deep and the cards face the front, so when the fish faces the cards
-## the camera backs out through the glass and looks in, like the room camera.
+## The camera stays between the gravel and the water surface, but it may back
+## out through any of the four glass walls: the tank is only 50 cm deep, so when
+## the fish is near the glass the camera backs out and looks in, which keeps it
+## aimable near the edges.
 
 const FOLLOW_FOV := 70.0
 const MIN_PITCH := -1.2
@@ -22,7 +23,7 @@ const MAX_PITCH := 0.9
 @export var recenter_delay := 1.2 ## s after the last manual look
 @export var recenter_rate := 1.6
 @export var gaze_time := 0.35 ## s to swing into / out of gaze
-@export var front_leeway := 0.35 ## m the follow camera may back out through the front glass
+@export var glass_leeway := 0.35 ## m the follow camera may back out through the glass walls
 
 var fish: Fish
 var screen: Node3D
@@ -102,7 +103,7 @@ func is_underwater() -> bool:
 func _follow_transform() -> Transform3D:
 	var offset := Basis.from_euler(Vector3(orbit_pitch, orbit_yaw, 0.0)) * Vector3(0, 0, distance)
 	var target := _pivot + Vector3(0, 0.02, 0)
-	var pos := _clamp_inside(target + offset, front_leeway)
+	var pos := _clamp_inside(target + offset, glass_leeway)
 	return Transform3D(Basis.looking_at(target - pos, Vector3.UP), pos)
 
 
@@ -129,11 +130,16 @@ func _look_from(pos: Vector3, fill: float) -> Array:
 	return [Transform3D(Basis.looking_at(center - pos, Vector3.UP), pos), clampf(fit, 8.0, FOLLOW_FOV)]
 
 
-func _clamp_inside(p: Vector3, leeway_front := 0.0) -> Vector3:
+func _clamp_inside(p: Vector3, glass_leeway := 0.0) -> Vector3:
 	if bounds.size == Vector3.ZERO:
 		return p
 	var inner := bounds.grow(-0.02)
 	var clamped := p.clamp(inner.position, inner.end)
-	if leeway_front > 0.0 and p.z > inner.end.z:
-		clamped.z = minf(p.z, bounds.end.z + leeway_front)
+	if glass_leeway > 0.0:
+		# Out through the side, front and back glass; never below the gravel or above the water.
+		for axis in [Vector3.AXIS_X, Vector3.AXIS_Z]:
+			if p[axis] > inner.end[axis]:
+				clamped[axis] = minf(p[axis], bounds.end[axis] + glass_leeway)
+			elif p[axis] < inner.position[axis]:
+				clamped[axis] = maxf(p[axis], bounds.position[axis] - glass_leeway)
 	return clamped
