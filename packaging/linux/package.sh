@@ -77,6 +77,9 @@ export XDG_DATA_HOME="$WORK/godot-data"
 mkdir -p "$XDG_DATA_HOME/godot/export_templates"
 ln -sfn "$GODOT_TEMPLATES" "$XDG_DATA_HOME/godot/export_templates/$godot_version"
 rm -rf "$WORK/export" && mkdir -p "$WORK/export"
+# Register the extension up front: found mid-scan on a fresh tree, it makes
+# the import crash on exit.
+mkdir -p "$ROOT/godot/.godot" && echo "res://linguini.gdextension" > "$ROOT/godot/.godot/extension_list.cfg"
 "$GODOT" --headless --path "$ROOT/godot" --import >/dev/null 2>&1
 "$GODOT" --headless --path "$ROOT/godot" --export-release "Linux" "$WORK/export/Linguini.x86_64" 2>&1 |
     grep -E "ERROR|WARNING" || true

@@ -108,6 +108,9 @@ awk -v t="$template" '
 grep -qF "custom_template/release=\"$template\"" "$presets" ||
     { echo "Couldn't set the macOS preset's custom template in $presets" >&2; exit 1; }
 rm -rf "$WORK/export" && mkdir -p "$WORK/export"
+# Register the extension up front: found mid-scan on a fresh tree, it makes
+# the import crash on exit.
+mkdir -p "$WORK/src/godot/.godot" && echo "res://linguini.gdextension" > "$WORK/src/godot/.godot/extension_list.cfg"
 "$GODOT" --headless --path "$WORK/src/godot" --import >/dev/null 2>&1
 "$GODOT" --headless --path "$WORK/src/godot" --export-release "macOS" "$WORK/export/Linguini.app" 2>&1 |
     grep -E "ERROR|WARNING" || true
