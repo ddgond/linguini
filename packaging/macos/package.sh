@@ -76,6 +76,7 @@ for arch in "${ARCHS[@]}"; do
         exit 1
     fi
 done
+mkdir -p "$ROOT/godot/bin"
 rm -rf "$ROOT/godot/bin/$FRAMEWORK" && cp -R "$framework" "$ROOT/godot/bin/"
 
 step "Building the extension for the editor"

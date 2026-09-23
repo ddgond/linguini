@@ -50,6 +50,8 @@ if [[ -n "$unexpected" ]]; then
 fi
 glibc=$(docker run --rm -v "$WORK/src:/work" "$IMAGE" bash -c "objdump -T godot/bin/$LIB | grep -o 'GLIBC_[0-9.]*' | sort -Vu | tail -1")
 echo "    requires $glibc"
+# godot/bin/ is ignored by git, so a fresh checkout (as in CI) doesn't have it.
+mkdir -p "$ROOT/godot/bin"
 cp "$WORK/src/godot/bin/$LIB" "$ROOT/godot/bin/$LIB"
 
 step "Exporting the Godot project"
