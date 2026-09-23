@@ -47,9 +47,9 @@ PLATFORMS = [
     {
         "id": "macos",
         "name": "macOS",
-        "arch": "Apple Silicon",
+        "arch": "Apple Silicon & Intel",
         "pattern": re.compile(r"mac|osx|darwin", re.I),
-        "note": "macOS 12 or later.",
+        "note": "macOS 11 or later. Not notarized yet: allow it under System Settings › Privacy & Security on first launch.",
     },
 ]
 

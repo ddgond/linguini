@@ -91,6 +91,22 @@ After building, the script exports the project with the `Linux` preset (`godot/e
 
 It needs Docker, plus a Godot editor with matching export templates. Set `GODOT` and `GODOT_TEMPLATES`, or let it take both from the Nix flake. It keeps its own Godot data directory, so your editor settings aren't touched.
 
+### macOS (in progress, on the `macos` branch)
+
+This will be a native build on a Mac. Cross-compiling from Linux worked for arm64, but zig's Mach-O linker crashed intermittently on x86_64. What's already here:
+- **Export:** the `macOS` preset (universal, macOS 11+, ad-hoc signed) is in `godot/export_presets.cfg`. It includes an `NSLocalNetworkUsageDescription`, because macOS asks permission before the app can reach hosts on the LAN.
+- **Project setting:** `rendering/textures/vram_compression/import_etc2_astc` is on, because Godot refuses arm64 or universal exports without it.
+- **Static linking:** `LINGUINI_DEPS_PREFIX` links FFmpeg, curl, OpenSSL, Opus and expat statically on macOS too, and adds the frameworks curl needs.
+- **Package files:** `packaging/macos/README.txt` goes into the zip. `packaging/macos/Info.plist` is the plist for the extension's `.framework`.
+- **Validator:** `packaging/macos/validate.py` checks a finished zip. It checks both CPU architectures, the signatures, that only system libraries are linked, the game data and the licences.
+
+Still to do:
+- **Static libraries:** build them for arm64 and x86_64, with FFmpeg's VideoToolbox decoding turned on.
+- **Universal framework:** join each architecture's extension with `lipo`.
+- **Packaging script:** write `packaging/macos/package.sh`.
+- **CI:** add a `macos-14` job to `release.yml`.
+- **Testing:** launch the app and stream from a host.
+
 ## Releases
 
 Releases are made by GitHub Actions (`.github/workflows/release.yml`) when a version tag is pushed:

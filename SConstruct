@@ -7,8 +7,8 @@
 # System dependencies (FFmpeg, Opus, OpenSSL, libcurl, expat) are found
 # with pkg-config on Linux and macOS. On Windows, point LINGUINI_DEPS_PREFIX at a
 # prefix containing include/ and lib/ (e.g. a vcpkg installed/x64-windows tree).
-# On Linux, LINGUINI_DEPS_PREFIX links them statically instead; see
-# packaging/linux/package.sh for the portable release build.
+# On Linux and macOS, LINGUINI_DEPS_PREFIX links them statically instead, for
+# release builds (packaging/linux, packaging/macos).
 import os
 import subprocess
 
@@ -16,6 +16,11 @@ env = SConscript("third_party/godot-cpp/SConstruct")
 
 platform = env["platform"]
 is_msvc = env.get("is_msvc", False)
+
+if platform in ["linux", "macos"]:
+    # Per-target object names, so builds for different targets and arches
+    # (e.g. both halves of a macOS universal build) can share a tree.
+    env["SHOBJSUFFIX"] = env["suffix"] + ".o"
 
 ML_COMMON = "third_party/moonlight-common-c"
 GAMESTREAM = "third_party/moonlight-embedded/libgamestream"
@@ -32,17 +37,23 @@ def pkg_config(env, modules):
     env.MergeFlags(flags)
 
 
-if platform == "linux" and os.environ.get("LINGUINI_DEPS_PREFIX"):
-    # Portable build (packaging/linux): static FFmpeg, curl, OpenSSL, Opus and
-    # expat from the prefix; only glibc and libva stay dynamic.
+static_deps = platform in ["linux", "macos"] and bool(os.environ.get("LINGUINI_DEPS_PREFIX"))
+if static_deps:
+    # Release builds: static FFmpeg, curl, OpenSSL, Opus and expat from the prefix.
     prefix = os.environ["LINGUINI_DEPS_PREFIX"]
-    env.Append(CPPPATH=[os.path.join(prefix, "include")], LIBPATH=[os.path.join(prefix, "lib")])
-    env.MergeFlags(subprocess.check_output(["pkg-config", "--cflags", "opus"]).decode())
+    env.Append(CPPPATH=[os.path.join(prefix, "include"), os.path.join(prefix, "include", "opus")])
+    env.Append(LIBPATH=[os.path.join(prefix, "lib")])
     env.Append(LIBS=["avcodec", "avutil", "curl", "ssl", "crypto", "expat", "opus"])
-    env.Append(LIBS=["va", "va-drm", "pthread", "dl", "m"])
-    # Keep the static libraries' symbols private, and fail at link time rather
-    # than load time if anything is missing.
-    env.Append(LINKFLAGS=["-Wl,--exclude-libs,ALL", "-Wl,--no-undefined"])
+    if platform == "linux":
+        # Only glibc and libva stay dynamic. Keep the static libraries' symbols
+        # private, and fail at link time rather than load time if anything is missing.
+        env.Append(LIBS=["va", "va-drm", "pthread", "dl", "m"])
+        env.Append(LINKFLAGS=["-Wl,--exclude-libs,ALL", "-Wl,--no-undefined"])
+    else:
+        # Frameworks the static libraries use: curl's macOS proxy/resolver
+        # support. VideoToolbox's are added below for every macOS build.
+        env.Append(LINKFLAGS=["-framework", "CoreFoundation", "-framework", "CoreServices",
+                              "-framework", "SystemConfiguration"])
 elif platform in ["linux", "macos"]:
     pkg_config(env, PKG_MODULES)
 elif platform == "windows":
