@@ -1,0 +1,10 @@
+[submodule "third_party/godot-cpp"]
+	path = third_party/godot-cpp
+	url = https://github.com/godotengine/godot-cpp
+	branch = 4.5
+[submodule "third_party/moonlight-common-c"]
+	path = third_party/moonlight-common-c
+	url = https://github.com/moonlight-stream/moonlight-common-c
+[submodule "third_party/moonlight-embedded"]
+	path = third_party/moonlight-embedded
+	url = https://github.com/moonlight-stream/moonlight-embedded

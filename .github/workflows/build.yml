@@ -1,0 +1,70 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+
+env:
+  GODOT_VERSION: 4.5.1
+
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y scons pkg-config ffmpeg libavcodec-dev libavutil-dev libopus-dev \
+            libssl-dev libcurl4-openssl-dev libexpat1-dev uuid-dev
+      - name: Build extension
+        run: scons -j4
+      - name: Run tests
+        run: |
+          curl -sSL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip
+          ./Godot_v${GODOT_VERSION}-stable_linux.x86_64 --headless --path godot --import
+          ./Godot_v${GODOT_VERSION}-stable_linux.x86_64 --headless --path godot -s res://tests/run_tests.gd
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linguini-linux
+          path: godot/bin/
+
+  macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install dependencies
+        run: brew install scons pkg-config ffmpeg opus openssl@3 curl expat
+      - name: Build extension
+        run: |
+          export PKG_CONFIG_PATH="$(brew --prefix openssl@3)/lib/pkgconfig:$(brew --prefix curl)/lib/pkgconfig:$(brew --prefix expat)/lib/pkgconfig:$PKG_CONFIG_PATH"
+          scons -j4 arch=arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linguini-macos
+          path: godot/bin/
+
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install dependencies
+        run: |
+          pip install scons
+          vcpkg install ffmpeg[avcodec] opus openssl curl expat --triplet x64-windows
+      - name: Build extension
+        shell: pwsh
+        run: |
+          $env:LINGUINI_DEPS_PREFIX = "$env:VCPKG_INSTALLATION_ROOT/installed/x64-windows"
+          scons -j4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linguini-windows
+          path: godot/bin/

@@ -1,0 +1,12 @@
+# Build output
+godot/bin/
+*.os
+*.o
+*.obj
+.sconsign*.dblite
+native/**/*.gen.cpp
+
+# Godot
+godot/.godot/
+godot/tests/fixtures/*.h264
+/build/
