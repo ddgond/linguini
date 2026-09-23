@@ -200,8 +200,10 @@ The app is ad-hoc signed but not notarized. Gatekeeper blocks it on first launch
 Releases are made by GitHub Actions (`.github/workflows/release.yml`) when a version tag is pushed:
 
 ```sh
-git tag v0.1.0 && git push origin v0.1.0
+git tag v0.0.1 && git push origin v0.0.1
 ```
+
+Until 0.1.0, releases are numbered 0.0.x.
 
 That tag push does three things:
 - **Package:** builds `linguini-linux-x86_64.tar.gz` with `packaging/linux/package.sh` and `linguini-macos-universal.zip` with `packaging/macos/package.sh` (on a `macos-14` runner, with the static dependencies cached).
@@ -288,7 +290,7 @@ third_party/           submodules
 
 ## Known limitations
 
-- Linux and macOS have been built and tested. The Windows paths in `SConstruct`, the shims, and the CI job are written but haven't been run.
+- Linux and macOS have been built and tested. The Windows paths in `SConstruct` and the shims are written but don't build yet. The Windows CI job is skipped until they do; set the repository variable `WINDOWS_CI` to `true` to run it.
 - Hosts are added by IP or hostname. There's no mDNS discovery yet.
 - Frames are decoded on the GPU where possible and copied back to system memory for upload. Zero-copy rendering is future work.
 - Linux and macOS have packaged release builds. Windows needs its own packaging.
