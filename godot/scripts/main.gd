@@ -19,6 +19,7 @@ extends Node3D
 ##   --overview[=EYE;AT]    view the room from the doorway, or from EYE toward AT
 ##                          (x,y,z each, in the room model's coordinates)
 ##   --mood=NAME            night, rainy or golden, just for this run
+##   --glyphs=SET           xbox, playstation or nintendo button art, just for this run
 ##   --edit                 open the tank editor
 ##   --tracking=STYLE       open the tank cam window (minimal, earnest, over-the-top)
 ##   --tracking-shot=PATH   with --screenshot, also save the tank cam window
@@ -37,7 +38,6 @@ var camera: FishCamera
 var cards: CardSystem
 var monitor: Monitor
 var menu: MonitorMenu
-var hud: Hud
 var editor: TankEditor
 var decor: TankDecor
 var tracking: TrackingCam
@@ -121,10 +121,6 @@ func _ready() -> void:
 	add_child(monitor)
 	monitor.setup(room.screen, room.screen_size, client, menu)
 
-	hud = Hud.new()
-	hud.client = client
-	add_child(hud)
-
 	tracking = TrackingCam.new()
 	tracking.fish = fish
 	tracking.cards = cards
@@ -133,7 +129,6 @@ func _ready() -> void:
 	tracking.follow(room.room_camera)
 	set_tracking(Settings.tracking_enabled(), Settings.tracking_style())
 	menu.tracking_changed.connect(set_tracking)
-	cards.held_changed.connect(hud.set_held)
 
 	audio = RoomAudio.new()
 	audio.name = "RoomAudio"
@@ -164,7 +159,6 @@ func set_mode(new_mode: Mode) -> void:
 	camera.menu_view = not swimming
 	monitor.menu_visible = not swimming
 	cards.enabled = swimming
-	hud.visible = swimming
 	if editing and not editor.is_open():
 		editor.open()
 	elif not editing and editor.is_open():
@@ -233,6 +227,8 @@ func _process(_delta: float) -> void:
 	var view := get_viewport().get_camera_3d()
 	var underwater := view != null and _water.has_point(view.global_position)
 	room.environment.fog_enabled = underwater
+	# No HUD: the camera's tally light and the monitor say whether we're live.
+	room.moods.live = client != null and client.is_streaming()
 	audio.underwater = underwater
 	_pump_audio()
 
@@ -319,9 +315,10 @@ func _apply_args() -> void:
 		cards.toggle_zones()
 	if _args.has("mood"):
 		Mood.set_mood(String(_args.mood), false)
+	if _args.has("glyphs"):
+		Glyphs.set_setting(String(_args.glyphs), false)
 	if _args.has("room-camera"):
 		(room.room_camera as Camera3D).make_current()
-		hud.visible = false
 	if _args.has("overview"):
 		var eye := Camera3D.new()
 		eye.fov = 75.0
@@ -337,7 +334,6 @@ func _apply_args() -> void:
 			at = Vector3(b[0], b[1], b[2])
 		eye.look_at_from_position(from + shift, at + shift)
 		eye.make_current()
-		hud.visible = false
 	if _args.has("tracking"):
 		var i := ["minimal", "earnest", "over-the-top"].find(String(_args.tracking))
 		set_tracking(true, i if i >= 0 else TrackingCam.Style.EARNEST)

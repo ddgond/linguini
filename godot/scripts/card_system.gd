@@ -93,8 +93,9 @@ var _state := PackedInt32Array([0, 0, 0, 0, 0, 0, 0])
 var _show_zones := false
 
 
+## An input's short printed name, in the current button glyph set.
 static func short_name(id: String) -> String:
-	return SHORT_NAMES.get(id, INPUTS[id].get("label", id))
+	return SHORT_NAMES.get(id, Glyphs.label(id))
 
 
 func load_layout(path: String) -> bool:
@@ -244,6 +245,8 @@ func update(fish_pos: Vector3, delta: float) -> void:
 			if _release_timers[i] <= 0.0:
 				card.active = false
 		card.playing = _play_ms[i] >= 0.0
+		if sequence:
+			card.progress = _play_ms[i] / maxf(card.binding.duration_ms(), 1.0) if card.playing else -1.0
 	_publish()
 
 

@@ -8,12 +8,14 @@ extends Window
 ## projected into the camera, dressed up with a jittering confidence score that
 ## drops when a card hides the fish from the camera.
 ##
-## Styles:
-## - EARNEST: a straight-faced research tool. Bounding box, confidence, trail,
-##   heatmap, active zone and held inputs, model name and "inference" rate.
-## - MINIMAL: box, label and held inputs.
-## - OVER_THE_TOP: everything in EARNEST, plus neural activations, intent
-##   predictions, a scrolling log and scanlines.
+## Styles (all label the fish plainly, "goldfish 0.97"):
+## - MINIMAL: corner-bracket box with its tag, and the held inputs.
+## - EARNEST: a straight-faced research tool. Adds a keypoint skeleton (nose,
+##   eyes, fins, tail), the trail and heatmap, labelled card zones, inference
+##   and latency readouts and a short detection log.
+## - OVER_THE_TOP: everything in EARNEST, plus a model banner, a track ID,
+##   trajectory prediction, neural activations, intent guesses, a scrolling
+##   log, scanlines and the occasional "recalibrating" flicker.
 
 enum Style { MINIMAL, EARNEST, OVER_THE_TOP }
 
@@ -22,7 +24,17 @@ const SIZE := Vector2i(1280, 720)
 const TITLE := "Linguini Tank Cam"
 const TRAIL_SECONDS := 2.5
 const HEAT_CELLS := Vector2i(48, 27)
-const MODEL := "TortelliNet-v3"
+const MODEL := "finnet-s v3.2"
+const MODEL_XL := "FINNET-XL // research build 0xF15H"
+const CLASS_NAME := "goldfish"
+## Keypoints, as fractions of the fish's bounds (x across, y up, z nose -1 .. tail +1).
+const KEYPOINTS := {
+	"nose": Vector3(0, 0, -1), "eye_l": Vector3(-0.45, 0.25, -0.6), "eye_r": Vector3(0.45, 0.25, -0.6),
+	"dorsal": Vector3(0, 1, -0.05), "fin_l": Vector3(-1, -0.35, -0.2), "fin_r": Vector3(1, -0.35, -0.2),
+	"tail_base": Vector3(0, 0, 0.45), "tail_tip": Vector3(0, 0.1, 1),
+}
+const SKELETON := [["nose", "eye_l"], ["nose", "eye_r"], ["nose", "dorsal"], ["dorsal", "tail_base"],
+	["nose", "fin_l"], ["nose", "fin_r"], ["fin_l", "tail_base"], ["fin_r", "tail_base"], ["tail_base", "tail_tip"]]
 
 var style := Style.EARNEST:
 	set(value):
@@ -43,6 +55,14 @@ var fps := 31.4
 var trail: Array[Vector2] = [] ## screen positions, oldest first
 var heat := PackedFloat32Array()
 var log_lines: PackedStringArray = []
+## Keypoint name -> screen position.
+var keypoints := {}
+## Where the fish will be in half a second, if it keeps going (screen space).
+var predicted: Array[Vector2] = []
+var latency_ms := 12.0
+var track_id := 1
+## Seconds left of an over-the-top "recalibrating" flicker.
+var recalibrating := 0.0
 
 var _trail_times: Array[float] = []
 var _time := 0.0
@@ -50,6 +70,7 @@ var _noise := FastNoiseLite.new()
 var _overlay: Control
 var _font: Font
 var _last_held := PackedStringArray()
+var _raw_box := Rect2()
 
 
 func _init() -> void:
@@ -70,7 +91,7 @@ func _init() -> void:
 
 func _ready() -> void:
 	close_requested.connect(hide)
-	_font = ThemeDB.fallback_font
+	_font = UiStyle.font(500, true)
 	_overlay = Overlay.new()
 	_overlay.cam = self
 	_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -98,6 +119,11 @@ func _process(delta: float) -> void:
 	_update_heat()
 	_update_log()
 	fps = clampf(fps + randf_range(-0.6, 0.6), 27.5, 33.8)
+	latency_ms = clampf(latency_ms + randf_range(-0.4, 0.4), 9.5, 16.0)
+	recalibrating = maxf(recalibrating - delta, 0.0)
+	if style == Style.OVER_THE_TOP and recalibrating <= 0.0 and randf() < delta / 25.0:
+		recalibrating = 0.6
+		_log("confidence drift: recalibrating")
 	_overlay.queue_redraw()
 
 
@@ -114,13 +140,48 @@ func _detect() -> void:
 		var p := camera.unproject_position(world)
 		rect = Rect2(p, Vector2.ZERO) if first else rect.expand(p)
 		first = false
-	# Pad a little, as detectors do.
-	box = rect.grow(6.0)
-	detected = not first and Rect2(Vector2.ZERO, Vector2(SIZE)).intersects(box)
+	# Pad a little, as detectors do, and smooth with a touch of jitter: real
+	# boxes wobble a few pixels frame to frame.
+	var was := detected
+	_raw_box = rect.grow(6.0)
+	detected = not first and Rect2(Vector2.ZERO, Vector2(SIZE)).intersects(_raw_box)
+	if detected and not was:
+		track_id += 1
+	var wobble := Vector2(_noise.get_noise_2d(_time * 9.0, 1.0), _noise.get_noise_2d(_time * 9.0, 5.0)) * 3.0
+	if not was or box.size == Vector2.ZERO:
+		box = _raw_box
+	else:
+		box = Rect2(box.position.lerp(_raw_box.position + wobble, 0.35), box.size.lerp(_raw_box.size, 0.35))
+	_keypoints(xf, bounds)
+	_predict()
 	occluded = _is_occluded()
 	var jitter := _noise.get_noise_1d(_time) * 0.02
 	var target := 0.41 if occluded else 0.965
 	confidence = clampf(lerpf(confidence, target, 0.15) + jitter, 0.05, 0.995)
+
+
+func _keypoints(xf: Transform3D, bounds: AABB) -> void:
+	keypoints.clear()
+	var c := bounds.get_center()
+	var h := bounds.size / 2.0
+	for key: String in KEYPOINTS:
+		var f: Vector3 = KEYPOINTS[key]
+		var world := xf * (c + f * h)
+		if not camera.is_position_behind(world):
+			var jitter := Vector2(_noise.get_noise_2d(_time * 6.0, key.hash() % 97), _noise.get_noise_2d(key.hash() % 89, _time * 6.0)) * 2.0
+			keypoints[key] = camera.unproject_position(world) + jitter
+
+
+func _predict() -> void:
+	predicted.clear()
+	if not detected:
+		return
+	var p := fish.global_position
+	var v := fish.velocity
+	for i in range(1, 7):
+		var world := p + v * (i * 0.08)
+		if not camera.is_position_behind(world):
+			predicted.append(camera.unproject_position(world))
 
 
 ## The fish model's bounds in its own space.
@@ -216,6 +277,7 @@ class Overlay:
 
 	const GREEN := Color(0.22, 0.88, 0.54)
 	const AMBER := Color(1.0, 0.72, 0.2)
+	const CYAN := Color(0.4, 0.85, 1.0)
 	const INK := Color(0.9, 0.97, 1.0)
 	const SHADE := Color(0, 0, 0, 0.55)
 
@@ -225,7 +287,7 @@ class Overlay:
 		match cam.style:
 			TrackingCam.Style.MINIMAL:
 				_draw_box(false)
-				_panel_text(Vector2(24, 40), "fish · %s" % cam.held_text(), 22, INK)
+				_panel_text(Vector2(24, 40), "held: %s" % cam.held_text(), 20, INK)
 			TrackingCam.Style.EARNEST:
 				_draw_earnest()
 			TrackingCam.Style.OVER_THE_TOP:
@@ -235,41 +297,86 @@ class Overlay:
 	func _draw_earnest() -> void:
 		_draw_heat()
 		_draw_trail()
+		_draw_zones()
 		_draw_box(true)
-		_panel_text(Vector2(24, 40), "%s  ·  inference %.1f fps" % [TrackingCam.MODEL, cam.fps], 20, INK)
+		_draw_skeleton()
+		_panel_text(Vector2(24, 40), "%s  ·  %.1f fps  ·  %.1f ms" % [TrackingCam.MODEL, cam.fps, cam.latency_ms], 18, INK)
 		var status := "TRACKING" if cam.detected else "SEARCHING"
 		if cam.detected and cam.occluded:
 			status = "OCCLUDED"
-		_panel_text(Vector2(24, 72), "%s  ·  1 object  ·  %s" % [status, _clock()], 16, INK.darkened(0.2))
+		_panel_text(Vector2(24, 70), "%s  ·  %d obj  ·  nms 0.45  ·  %s" % [status, 1 if cam.detected else 0, _clock()], 14, INK.darkened(0.2))
 		var bottom := size.y - 30
-		_panel_text(Vector2(24, bottom - 34), "zone: %s" % cam.zone_text(), 20, AMBER)
-		_panel_text(Vector2(24, bottom), "held: %s" % cam.held_text(), 22, GREEN if cam.held_text() != "idle" else INK)
+		_panel_text(Vector2(24, bottom - 32), "zone: %s" % cam.zone_text(), 18, AMBER)
+		_panel_text(Vector2(24, bottom), "held: %s" % cam.held_text(), 20, GREEN if cam.held_text() != "idle" else INK)
+		# The last few detections, bottom right.
+		if cam.style == TrackingCam.Style.EARNEST:
+			var lines := cam.log_lines.slice(maxi(cam.log_lines.size() - 4, 0))
+			var y := size.y - 24 - (lines.size() - 1) * 17
+			if not lines.is_empty():
+				draw_rect(Rect2(size.x - 440, y - 16, 420, lines.size() * 17 + 8), SHADE)
+			for line in lines:
+				_text(Vector2(size.x - 432, y), line, 12, Color(GREEN, 0.9))
+				y += 17
 		# REC dot, top right.
 		if fmod(cam._time, 1.2) < 0.8:
 			draw_circle(Vector2(size.x - 40, 34), 8, Color(1, 0.2, 0.2))
-		_text(Vector2(size.x - 110, 40), "LIVE", 18, INK)
+		_text(Vector2(size.x - 104, 40), "REC", 16, INK)
 
-	func _draw_box(with_label: bool) -> void:
+	## Corner brackets rather than a full rectangle, with a class tag.
+	func _draw_box(with_details: bool) -> void:
 		if not cam.detected:
 			return
 		var color := AMBER if cam.occluded else GREEN
 		var r := cam.box
-		draw_rect(r, color, false, 2.5)
-		# Corner ticks, detector style.
-		var t := 10.0
+		var t := minf(18.0, minf(r.size.x, r.size.y) * 0.35)
 		for corner in [r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)]:
 			var sx := 1.0 if corner.x == r.position.x else -1.0
 			var sy := 1.0 if corner.y == r.position.y else -1.0
-			draw_line(corner, corner + Vector2(t * sx, 0), color, 4.0)
-			draw_line(corner, corner + Vector2(0, t * sy), color, 4.0)
-		var label := "fish %.2f" % cam.confidence
-		if with_label:
-			label = "fish %.2f  id:0  Δ%.0fpx" % [cam.confidence, cam.fish.velocity.length() * 400.0]
-		var font_size := 15
-		var w := cam._font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + 10
-		var tag := Rect2(r.position + Vector2(-1, -22), Vector2(w, 20))
+			draw_line(corner, corner + Vector2(t * sx, 0), color, 3.0)
+			draw_line(corner, corner + Vector2(0, t * sy), color, 3.0)
+		draw_rect(r, Color(color, 0.25), false, 1.0)
+		var label := "%s %.2f" % [TrackingCam.CLASS_NAME, cam.confidence]
+		if with_details:
+			label += "  #%d" % cam.track_id
+		var font_size := 14
+		var w := cam._font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + 12
+		var tag := Rect2(r.position + Vector2(0, -22), Vector2(w, 20))
 		draw_rect(tag, color)
-		draw_string(cam._font, tag.position + Vector2(5, 15), label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(0.02, 0.1, 0.05))
+		draw_string(cam._font, tag.position + Vector2(6, 15), label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(0.02, 0.1, 0.05))
+
+	func _draw_skeleton() -> void:
+		if not cam.detected or cam.occluded:
+			return
+		for bone: Array in TrackingCam.SKELETON:
+			if cam.keypoints.has(bone[0]) and cam.keypoints.has(bone[1]):
+				draw_line(cam.keypoints[bone[0]], cam.keypoints[bone[1]], Color(CYAN, 0.7), 1.5, true)
+		for key: String in cam.keypoints:
+			draw_circle(cam.keypoints[key], 3.0, CYAN)
+			draw_arc(cam.keypoints[key], 5.0, 0, TAU, 12, Color(CYAN, 0.5), 1.0, true)
+
+	## The engaged cards' hit zones, outlined where the camera sees them.
+	func _draw_zones() -> void:
+		if cam.cards == null:
+			return
+		for card in cam.cards.engaged_cards():
+			var pts := PackedVector2Array()
+			for corner: Vector2 in [Vector2(-1, -1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1)]:
+				var world := card.global_transform * Vector3(corner.x * card.size.x / 2, corner.y * card.size.y / 2, 0)
+				if cam.camera.is_position_behind(world):
+					return
+				pts.append(cam.camera.unproject_position(world))
+			pts.append(pts[0])
+			for i in 4:
+				_dashed(pts[i], pts[i + 1], AMBER)
+			var label := "zone %s %.2f" % [card.binding.display_name(), clampf(cam.confidence - 0.03, 0.0, 1.0)]
+			_text(pts[3] + Vector2(2, 14), label, 12, AMBER)
+
+	func _dashed(a: Vector2, b: Vector2, color: Color) -> void:
+		var length := a.distance_to(b)
+		var n := int(length / 8.0)
+		for i in n:
+			if i % 2 == 0:
+				draw_line(a.lerp(b, float(i) / n), a.lerp(b, float(i + 1) / n), color, 1.5)
 
 	func _draw_trail() -> void:
 		var n := cam.trail.size()
@@ -288,27 +395,42 @@ class Overlay:
 				draw_rect(Rect2(Vector2(x, y) * cell, cell), Color(c, minf(h, 1.0) * 0.35))
 
 	func _draw_over_the_top() -> void:
+		# Banner, top centre.
+		var banner := TrackingCam.MODEL_XL
+		var bw := cam._font.get_string_size(banner, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
+		_panel_text(Vector2((size.x - bw) / 2, 40), banner, 16, CYAN)
+		# Where the fish is headed.
+		var n := cam.predicted.size()
+		for i in n:
+			draw_circle(cam.predicted[i], 4.0 - i * 0.4, Color(AMBER, 0.9 - i * 0.12))
+		if n > 0 and cam.detected:
+			_text(cam.predicted[n - 1] + Vector2(8, -6), "t+0.5s", 12, AMBER)
 		# Fake activations: bars that twitch with the fish's movement.
-		var origin := Vector2(size.x - 250, 80)
-		_text(origin + Vector2(0, -8), "layer 7 activations", 14, INK.darkened(0.2))
+		var origin := Vector2(size.x - 250, 90)
+		_text(origin + Vector2(0, -8), "layer 7 activations", 13, INK.darkened(0.2))
 		for i in 16:
 			var v := absf(sin(cam._time * (1.3 + i * 0.37) + i) * 0.6 + cam.fish.effort * 0.5 + randf() * 0.1)
-			draw_rect(Rect2(origin + Vector2(i * 14, 60 - v * 60), Vector2(10, v * 60)), Color(0.4, 0.8, 1.0, 0.8))
+			draw_rect(Rect2(origin + Vector2(i * 14, 60 - v * 60), Vector2(10, v * 60)), Color(CYAN, 0.8))
 		var intent: Array = cam.intent()
-		_panel_text(Vector2(size.x - 250, 190), "INTENT  %s  %.2f" % [intent[0], intent[1]], 18, AMBER)
+		_panel_text(Vector2(size.x - 250, 200), "INTENT  %s  %.2f" % [intent[0], intent[1]], 16, AMBER)
 		# Scrolling log, on its own shaded panel so it reads over the cards.
 		var y := size.y - 250
 		if not cam.log_lines.is_empty():
 			draw_rect(Rect2(size.x - 480, y - 16, 460, cam.log_lines.size() * 17 + 10), SHADE)
 		for line in cam.log_lines:
-			_text(Vector2(size.x - 470, y), line, 13, Color(GREEN, 0.9))
+			_text(Vector2(size.x - 470, y), line, 12, Color(GREEN, 0.9))
 			y += 17
-		# Scanlines and the odd glitch.
+		# Scanlines, the odd glitch, and now and then a recalibration.
 		for sy in range(0, int(size.y), 3):
 			draw_line(Vector2(0, sy), Vector2(size.x, sy), Color(0, 0, 0, 0.12), 1.0)
 		if randf() < 0.05:
 			var gy := randf() * size.y
 			draw_rect(Rect2(0, gy, size.x, randf_range(2, 8)), Color(0.5, 1.0, 0.8, 0.15))
+		if cam.recalibrating > 0.0 and fmod(cam._time, 0.2) < 0.12:
+			draw_rect(Rect2(Vector2.ZERO, size), Color(0.4, 1.0, 0.8, 0.06))
+			var msg := "RECALIBRATING…"
+			var mw := cam._font.get_string_size(msg, HORIZONTAL_ALIGNMENT_LEFT, -1, 30).x
+			_panel_text(Vector2((size.x - mw) / 2, size.y / 2), msg, 30, CYAN)
 
 	func _clock() -> String:
 		var t := Time.get_datetime_dict_from_system()

@@ -133,6 +133,8 @@ cp "$ROOT/third_party/moonlight-embedded/LICENSE" "$stage/licenses/moonlight-emb
 cp "$ROOT/third_party/moonlight-common-c/enet/LICENSE" "$stage/licenses/enet.txt"
 cp "$ROOT/third_party/moonlight-common-c/nanors/LICENSE" "$stage/licenses/nanors.txt"
 cp "$ROOT/third_party/godot-cpp/LICENSE.md" "$stage/licenses/godot-cpp.md"
+cp "$ROOT/godot/fonts/Nunito-OFL.txt" "$stage/licenses/font-nunito.txt"
+cp "$ROOT/godot/fonts/JetBrainsMono-OFL.txt" "$stage/licenses/font-jetbrains-mono.txt"
 "$GODOT" --headless --path "$WORK/src/godot" -- --tool=write_licenses "$stage/licenses/godot.txt" >/dev/null
 cp -R "$WORK/deps-${ARCHS[0]}/licenses/." "$stage/licenses/"
 mkdir -p "$DIST/builds"

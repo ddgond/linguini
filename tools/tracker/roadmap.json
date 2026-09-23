@@ -1,6 +1,6 @@
 {
   "project": "Linguini",
-  "now": "3c",
+  "now": "3d",
   "milestones": [
     {
       "id": "1",
@@ -149,9 +149,38 @@
     {
       "id": "3c",
       "title": "Cards, UI, tank cam",
-      "status": "planned",
-      "summary": "Card faces and fonts, menu theme, editor panel look, a more convincing overlay. Q&A first.",
-      "items": []
+      "status": "done",
+      "summary": "Matte classroom flash cards, selectable button glyphs, Nunito + JetBrains Mono, a cosy streamer-OS menu, a matching editor, a more convincing tank cam, and no HUD.",
+      "items": [
+        {
+          "text": "Fonts: Nunito for the game, JetBrains Mono for the tank cam (bundled, OFL)",
+          "status": "done"
+        },
+        {
+          "text": "Button glyph sets (Xbox, PlayStation, Nintendo): auto from the controller, with a picker",
+          "status": "done"
+        },
+        {
+          "text": "Matte flash cards: paper face, printed glyphs, corner label, edge light when held, sequence progress",
+          "status": "done"
+        },
+        {
+          "text": "Monitor menu as a cosy streamer OS: logo, mood accent, host and app cards, taskbar",
+          "status": "done"
+        },
+        {
+          "text": "Tank editor panels to match, with thumbnails",
+          "status": "done"
+        },
+        {
+          "text": "Tank cam overlay polish: brackets, keypoints, readouts, logs, jitter",
+          "status": "done"
+        },
+        {
+          "text": "No HUD: held buttons on the cards, live state on the webcam tally and monitor",
+          "status": "done"
+        }
+      ]
     },
     {
       "id": "3d",

@@ -273,6 +273,25 @@ func _desk() -> void:
 	result.screen_light = glow
 	moods.screen_light = glow
 
+	# The webcam on top of the monitor gets a tally LED, lit while live.
+	var tally := MeshInstance3D.new()
+	tally.name = "WebcamTally"
+	var bead := SphereMesh.new()
+	bead.radius = 0.003
+	bead.height = 0.006
+	tally.mesh = bead
+	var red := StandardMaterial3D.new()
+	red.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	red.albedo_color = Color(1.0, 0.15, 0.12)
+	red.emission_enabled = true
+	red.emission = Color(1.0, 0.1, 0.08)
+	red.emission_energy_multiplier = 4.0
+	tally.material_override = red
+	tally.position = sc + Vector3(-0.012, size.y / 2 + 0.036, 0.035)
+	tally.visible = false
+	root.add_child(tally)
+	moods.webcam_tally = tally
+
 	var speakers: Array[Vector3] = []
 	for p: Array in layout.speakers:
 		speakers.append(_vec(p) + offset)

@@ -58,6 +58,13 @@ var lamps: Array[OmniLight3D] = []
 var fairy_light: OmniLight3D
 var accent_light: OmniLight3D
 
+## The webcam's tally LED (lit while streaming).
+var webcam_tally: MeshInstance3D
+## Whether a stream is running: the room camera's and the webcam's tally
+## lights say so (there's no on-screen HUD).
+var live := false:
+	set = set_live
+
 var mood := ""
 var _lightmaps := {}
 var _views := {}
@@ -83,6 +90,7 @@ func apply(mood_name: String) -> void:
 		if mat_name != "GlowChat":
 			mat.set_shader_parameter("emission_color", GLOW_COLORS.get(mat_name, Color.WHITE))
 		mat.set_shader_parameter("emission_energy", m.glow[mat_name])
+	_tally()
 	if materials.has("GlowRGB"):
 		materials.GlowRGB.set_shader_parameter("emission_color", m.rgb)
 		materials.GlowRGB.set_shader_parameter("albedo", m.rgb)
@@ -114,6 +122,21 @@ func apply(mood_name: String) -> void:
 	if screen_light:
 		screen_light.light_energy = m.screen
 	_shadows()
+
+
+func set_live(value: bool) -> void:
+	if value == live:
+		return
+	live = value
+	_tally()
+
+
+func _tally() -> void:
+	var tally: ShaderMaterial = materials.get("GlowTally")
+	if tally and mood != "":
+		tally.set_shader_parameter("emission_energy", MOODS[mood].glow.GlowTally if live else 0.0)
+	if webcam_tally:
+		webcam_tally.visible = live
 
 
 ## Only the golden hour's sun casts shadows (through the window frame), and

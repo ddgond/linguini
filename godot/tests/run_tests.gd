@@ -15,6 +15,7 @@ const SUITES := [
 	"res://tests/test_decor.gd",
 	"res://tests/test_art.gd",
 	"res://tests/test_room.gd",
+	"res://tests/test_ui.gd",
 ]
 
 

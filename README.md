@@ -14,9 +14,10 @@ You play from inside a fish tank in a streamer's bedroom. The game stream plays 
 - A **tank cam** window (F4) shows the room camera's view with a fake ML fish-tracking overlay, ready for OBS to capture.
 - Game audio plays from the speakers next to the monitor, and it's muffled while the camera is underwater.
 - **Art, so far:** a fancy fantail goldfish that swims by vertex shader, a modelled tank and stand, glass with a hint of algae, a rippling water surface, and caustic light. The tank has editable decor: plants, rocks, driftwood, an air stone, a filter and ornaments. The tank sits under the window of a cosy streamer's bedroom, with lighting baked in Blender for three moods. Every model comes from a Blender script.
+- **Look and feel:** matte laminated flash cards with printed button art in Xbox, PlayStation or Nintendo style, a cosy "streamer desktop" on the monitor, and no HUD. Held buttons show on the cards, and the camera's red tally light shows when you're live. The fonts are Nunito and JetBrains Mono.
 - **Quality presets:** Low, Medium and High, auto-picked for your GPU.
 
-Still to come in milestone 3: 3b the bedroom and its lighting, 3c card faces, the UI and the tank cam's look, and 3d feel and sound. `tools/tracker/` shows progress live.
+Still to come in milestone 3: 3d, feel and sound. `tools/tracker/` shows progress live.
 
 ## Controls
 
@@ -35,6 +36,8 @@ Still to come in milestone 3: 3b the bedroom and its lighting, 3c card faces, th
 
 Your own keyboard and gamepad never reach the host. Only the cards do.
 
+The gamepad names above are Xbox's. **Buttons** on the monitor's home page sets which controller's art the cards, menus and hints use: **Xbox**, **PlayStation** or **Nintendo**. It starts on **Auto**, which follows the controller you last used, going by its name. Only the art changes; the host always gets the same inputs. Nintendo's face letters swap by position, so the bottom button (A on Xbox) shows as B.
+
 ## Flash cards
 
 The built-in Default layout is `godot/data/layouts/default.json`. Every card faces the front glass, where the room camera is. A card's trigger zone is the middle 90% of its footprint, extruded forward to the glass. From the room camera's point of view, the fish covering a card presses it.
@@ -43,6 +46,7 @@ The built-in Default layout is `godot/data/layouts/default.json`. Every card fac
 - **Releasing:** a card releases once the fish has been out of the zone for 150 ms. The zone also has a 1.5 cm margin while held, so a fish drifting along an edge doesn't make the button flicker.
 - **Combos:** a card can hold several inputs together, such as RB + A. Each stick is laid out as a 3×3 grid: the four directions, combo cards for the four diagonals in the corners, and an empty centre.
 - **Sequences:** a card can instead play a timed macro once each time the fish arrives. For example, "B for 80 ms, then RB at 180 ms for 80 ms". Each step holds one input from its start time for its length, and steps can overlap to press inputs together. A sequence finishes even if the fish swims off. Arriving again replays it.
+- **The printed face:** a coloured band says what kind of input the card is (button, bumper, D-pad, left stick, combo, sequence). Under it is the button's glyph, an arrow, or a row of glyphs for a combo or sequence. While a card is held, its laminated edge lights in the card's colour. A playing sequence fills a bar along the bottom.
 
 ### Tank editor
 
@@ -53,7 +57,7 @@ Press F2, or choose **Edit tank** on the monitor. The fish waits and nothing is 
 - **Camera:** right-drag orbits, and the wheel zooms.
 - **Editing a card:** choose **Hold** and pick one or more inputs, or choose **Sequence** and edit its steps. You can give it a name, which is shown on the card.
 - **Editing decor:** set its colour variant and size (S, M or L), and turn it with the slider. Cards always face the glass, so only decor turns.
-- **Actions:** **+ Card**, **+ Decor** (with the piece chosen from the list), **Duplicate** and **Delete**.
+- **Actions:** **+ Card**, **Duplicate** and **Delete**. To add decor, click its picture in the **Add decor** palette. The selected card shows how it's printed, and selected decor shows its picture.
 - **Presets:** **Load**, **Save**, **Save as** and **Delete**. A preset holds both the cards and the decor. Default is built in and read-only. Your presets are saved as JSON in the app's user folder under `layouts/`. The preset in use is remembered between sessions.
 
 ### Decor
@@ -96,9 +100,10 @@ Each mood has its own baked lightmap and window view. Live lights add the monito
 The tank cam is a second window, titled "Linguini Tank Cam" and 1280×720, showing the room camera's view of the tank. To stream it, add a **Window Capture** source in OBS and pick that window. Turn it on with F4, or with **Tank cam window** on the monitor menu, which also sets the overlay style.
 
 Nothing in it is machine learning. The "detector" is the fish's real position projected into the camera. Its confidence score drops when a card hides the fish from the camera. There are three styles:
-- **Earnest** (default): a straight-faced research tool. It shows a bounding box with a jittering confidence score, a motion trail, a heatmap of where the fish spends its time, the cards it's engaging, the inputs it's holding, and "TortelliNet-v3 · inference 31.4 fps".
-- **Minimal:** the box, its label and the held inputs.
-- **Over-the-top:** everything in Earnest, plus fake layer activations, an "INTENT" prediction, a scrolling log and scanlines.
+The fish is always labelled plainly, as "goldfish 0.97".
+- **Earnest** (default): a straight-faced research tool. It shows the box and its track number, and a keypoint skeleton (nose, eyes, fins, tail). It adds a motion trail, a heatmap of where the fish spends its time, and dashed outlines on the card zones it's engaging. It also has inference rate and latency readouts, the inputs held, and a short detection log.
+- **Minimal:** corner brackets around the fish, its label and the held inputs.
+- **Over-the-top:** everything in Earnest, plus a model banner and a predicted trajectory. It also has fake layer activations, an "INTENT" guess, a scrolling log, scanlines and the odd "RECALIBRATING…" flicker.
 
 ## Game audio
 
@@ -136,6 +141,7 @@ The tests cover:
 - Decor: placement by anchor, solid versus soft, saving with presets, the editor, and the default arrangement staying clear of card zones.
 - Art: that the tank and fish models match the game's dimensions, and that the quality presets switch their effects.
 - The bedroom: that it lands around the tank, uses its lightmaps, and switches lightmap, view and rain with the mood picker.
+- The look: button glyph sets and their detection, the card slab's orientation, the idle monitor and tally lights, the editor's decor palette and the tank cam's keypoints.
 - The decode path, from an H.264 test stream to the Y/UV planes.
 - Host requests.
 - The fish staying inside the tank under physics.
