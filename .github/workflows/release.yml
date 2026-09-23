@@ -1,8 +1,8 @@
 name: Release
 
-# Pushing a version tag (v0.1.0, v1.2.3-beta.1, ...) packages the Linux build,
-# publishes it as a GitHub Release, and deploys the landing page to GitHub Pages
-# with download links pointing at that release.
+# Pushing a version tag (v0.1.0, v1.2.3-beta.1, ...) packages the Linux and
+# macOS builds, publishes them as a GitHub Release, and deploys the landing
+# page to GitHub Pages with download links pointing at that release.
 #
 # One-time setup: Settings > Pages > Build and deployment > Source: GitHub Actions.
 on:
@@ -13,15 +13,12 @@ env:
   GODOT_VERSION: 4.7.2
 
 jobs:
-  package:
+  linux:
     runs-on: ubuntu-24.04
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-          fetch-depth: 0
 
       - name: Install Godot and the Linux export template
         run: |
@@ -34,6 +31,61 @@ jobs:
 
       - name: Package Linux
         run: packaging/linux/package.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-linux
+          path: dist/builds/*
+
+  macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install build tools
+        run: brew install scons nasm
+
+      - name: Install Godot and the macOS export template
+        run: |
+          base="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          curl -fsSL -o godot.zip "$base/Godot_v${GODOT_VERSION}-stable_macos.universal.zip"
+          unzip -q godot.zip -d "$RUNNER_TEMP"
+          echo "GODOT=$RUNNER_TEMP/Godot.app/Contents/MacOS/Godot" >> "$GITHUB_ENV"
+          curl -fsSL -o templates.tpz "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q templates.tpz templates/macos.zip templates/version.txt -d "$RUNNER_TEMP"
+          echo "GODOT_TEMPLATES=$RUNNER_TEMP/templates" >> "$GITHUB_ENV"
+
+      # The static dependencies take a while to build and change only with the script.
+      - uses: actions/cache@v4
+        with:
+          path: dist/macos/deps-*
+          key: macos-deps-${{ hashFiles('packaging/macos/build-deps.sh') }}
+
+      - name: Package macOS
+        run: packaging/macos/package.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-macos
+          path: dist/builds/*
+
+  release:
+    needs: [linux, macos]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: build-*
+          path: dist/builds
+          merge-multiple: true
 
       - name: Checksums
         working-directory: dist/builds
@@ -61,7 +113,7 @@ jobs:
           path: dist/site
 
   pages:
-    needs: package
+    needs: release
     runs-on: ubuntu-24.04
     permissions:
       pages: write

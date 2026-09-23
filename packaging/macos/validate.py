@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-"""Checks the macOS release zip without a Mac.
+"""Checks the macOS release zip. It runs anywhere; package.sh runs it last.
 
     python3 packaging/macos/validate.py dist/builds/linguini-macos-universal.zip
 
 Verifies the zip, the app bundle's Info.plist (bundle id, minimum macOS, local
 network usage string), that the executable and the extension are Universal 2
 (arm64 + x86_64) Mach-O with a code signature in every slice, that the
-extension links only libSystem and system frameworks, that the game data is packed, and that the
-README and licences are present. It can't launch the app: that still needs a Mac.
+extension links only system libraries (/usr/lib and system frameworks), that
+the game data is packed, and that the README and licences are present. It
+doesn't launch the app.
 """
 import plistlib
 import stat
@@ -83,7 +84,9 @@ def main(path: str) -> int:
 
         info = plistlib.loads(z.read(plists[0]))
         check(info.get("CFBundleIdentifier") == BUNDLE_ID, f"bundle id is {info.get('CFBundleIdentifier')}")
-        check(info.get("LSMinimumSystemVersion") == MIN_MACOS, f"minimum macOS is {info.get('LSMinimumSystemVersion')}")
+        # Godot writes the minimum per architecture.
+        minimum = info.get("LSMinimumSystemVersionByArchitecture") or {}
+        check(minimum == {"arm64": MIN_MACOS, "x86_64": MIN_MACOS}, f"minimum macOS is {minimum}")
         check("NSLocalNetworkUsageDescription" in info, "Info.plist has no NSLocalNetworkUsageDescription")
 
         executable = app + "Contents/MacOS/" + info["CFBundleExecutable"]
@@ -101,8 +104,7 @@ def main(path: str) -> int:
             check(set(ext) == {"arm64", "x86_64"}, f"extension slices: {sorted(ext)}")
             for arch, s in ext.items():
                 check(s["signed"], f"extension {arch} slice isn't signed")
-                foreign = [d for d in s["dylibs"] if not (d.startswith("/usr/lib/libSystem.")
-                           or d.startswith("/System/Library/Frameworks/"))]
+                foreign = [d for d in s["dylibs"] if not d.startswith(("/usr/lib/", "/System/Library/Frameworks/"))]
                 check(not foreign, f"extension {arch} links non-system libraries: {foreign}")
                 check(s["minos"] == MIN_MACOS, f"extension {arch} targets macOS {s['minos']}")
             check(framework + "Resources/Info.plist" in names, "extension framework has no Info.plist")

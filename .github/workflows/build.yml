@@ -49,6 +49,13 @@ jobs:
           PKG_CONFIG_PATH="$(brew --prefix openssl@3)/lib/pkgconfig:$(brew --prefix curl)/lib/pkgconfig:$(brew --prefix expat)/lib/pkgconfig:$PKG_CONFIG_PATH"
           export PKG_CONFIG_PATH
           scons -j4 arch=arm64
+      - name: Run tests
+        run: |
+          curl -sSL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_macos.universal.zip"
+          unzip -q godot.zip
+          godot="./Godot.app/Contents/MacOS/Godot"
+          "$godot" --headless --path godot --import
+          "$godot" --headless --path godot -s res://tests/run_tests.gd
       - uses: actions/upload-artifact@v4
         with:
           name: linguini-macos

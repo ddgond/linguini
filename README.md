@@ -49,7 +49,7 @@ scons                          # builds godot/bin/liblinguini.*
 godot --path godot             # run it (or open godot/ in the editor)
 ```
 
-On Nix, `nix develop` provides everything, Godot included. On Linux and macOS, the libraries are found with `pkg-config`. On Windows, set `LINGUINI_DEPS_PREFIX` to a prefix with `include/` and `lib/`, such as a vcpkg `installed/x64-windows` tree.
+On Nix, `nix develop` provides everything, Godot included. On Linux and macOS, the libraries are found with `pkg-config` (see [macOS](#macos) for Homebrew). On Windows, set `LINGUINI_DEPS_PREFIX` to a prefix with `include/` and `lib/`, such as a vcpkg `installed/x64-windows` tree.
 
 ### Tests
 
@@ -91,21 +91,34 @@ After building, the script exports the project with the `Linux` preset (`godot/e
 
 It needs Docker, plus a Godot editor with matching export templates. Set `GODOT` and `GODOT_TEMPLATES`, or let it take both from the Nix flake. It keeps its own Godot data directory, so your editor settings aren't touched.
 
-### macOS (in progress, on the `macos` branch)
+### macOS
 
-This will be a native build on a Mac. Cross-compiling from Linux worked for arm64, but zig's Mach-O linker crashed intermittently on x86_64. What's already here:
-- **Export:** the `macOS` preset (universal, macOS 11+, ad-hoc signed) is in `godot/export_presets.cfg`. It includes an `NSLocalNetworkUsageDescription`, because macOS asks permission before the app can reach hosts on the LAN.
-- **Project setting:** `rendering/textures/vram_compression/import_etc2_astc` is on, because Godot refuses arm64 or universal exports without it.
-- **Static linking:** `LINGUINI_DEPS_PREFIX` links FFmpeg, curl, OpenSSL, Opus and expat statically on macOS too, and adds the frameworks curl needs.
-- **Package files:** `packaging/macos/README.txt` goes into the zip. `packaging/macos/Info.plist` is the plist for the extension's `.framework`.
-- **Validator:** `packaging/macos/validate.py` checks a finished zip. It checks both CPU architectures, the signatures, that only system libraries are linked, the game data and the licences.
+```sh
+packaging/macos/package.sh     # -> dist/builds/linguini-macos-universal.zip
+```
 
-Still to do:
-- **Static libraries:** build them for arm64 and x86_64, with FFmpeg's VideoToolbox decoding turned on.
-- **Universal framework:** join each architecture's extension with `lipo`.
-- **Packaging script:** write `packaging/macos/package.sh`.
-- **CI:** add a `macos-14` job to `release.yml`.
-- **Testing:** launch the app and stream from a host.
+The macOS build is made natively on a Mac, Apple Silicon or Intel. It produces one universal app that runs on both, on macOS 11 or later.
+- **Static dependencies:** `packaging/macos/build-deps.sh` builds the same versions of OpenSSL, Opus, expat, curl and FFmpeg as the Linux Dockerfile, once for each architecture, into `dist/macos/deps-*`. FFmpeg decodes H.264 and HEVC with VideoToolbox. AV1 decodes in software, because FFmpeg 7.1 has no VideoToolbox AV1. The builds are reused until the script changes.
+- **Universal extension:** the extension is built for arm64 and x86_64 and joined with `lipo` into `liblinguini.macos.template_release.framework`. The script fails if either half links anything outside `/usr/lib` and the system frameworks, or targets a macOS other than 11.0.
+- **Export:** the `macOS` preset in `godot/export_presets.cfg` is universal, ad-hoc signed with the hardened runtime, and includes an `NSLocalNetworkUsageDescription`, because macOS asks permission before the app can reach hosts on the LAN. `rendering/textures/vram_compression/import_etc2_astc` is on, because Godot refuses arm64 or universal exports without it.
+- **Checks:** the zip holds `Linguini.app`, a README and the licences. The script finishes by running `packaging/macos/validate.py` on it, which checks both architectures, the signatures, the linked libraries, the game data and the licences.
+
+It needs the Xcode command line tools, SCons, nasm (for x86_64 FFmpeg), and a Godot editor with the matching macOS export template. Set `GODOT` and `GODOT_TEMPLATES`, or let it use `godot` and Godot's own export templates directory. To set up a Mac:
+
+```sh
+brew install scons nasm pkg-config ffmpeg opus openssl@3 curl expat   # the last five for development builds
+brew install --cask godot
+# then install the export templates from the editor (Editor › Manage Export Templates)
+```
+
+For development builds, `scons` finds Homebrew's libraries through `pkg-config`. Homebrew doesn't link OpenSSL, curl or expat into its prefix, so add them to the path first:
+
+```sh
+export PKG_CONFIG_PATH="$(brew --prefix openssl@3)/lib/pkgconfig:$(brew --prefix curl)/lib/pkgconfig:$(brew --prefix expat)/lib/pkgconfig"
+scons arch=arm64               # or x86_64; builds godot/bin/liblinguini.macos.template_debug.framework
+```
+
+The app is ad-hoc signed but not notarized. Gatekeeper blocks it on first launch until the user allows it under **System Settings › Privacy & Security** (see `packaging/macos/README.txt`). Notarizing needs an Apple Developer ID.
 
 ## Releases
 
@@ -116,13 +129,13 @@ git tag v0.1.0 && git push origin v0.1.0
 ```
 
 That tag push does three things:
-- **Package:** builds `linguini-linux-x86_64.tar.gz` with `packaging/linux/package.sh`.
-- **Release:** publishes it as a GitHub Release for the tag, with `SHA256SUMS` and generated release notes. A tag with a hyphen, such as `v0.2.0-beta.1`, is marked as a pre-release.
+- **Package:** builds `linguini-linux-x86_64.tar.gz` with `packaging/linux/package.sh` and `linguini-macos-universal.zip` with `packaging/macos/package.sh` (on a `macos-14` runner, with the static dependencies cached).
+- **Release:** publishes them as a GitHub Release for the tag, with `SHA256SUMS` and generated release notes. A tag with a hyphen, such as `v0.2.0-beta.1`, is marked as a pre-release.
 - **Landing page:** rebuilds it with that version and download links pointing at the release, then deploys it to GitHub Pages.
 
 For one-time setup, go to the repository's **Settings › Pages** and set **Source** to **GitHub Actions**.
 
-Ordinary pushes and pull requests run `.github/workflows/build.yml`, which builds the extension and runs the tests.
+Ordinary pushes and pull requests run `.github/workflows/build.yml`, which builds the extension and runs the tests on Linux and macOS.
 
 ## Landing page
 
@@ -157,10 +170,12 @@ third_party/           submodules
 
 ## Known limitations
 
-- Only the Linux build has been built and tested. The macOS and Windows paths in `SConstruct`, the shims, and the CI jobs are written but haven't been run.
+- Linux and macOS have been built and tested. The Windows paths in `SConstruct`, the shims, and the CI job are written but haven't been run.
 - Hosts are added by IP or hostname. There's no mDNS discovery yet.
 - Frames are decoded on the GPU where possible and copied back to system memory for upload. Zero-copy rendering is future work.
-- Only Linux has a packaged release build so far. Windows and macOS need their own packaging.
+- Linux and macOS have packaged release builds. Windows needs its own packaging.
+- The macOS build isn't notarized, so first launch needs a trip to System Settings.
+- The macOS build has been tested with the test stream (VideoToolbox decoding, both architectures) but hasn't streamed from a real host yet, so the local network permission prompt is also untested.
 - libgamestream requests can't be cancelled. "Back" during pairing stops waiting, but the host keeps the PIN prompt open until it's entered or times out.
 - libgamestream names the client "roth" on the host's paired-devices list.
 
