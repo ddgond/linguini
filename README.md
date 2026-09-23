@@ -76,6 +76,25 @@ godot --headless --path godot -s res://tools/stream_check.gd -- HOST Desktop 15 
 
 `main.tscn` also accepts `-- --swim --test-video=PATH --gaze --zones --room-camera --screenshot=PATH` for manual checks without a host. The full list is in `godot/scripts/main.gd`.
 
+## Landing page
+
+`site/build.py` builds a static landing page with download links into `dist/site/`. It uses only the Python standard library.
+
+```sh
+python3 site/build.py                                    # dist/builds/* -> dist/site/
+python3 site/build.py --builds DIR --out DIR --repo-url https://…
+python3 site/build.py --base-url https://…/releases/v0.1.0/   # link to hosted files instead of copying
+```
+
+Put the packaged builds in `dist/builds/`. Each file is matched to a platform by its name:
+- `linux`
+- `win`, `windows` or `win64`
+- `mac`, `macos`, `osx` or `darwin`
+
+For example: `linguini-linux-x86_64.zip`, `linguini-windows-x86_64.zip`, `linguini-macos.zip`.
+
+The script copies the builds into the site and writes `SHA256SUMS`. The page lists each file's size and SHA-256. On the visitor's own platform, the hero button becomes "Download for …". A platform without a build shows "Not built yet". The output is plain HTML and CSS with a small script, so any static host works.
+
 ## Layout
 
 ```

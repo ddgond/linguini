@@ -10,3 +10,4 @@ native/**/*.gen.cpp
 godot/.godot/
 godot/tests/fixtures/*.h264
 /build/
+/dist/
