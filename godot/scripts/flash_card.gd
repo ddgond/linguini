@@ -57,6 +57,7 @@ func _ready() -> void:
 	paper.albedo_color = Color(0.96, 0.95, 0.9)
 	paper.roughness = 0.25 # laminated
 	_add_box(_face, Vector3(size.x, size.y, 0.003), Vector3.ZERO, paper)
+	Quality.add_caustics(paper)
 
 	var arrow := _combined_arrow(ids)
 	var single := binding.kind == CardBinding.Kind.HOLD and ids.size() == 1

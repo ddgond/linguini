@@ -4,7 +4,7 @@ A [Moonlight](https://moonlight-stream.org/) game-streaming client, inspired by 
 
 You play from inside a fish tank in a streamer's bedroom. The game stream plays on the monitor across the room. Flash cards in the tank press controller buttons on the host while the fish swims in front of them.
 
-## Status: milestone 2 (editing, tank cam, room audio)
+## Status: milestone 3a (fish, tank, water)
 
 - Pair with a Sunshine or GeForce Experience host, pick an app and stream it. Video and audio go to the monitor in the room. All of this happens on the monitor itself.
 - **Real Fishy Movement:** the stick or WASD steers from the fish's point of view, not the camera's. Forward swims along its heading, left and right turn it, and back makes it back up slowly. Input is an urge, not a velocity: the fish turns at a limited rate and moves in tail-beat pulses, so it swims in arcs. With no input it drifts.
@@ -13,8 +13,10 @@ You play from inside a fish tank in a streamer's bedroom. The game stream plays 
 - A tank editor (F2) places, rebinds, duplicates and deletes cards, and saves named presets.
 - A **tank cam** window (F4) shows the room camera's view with a fake ML fish-tracking overlay, ready for OBS to capture.
 - Game audio plays from the speakers next to the monitor, and it's muffled while the camera is underwater.
+- **Art, so far:** a fancy fantail goldfish that swims by vertex shader, a modelled tank and stand, glass with a hint of algae, a rippling water surface, and caustic light. The tank has editable decor: plants, rocks, driftwood, an air stone, a filter and ornaments. Every model comes from a Blender script.
+- **Quality presets:** Low, Medium and High, auto-picked for your GPU.
 
-Milestone 3 is the art pass.
+Still to come in milestone 3: 3b the bedroom and its lighting, 3c card faces, the UI and the tank cam's look, and 3d feel and sound. `tools/tracker/` shows progress live.
 
 ## Controls
 
@@ -45,13 +47,39 @@ The built-in Default layout is `godot/data/layouts/default.json`. Every card fac
 ### Tank editor
 
 Press F2, or choose **Edit tank** on the monitor. The fish waits and nothing is sent to the host while you edit.
-- **Moving cards:** click a card to select it, then drag to move it across the tank. Shift+drag moves it nearer or further from the glass. The panel also has exact position fields.
+- **Moving things:** click a card or a piece of decor to select it, then drag to move it.
+  - Cards move parallel to the glass; Shift+drag moves them nearer or further. The panel also has exact position fields.
+  - Decor moves along whatever it's anchored to: the gravel, the water surface, or the back and side rims (the filter). Moss balls float anywhere, with Shift+drag for depth.
 - **Camera:** right-drag orbits, and the wheel zooms.
 - **Editing a card:** choose **Hold** and pick one or more inputs, or choose **Sequence** and edit its steps. You can give it a name, which is shown on the card.
-- **Card actions:** **+ Add card**, **Duplicate** and **Delete card**.
-- **Presets:** **Load**, **Save**, **Save as** and **Delete**. Default is built in and read-only. Your presets are saved as JSON in the app's user folder under `layouts/`. The preset in use is remembered between sessions.
+- **Editing decor:** set its colour variant and size (S, M or L), and turn it with the slider. Cards always face the glass, so only decor turns.
+- **Actions:** **+ Card**, **+ Decor** (with the piece chosen from the list), **Duplicate** and **Delete**.
+- **Presets:** **Load**, **Save**, **Save as** and **Delete**. A preset holds both the cards and the decor. Default is built in and read-only. Your presets are saved as JSON in the app's user folder under `layouts/`. The preset in use is remembered between sessions.
+
+### Decor
+
+The catalogue is `godot/data/decor.json`. It holds each piece's name, anchor and colour variants, and any bubbles or glow it has.
+- **Solid pieces** (rocks, driftwood, the castle, the sign, the chest, the bonfire, the air stone and the filter): the fish bumps into them. The driftwood arch is solid only along the wood itself, so the fish can swim underneath.
+- **Soft pieces** (grass, the broad-leaf plant, the moss ball and the lily pad): the fish swims through them. Plants sway in a gentle current and lean away as the fish passes.
+- **Hiding the fish:** decor between the fish and the room camera lowers the tank cam's confidence, just as cards do.
+- **Card zones:** decor may overlap them. A solid piece there makes that card harder to reach.
 
 Esc or **Done** leaves the editor. Changes stay in the tank until you quit, even if they aren't saved.
+
+## Graphics quality
+
+**Graphics** on the monitor's home page sets **Low**, **Medium** or **High**. It starts on **Auto**, which picks Low on integrated or software GPUs and High on dedicated ones.
+
+| | Low | Medium | High |
+|---|---|---|---|
+| Caustics | off | on | on |
+| Water refraction | off | on | on |
+| Glow | off | on | on |
+| Ambient occlusion (SSAO) | off | off | on |
+| Anti-aliasing | off | 2× MSAA | 4× MSAA |
+| Render scale | 0.8 | 1.0 | 1.0 |
+| Shadow atlas | 1024 | 2048 | 4096 |
+| Bubbles | 40% | 75% | 100% |
 
 ## Tank cam
 
@@ -95,6 +123,8 @@ The tests cover:
 - The tank editor: entering and leaving it, card edits, and saving and loading presets.
 - The tank cam's detector: tracking, occlusion and what it reports.
 - Game audio: channel routing and the underwater filter.
+- Decor: placement by anchor, solid versus soft, saving with presets, the editor, and the default arrangement staying clear of card zones.
+- Art: that the tank and fish models match the game's dimensions, and that the quality presets switch their effects.
 - The decode path, from an H.264 test stream to the Y/UV planes.
 - Host requests.
 - The fish staying inside the tank under physics.
@@ -190,15 +220,46 @@ For example: `linguini-linux-x86_64.zip`, `linguini-windows-x86_64.zip`, `lingui
 
 The script copies the builds into the site and writes `SHA256SUMS`. The page lists each file's size and SHA-256. On the visitor's own platform, the hero button becomes "Download for …". A platform without a build shows "Not built yet". The output is plain HTML and CSS with a small script, so any static host works.
 
+## Art pipeline
+
+Every model is built by a Blender Python script in `art/`. The generated `.glb` files are committed, so building the game doesn't need Blender.
+
+```sh
+nix develop .#art -c art/build.sh              # rebuild every model (and its preview renders)
+nix develop .#art -c art/build.sh fish castle  # just these
+python3 art/check.py                           # fails if a .glb is out of date with its script
+```
+
+- **The catalogue:** `art/catalog.json` lists each model: its id, script, output, milestone and status.
+  - Scripts live in `art/models/`. Shared helpers for materials, painting, sweeps, colliders and studio renders live in `art/lib/`.
+  - `art/manifest.json` records a hash of each model's inputs, which is what `check.py` compares. CI runs the check.
+- **Conventions** (details in `art/lib/common.py` and `art/lib/decor.py`):
+  - Units are metres, and a model facing Blender +Y faces Godot −Z.
+  - Painted colour goes in the `Col` attribute.
+  - Animation weights go in a second UV map, which Godot reads as `UV2`.
+  - Materials are named, and Godot swaps in its own shaders or recolours by those names.
+  - Objects named `*-convcolonly` become collision-only shapes.
+
+### Progress tracker
+
+```sh
+python3 tools/tracker/server.py    # http://localhost:57197, and on your LAN
+```
+
+A live page with the roadmap and a render of every model, grouped by milestone. It refreshes itself every few seconds, picking up edits to `tools/tracker/roadmap.json` and new renders from `art/build.sh`. Renders are written to `art/renders/`, which isn't committed.
+
 ## Layout
 
 ```
 native/src/            GDExtension: MoonlightClient node, FFmpeg video decoder, Opus audio
 native/compat/         shims that let libgamestream build unmodified off Linux
-godot/scripts/         fish, camera, cards, monitor + menu, room builder (greybox)
-godot/shaders/         monitor screen (YUV -> RGB, letterboxing, menu overlay)
-godot/data/layouts/    card layouts
+art/                   Blender scripts for every model (see Art pipeline)
+godot/art/             the generated models (.glb)
+godot/scripts/         fish, camera, cards, decor, editor, monitor + menu, room, quality
+godot/shaders/         fish, glass, water, caustics, plants, bubbles, monitor screen
+godot/data/            card layouts and the decor catalogue
 godot/tests/           headless tests
+tools/tracker/         the progress tracker
 third_party/           submodules
 ```
 

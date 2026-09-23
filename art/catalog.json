@@ -1,0 +1,144 @@
+{
+  "comment": "Every model the art pipeline builds. `script` (relative to art/) writes `output` (relative to godot/); art/build.sh also renders each to art/renders/<id>.png for the progress tracker. `status`: planned, in-progress or done.",
+  "models": [
+    {
+      "id": "fish",
+      "name": "Linguini (fantail)",
+      "milestone": "3a",
+      "script": "models/fish.py",
+      "output": "art/fish.glb",
+      "status": "done",
+      "note": "In game with vertex-shader swimming"
+    },
+    {
+      "id": "tank",
+      "name": "Tank and stand",
+      "milestone": "3a",
+      "script": "models/tank.py",
+      "output": "art/tank.glb",
+      "status": "done",
+      "note": "In game: glass shader, caustics on the gravel"
+    },
+    {
+      "id": "rock_round",
+      "name": "Rock (round)",
+      "milestone": "3a",
+      "script": "models/decor/rock.py",
+      "output": "art/decor/rock_round.glb",
+      "status": "done",
+      "args": {
+        "shape": "round"
+      }
+    },
+    {
+      "id": "rock_flat",
+      "name": "Rock (flat)",
+      "milestone": "3a",
+      "script": "models/decor/rock.py",
+      "output": "art/decor/rock_flat.glb",
+      "status": "done",
+      "args": {
+        "shape": "flat"
+      }
+    },
+    {
+      "id": "rock_tall",
+      "name": "Rock (tall)",
+      "milestone": "3a",
+      "script": "models/decor/rock.py",
+      "output": "art/decor/rock_tall.glb",
+      "status": "done",
+      "args": {
+        "shape": "tall"
+      }
+    },
+    {
+      "id": "driftwood",
+      "name": "Driftwood arch",
+      "milestone": "3a",
+      "script": "models/decor/driftwood.py",
+      "output": "art/decor/driftwood.glb",
+      "status": "done"
+    },
+    {
+      "id": "plant_grass",
+      "name": "Tall grass",
+      "milestone": "3a",
+      "script": "models/decor/plant_grass.py",
+      "output": "art/decor/plant_grass.glb",
+      "status": "done"
+    },
+    {
+      "id": "plant_broadleaf",
+      "name": "Broad-leaf plant",
+      "milestone": "3a",
+      "script": "models/decor/plant_broadleaf.py",
+      "output": "art/decor/plant_broadleaf.glb",
+      "status": "done"
+    },
+    {
+      "id": "moss_ball",
+      "name": "Moss ball",
+      "milestone": "3a",
+      "script": "models/decor/moss_ball.py",
+      "output": "art/decor/moss_ball.glb",
+      "status": "done"
+    },
+    {
+      "id": "lily_pad",
+      "name": "Lily pad",
+      "milestone": "3a",
+      "script": "models/decor/lily_pad.py",
+      "output": "art/decor/lily_pad.glb",
+      "status": "done"
+    },
+    {
+      "id": "airstone",
+      "name": "Air stone",
+      "milestone": "3a",
+      "script": "models/decor/airstone.py",
+      "output": "art/decor/airstone.glb",
+      "status": "done"
+    },
+    {
+      "id": "filter",
+      "name": "Hang-on filter",
+      "milestone": "3a",
+      "script": "models/decor/filter.py",
+      "output": "art/decor/filter.glb",
+      "status": "done"
+    },
+    {
+      "id": "castle",
+      "name": "Castle",
+      "milestone": "3a",
+      "script": "models/decor/castle.py",
+      "output": "art/decor/castle.glb",
+      "status": "done"
+    },
+    {
+      "id": "sign",
+      "name": "No Fishing sign",
+      "milestone": "3a",
+      "script": "models/decor/sign.py",
+      "output": "art/decor/sign.glb",
+      "status": "done"
+    },
+    {
+      "id": "chest",
+      "name": "Treasure chest",
+      "milestone": "3a",
+      "script": "models/decor/chest.py",
+      "output": "art/decor/chest.glb",
+      "status": "done"
+    },
+    {
+      "id": "bonfire",
+      "name": "Bonfire and coiled sword",
+      "milestone": "3a",
+      "script": "models/decor/bonfire.py",
+      "output": "art/decor/bonfire.glb",
+      "status": "done"
+    }
+  ]
+}

@@ -37,6 +37,15 @@ func remove_host(address: String) -> void:
 		save()
 
 
+func get_value(section: String, key: String, default: Variant) -> Variant:
+	return _cfg.get_value(section, key, default)
+
+
+func set_value(section: String, key: String, value: Variant) -> void:
+	_cfg.set_value(section, key, value)
+	save()
+
+
 func get_stream(key: String, default: Variant) -> Variant:
 	return _cfg.get_value("stream", key, default)
 

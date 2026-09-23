@@ -23,8 +23,6 @@ const TITLE := "Linguini Tank Cam"
 const TRAIL_SECONDS := 2.5
 const HEAT_CELLS := Vector2i(48, 27)
 const MODEL := "TortelliNet-v3"
-## The fish's half-extents for its bounding box, in its own space.
-const FISH_HALF := Vector3(0.018, 0.024, 0.045)
 
 var style := Style.EARNEST:
 	set(value):
@@ -106,14 +104,11 @@ func _process(delta: float) -> void:
 ## Where the fish is in the picture, and how sure "the model" is about it.
 func _detect() -> void:
 	var xf := fish.global_transform
+	var bounds := _fish_bounds()
 	var rect := Rect2()
 	var first := true
 	for i in 8:
-		var corner := Vector3(
-			FISH_HALF.x * (1 if i & 1 else -1),
-			FISH_HALF.y * (1 if i & 2 else -1),
-			FISH_HALF.z * (1 if i & 4 else -1))
-		var world := xf * corner
+		var world := xf * bounds.get_endpoint(i)
 		if camera.is_position_behind(world):
 			continue
 		var p := camera.unproject_position(world)
@@ -126,6 +121,14 @@ func _detect() -> void:
 	var jitter := _noise.get_noise_1d(_time) * 0.02
 	var target := 0.41 if occluded else 0.965
 	confidence = clampf(lerpf(confidence, target, 0.15) + jitter, 0.05, 0.995)
+
+
+## The fish model's bounds in its own space.
+func _fish_bounds() -> AABB:
+	for child in fish.get_children():
+		if child is FishModel:
+			return child.local_aabb()
+	return AABB(Vector3(-0.018, -0.024, -0.045), Vector3(0.036, 0.048, 0.09))
 
 
 func _is_occluded() -> bool:

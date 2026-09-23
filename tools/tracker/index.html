@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Linguini Progress</title>
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cellipse cx='28' cy='32' rx='22' ry='15' fill='%23f2711c'/%3E%3Cpath d='M46 32 L62 18 Q58 32 62 46 Z' fill='%23f59a3c'/%3E%3Ccircle cx='16' cy='28' r='4' fill='%23fff'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="dot" aria-hidden="true"></span>
+      <h1>Linguini progress</h1>
+    </div>
+    <p class="live" id="live" aria-live="polite">Connecting…</p>
+  </header>
+
+  <main>
+    <section class="now" id="now" aria-label="Current milestone"></section>
+
+    <section aria-labelledby="roadmap-h">
+      <h2 id="roadmap-h">Roadmap</h2>
+      <ol class="roadmap" id="roadmap"></ol>
+    </section>
+
+    <section aria-labelledby="models-h">
+      <div class="section-head">
+        <h2 id="models-h">Models</h2>
+        <div class="filters" role="group" aria-label="Filter models">
+          <button type="button" data-filter="all" aria-pressed="true">All</button>
+          <button type="button" data-filter="in-progress" aria-pressed="false">In progress</button>
+          <button type="button" data-filter="done" aria-pressed="false">Done</button>
+          <button type="button" data-filter="planned" aria-pressed="false">Planned</button>
+        </div>
+      </div>
+      <div id="models"></div>
+    </section>
+  </main>
+
+  <dialog id="viewer">
+    <form method="dialog"><button class="close" aria-label="Close">×</button></form>
+    <img id="viewer-img" alt="">
+    <p id="viewer-caption"></p>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
