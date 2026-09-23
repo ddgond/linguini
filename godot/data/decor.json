@@ -1,0 +1,119 @@
+{
+	"comment": "Tank decor catalogue. Shared by the game (DecorCatalog) and the art pipeline's preview renders (art/run.py uses each item's first variant). kind: solid (the fish bumps into it) or soft (swim-through, sways). anchor: gravel (sits on the gravel), float (anywhere in the water), surface (floats on the water) or rim (hangs on the back or side rim). Variant colours are sRGB hex per material name; they multiply the model's painted colour. bubbles are emitter positions in the model's own space (metres, Godot axes). sizes scale every piece: S, M, L.",
+	"sizes": { "S": 0.75, "M": 1.0, "L": 1.3 },
+	"items": {
+		"plant_grass": {
+			"name": "Tall grass", "kind": "soft", "anchor": "gravel",
+			"variants": [
+				{ "name": "Green", "Plant": "#5fae4c" },
+				{ "name": "Red", "Plant": "#c0603e" },
+				{ "name": "Lime", "Plant": "#a2d251" }
+			]
+		},
+		"plant_broadleaf": {
+			"name": "Broad-leaf plant", "kind": "soft", "anchor": "gravel",
+			"variants": [
+				{ "name": "Green", "Plant": "#4f9a45" },
+				{ "name": "Dark green", "Plant": "#32703a" },
+				{ "name": "Red", "Plant": "#ad4a33" }
+			]
+		},
+		"moss_ball": {
+			"name": "Moss ball", "kind": "soft", "anchor": "float",
+			"variants": [
+				{ "name": "Green", "Primary": "#45843a" },
+				{ "name": "Lime", "Primary": "#74ad40" }
+			]
+		},
+		"lily_pad": {
+			"name": "Lily pad", "kind": "soft", "anchor": "surface",
+			"variants": [
+				{ "name": "Pink flower", "Plant": "#4f9c47", "Accent": "#f4a6c4" },
+				{ "name": "White flower", "Plant": "#4f9c47", "Accent": "#f6f3ec" },
+				{ "name": "Yellow flower", "Plant": "#5aa24a", "Accent": "#f4d35e" }
+			]
+		},
+		"rock_round": {
+			"name": "Round rock", "kind": "solid", "anchor": "gravel",
+			"variants": [
+				{ "name": "Grey", "Primary": "#908d89" },
+				{ "name": "Sandstone", "Primary": "#caa77a" },
+				{ "name": "Slate", "Primary": "#5f6975" }
+			]
+		},
+		"rock_flat": {
+			"name": "Flat rock", "kind": "solid", "anchor": "gravel",
+			"variants": [
+				{ "name": "Grey", "Primary": "#908d89" },
+				{ "name": "Sandstone", "Primary": "#caa77a" },
+				{ "name": "Slate", "Primary": "#5f6975" }
+			]
+		},
+		"rock_tall": {
+			"name": "Tall rock", "kind": "solid", "anchor": "gravel",
+			"variants": [
+				{ "name": "Grey", "Primary": "#908d89" },
+				{ "name": "Sandstone", "Primary": "#caa77a" },
+				{ "name": "Slate", "Primary": "#5f6975" }
+			]
+		},
+		"driftwood": {
+			"name": "Driftwood arch", "kind": "solid", "anchor": "gravel",
+			"variants": [
+				{ "name": "Weathered", "Primary": "#baa48b" },
+				{ "name": "Dark", "Primary": "#6d4c35" },
+				{ "name": "Red", "Primary": "#9c5c3e" }
+			]
+		},
+		"airstone": {
+			"name": "Air stone", "kind": "solid", "anchor": "gravel",
+			"bubbles": [ { "at": [0.0, 0.016, 0.0], "rate": 14 } ],
+			"variants": [
+				{ "name": "Blue-grey", "Primary": "#7d8fa1" },
+				{ "name": "Sand", "Primary": "#cab99b" }
+			]
+		},
+		"filter": {
+			"name": "Hang-on filter", "kind": "solid", "anchor": "rim",
+			"spill": true,
+			"variants": [
+				{ "name": "Black", "Primary": "#2a2c30" },
+				{ "name": "White", "Primary": "#e8e8e4" },
+				{ "name": "Aqua", "Primary": "#70b8b9" }
+			]
+		},
+		"castle": {
+			"name": "Castle", "kind": "solid", "anchor": "gravel",
+			"variants": [
+				{ "name": "Stone, red roofs", "Primary": "#bbb3a6", "Secondary": "#b94b3b" },
+				{ "name": "Sandstone, blue roofs", "Primary": "#d6bb8c", "Secondary": "#4b70b9" },
+				{ "name": "Pink, purple roofs", "Primary": "#e5aaaa", "Secondary": "#7c53a9" }
+			]
+		},
+		"sign": {
+			"name": "No Fishing sign", "kind": "solid", "anchor": "gravel",
+			"variants": [
+				{ "name": "Wood, white letters", "Primary": "#a97a50", "Accent": "#f2eee2" },
+				{ "name": "Wood, red letters", "Primary": "#a97a50", "Accent": "#c63d33" },
+				{ "name": "White, black letters", "Primary": "#ece8dc", "Accent": "#222222" }
+			]
+		},
+		"chest": {
+			"name": "Treasure chest", "kind": "solid", "anchor": "gravel",
+			"bubbles": [ { "at": [0.0, 0.05, 0.0], "rate": 3 } ],
+			"variants": [
+				{ "name": "Oak", "Primary": "#8b5b36", "Secondary": "#4b4b50", "Accent": "#e9b94b" },
+				{ "name": "Dark", "Primary": "#553623", "Secondary": "#6f5a2e", "Accent": "#e9b94b" }
+			]
+		},
+		"bonfire": {
+			"name": "Bonfire", "kind": "solid", "anchor": "gravel",
+			"bubbles": [ { "at": [0.0, 0.02, 0.0], "rate": 6 } ],
+			"glow": "Ember",
+			"variants": [
+				{ "name": "Grace", "Primary": "#7e7b77", "Secondary": "#9ba1a9", "Ember": "#ff7b2b" },
+				{ "name": "Mossy", "Primary": "#6f7a62", "Secondary": "#9ba1a9", "Ember": "#ffb347" }
+			]
+		}
+	}
+}

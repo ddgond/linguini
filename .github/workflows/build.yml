@@ -22,6 +22,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y scons pkg-config ffmpeg libavcodec-dev libavutil-dev libopus-dev \
             libssl-dev libcurl4-openssl-dev libexpat1-dev
+      - name: Check the models are up to date with art/
+        run: python3 art/check.py
       - name: Build extension
         run: scons -j4
       - name: Run tests

@@ -1,14 +1,16 @@
 class_name TankEditor
 extends Node
-## In-game editor for the flash cards: place, move, rebind, duplicate and
-## delete cards, build combos, toggles and sequences, and save or load named
-## presets.
+## In-game editor for the tank: place, move, rebind, duplicate and delete
+## cards (combos, toggles and sequences too), arrange decor, and save or load
+## named presets holding both.
 ##
-## Mouse: click a card to select it and drag to move it across the tank;
-## Shift+drag moves it nearer or further from the glass. Right-drag orbits the
-## camera; the wheel zooms. Esc or Done leaves the editor.
+## Mouse: click a card or a piece of decor to select it and drag to move it.
+## Cards move parallel to the glass (Shift+drag: nearer or further). Decor
+## moves along what it's anchored to: the gravel, the water surface, the rims,
+## or anywhere in the water (moss balls; Shift+drag for depth). Right-drag
+## orbits the camera; the wheel zooms. Esc or Done leaves the editor.
 ##
-## Cards always face the front glass, so there's no rotation.
+## Cards always face the front glass, so only decor rotates.
 
 signal closed
 signal preset_changed(preset_name: String)
@@ -17,6 +19,7 @@ const PANEL_WIDTH := 440
 const STEP_MS := 10
 
 var cards: CardSystem
+var decor: TankDecor
 ## The water volume in the tank's local space; cards are kept inside it.
 var water_local: AABB
 ## Point the camera orbits, in global space.
@@ -25,6 +28,7 @@ var focus := Vector3.ZERO
 var preset_name := LayoutPresets.DEFAULT
 var dirty := false
 var selected: FlashCard
+var selected_decor: DecorPiece
 
 var camera: Camera3D
 var _orbit_yaw := 0.0
@@ -41,6 +45,7 @@ var _title: Label
 var _status: Label
 var _save_as_name: LineEdit
 var _card_box: VBoxContainer
+var _decor_choice: OptionButton
 
 
 func _ready() -> void:
@@ -87,6 +92,8 @@ func load_preset(p_name: String) -> bool:
 	if data.is_empty():
 		return false
 	cards.load_layout_data(data)
+	if decor:
+		decor.load_data(data.get("decor", []))
 	if is_open():
 		cards.set_zones_visible(true)
 	preset_name = p_name
@@ -111,12 +118,18 @@ func _unhandled_input(event: InputEvent) -> void:
 			_update_camera()
 		elif mb.button_index == MOUSE_BUTTON_LEFT:
 			if mb.pressed:
-				var card := _pick(mb.position)
-				_select(card)
-				if card:
+				var node := _pick(mb.position)
+				if node is DecorPiece:
+					_select_decor(node)
 					_dragging = true
-					var hit: Variant = _plane_hit(mb.position, card.global_position.z)
-					_drag_offset = card.global_position - hit if hit != null else Vector3.ZERO
+					var hit: Variant = _decor_drag_hit(mb.position, node)
+					_drag_offset = node.global_position - hit if hit != null else Vector3.ZERO
+				else:
+					_select(node as FlashCard)
+					if node:
+						_dragging = true
+						var hit: Variant = _plane_hit(mb.position, node.global_position.z)
+						_drag_offset = node.global_position - hit if hit != null else Vector3.ZERO
 			elif _dragging:
 				_dragging = false
 				_rebuild_card_panel()
@@ -127,6 +140,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_orbit_yaw -= mm.relative.x * 0.005
 			_orbit_pitch = clampf(_orbit_pitch + mm.relative.y * 0.005, -0.3, 1.2)
 			_update_camera()
+		elif _dragging and selected_decor:
+			_drag_decor(mm)
 		elif _dragging and selected:
 			var pos := selected.position
 			if mm.shift_pressed:
@@ -153,7 +168,8 @@ func _update_camera() -> void:
 	camera.h_offset = PANEL_WIDTH * 0.5 * metres_per_pixel
 
 
-func _pick(screen: Vector2) -> FlashCard:
+## The card or decor piece under the mouse, if any.
+func _pick(screen: Vector2) -> Node3D:
 	var from := camera.project_ray_origin(screen)
 	var to := from + camera.project_ray_normal(screen) * 10.0
 	var query := PhysicsRayQueryParameters3D.create(from, to, 2)
@@ -161,9 +177,34 @@ func _pick(screen: Vector2) -> FlashCard:
 	if hit.is_empty():
 		return null
 	var node: Node = hit.collider
-	while node and not (node is FlashCard):
+	while node and not (node is FlashCard or node is DecorPiece):
 		node = node.get_parent()
-	return node as FlashCard
+	return node as Node3D
+
+
+## Where a drag of `piece` meets its movement plane: horizontal for pieces on
+## the gravel, the surface or the rims; parallel to the glass for floating ones.
+func _decor_drag_hit(screen: Vector2, piece: DecorPiece) -> Variant:
+	var origin := camera.project_ray_origin(screen)
+	var dir := camera.project_ray_normal(screen)
+	if piece.anchor() == "float":
+		return Plane(Vector3(0, 0, 1), piece.global_position.z).intersects_ray(origin, dir)
+	return Plane(Vector3.UP, piece.global_position.y).intersects_ray(origin, dir)
+
+
+func _drag_decor(mm: InputEventMouseMotion) -> void:
+	var piece := selected_decor
+	var pos := piece.position
+	if mm.shift_pressed and piece.anchor() == "float":
+		pos.z -= mm.relative.y * 0.0015
+	else:
+		var hit: Variant = _decor_drag_hit(mm.position, piece)
+		if hit == null:
+			return
+		var local := decor.to_local(hit + _drag_offset)
+		pos = Vector3(local.x, local.y if piece.anchor() == "float" else pos.y, local.z)
+	decor.move_piece(piece, pos)
+	_set_dirty(true)
 
 
 ## Where the mouse ray meets the plane z = `z` (global), parallel to the glass.
@@ -178,13 +219,29 @@ func _move_selected(pos: Vector3) -> void:
 
 
 func _select(card: FlashCard) -> void:
-	if selected and is_instance_valid(selected):
-		selected.set_selected(false)
+	_clear_selection()
 	selected = card
 	if selected:
 		selected.set_selected(true)
-	_confirm = ""
 	_rebuild_card_panel()
+
+
+func _select_decor(piece: DecorPiece) -> void:
+	_clear_selection()
+	selected_decor = piece
+	if piece:
+		piece.set_selected(true)
+	_rebuild_card_panel()
+
+
+func _clear_selection() -> void:
+	if selected and is_instance_valid(selected):
+		selected.set_selected(false)
+	if selected_decor and is_instance_valid(selected_decor):
+		selected_decor.set_selected(false)
+	selected = null
+	selected_decor = null
+	_confirm = ""
 
 
 # --- panel ---
@@ -235,13 +292,22 @@ func _build_panel() -> void:
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 	box.add_child(HSeparator.new())
-	_label(box, "Cards", 15, Color(0.75, 0.8, 0.9))
-	var card_actions := HBoxContainer.new()
-	box.add_child(card_actions)
-	_button(card_actions, "+ Add card", _on_add_card)
-	_button(card_actions, "Duplicate", _on_duplicate)
-	_button(card_actions, "Delete card", _on_delete_card)
-	var hint := _label(box, "Click a card to select it and drag to move it. Shift+drag: nearer / further from the glass. Right-drag: orbit. Wheel: zoom.", 14, Color(0.65, 0.7, 0.8))
+	_label(box, "Add", 15, Color(0.75, 0.8, 0.9))
+	var add_row := HBoxContainer.new()
+	box.add_child(add_row)
+	_button(add_row, "+ Card", _on_add_card)
+	_decor_choice = OptionButton.new()
+	for id in DecorCatalog.ids():
+		_decor_choice.add_item(DecorCatalog.item(id).name)
+		_decor_choice.set_item_metadata(_decor_choice.item_count - 1, id)
+	_decor_choice.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	add_row.add_child(_decor_choice)
+	_button(add_row, "+ Decor", _on_add_decor)
+	var actions := HBoxContainer.new()
+	box.add_child(actions)
+	_button(actions, "Duplicate", _on_duplicate)
+	_button(actions, "Delete", _on_delete_selected)
+	var hint := _label(box, "Click a card or decor to select it and drag to move it. Shift+drag: depth. Right-drag: orbit. Wheel: zoom.", 14, Color(0.65, 0.7, 0.8))
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 	box.add_child(HSeparator.new())
@@ -260,8 +326,11 @@ func _rebuild_card_panel() -> void:
 	for child in _card_box.get_children():
 		_card_box.remove_child(child)
 		child.queue_free()
+	if selected_decor and is_instance_valid(selected_decor):
+		_rebuild_decor_panel()
+		return
 	if selected == null or not is_instance_valid(selected):
-		_label(_card_box, "No card selected.", 16, Color(0.7, 0.75, 0.85))
+		_label(_card_box, "Nothing selected.", 16, Color(0.7, 0.75, 0.85))
 		return
 	var b := selected.binding
 	_label(_card_box, b.display_name(), 22, Color.WHITE)
@@ -457,8 +526,14 @@ func _on_add_card() -> void:
 
 
 func _on_duplicate() -> void:
+	if selected_decor:
+		var d := selected_decor
+		var copy := decor.add_piece(d.type, d.position + Vector3(0.08, 0.0, 0.0), d.yaw, d.size, d.variant)
+		_set_dirty(true)
+		_select_decor(copy)
+		return
 	if selected == null:
-		_set_status("Select a card to duplicate")
+		_set_status("Select something to duplicate")
 		return
 	var pos := cards.clamp_position(selected.position + Vector3(0.12, 0.0, 0.0), water_local)
 	var card := cards.add_card(selected.binding.duplicate_binding(), pos)
@@ -467,14 +542,107 @@ func _on_duplicate() -> void:
 	_select(card)
 
 
+func _on_delete_selected() -> void:
+	if selected_decor:
+		var piece := selected_decor
+		_select(null)
+		decor.remove_piece(piece)
+		_set_dirty(true)
+		return
+	_on_delete_card()
+
+
 func _on_delete_card() -> void:
 	if selected == null:
-		_set_status("Select a card to delete")
+		_set_status("Select something to delete")
 		return
 	var card := selected
 	_select(null)
 	cards.remove_card(card)
 	_set_dirty(true)
+
+
+# --- decor ---
+
+func _on_add_decor() -> void:
+	var id: String = _decor_choice.get_item_metadata(_decor_choice.selected)
+	# Near the middle, a little forward, at a height suiting its anchor.
+	var piece := decor.add_piece(id, Vector3(0.0, 0.3, 0.1), 0.0, "M", 0)
+	_set_dirty(true)
+	_select_decor(piece)
+
+
+func _rebuild_decor_panel() -> void:
+	var d := selected_decor
+	var item := d.info()
+	_label(_card_box, item.name, 22, Color.WHITE)
+	var kind := "Solid: the fish bumps into it" if d.is_solid() else "Soft: the fish swims through"
+	_label(_card_box, kind, 14, Color(0.65, 0.7, 0.8))
+
+	var colour_row := HBoxContainer.new()
+	_card_box.add_child(colour_row)
+	_label(colour_row, "Colour", 16, Color(0.75, 0.8, 0.9)).custom_minimum_size.x = 70
+	var colours := OptionButton.new()
+	for v: Dictionary in item.variants:
+		colours.add_item(v.name)
+	colours.selected = d.variant
+	colours.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	colours.item_selected.connect(func(i: int) -> void:
+		d.set_look(i, d.size, d.yaw)
+		_set_dirty(true)
+		_select_decor(d))
+	colour_row.add_child(colours)
+
+	var size_row := HBoxContainer.new()
+	_card_box.add_child(size_row)
+	_label(size_row, "Size", 16, Color(0.75, 0.8, 0.9)).custom_minimum_size.x = 70
+	for s: String in DecorPiece.SIZES:
+		var b := Button.new()
+		b.text = s
+		b.toggle_mode = true
+		b.button_pressed = s == d.size
+		b.custom_minimum_size = Vector2(48, 32)
+		b.pressed.connect(func() -> void:
+			d.set_look(d.variant, s, d.yaw)
+			decor.move_piece(d, d.position)
+			_set_dirty(true)
+			_select_decor(d))
+		size_row.add_child(b)
+
+	if d.anchor() != "rim":
+		var turn_row := HBoxContainer.new()
+		_card_box.add_child(turn_row)
+		_label(turn_row, "Turn", 16, Color(0.75, 0.8, 0.9)).custom_minimum_size.x = 70
+		var slider := HSlider.new()
+		slider.min_value = 0
+		slider.max_value = 360
+		slider.step = 5
+		slider.value = d.yaw
+		slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		slider.custom_minimum_size.y = 28
+		var readout := _label(turn_row, "%d°" % int(d.yaw), 15, Color(0.85, 0.9, 1.0))
+		readout.custom_minimum_size.x = 44
+		slider.value_changed.connect(func(v: float) -> void:
+			d.set_yaw(v)
+			readout.text = "%d°" % int(v)
+			_set_dirty(true))
+		turn_row.add_child(slider)
+		turn_row.move_child(slider, 1)
+	else:
+		_label(_card_box, "Hangs on the back or side rim; drag to move it along.", 14, Color(0.65, 0.7, 0.8))
+
+	var where: String = {"gravel": "Sits on the gravel.", "surface": "Floats on the water.",
+		"float": "Floats in the water. Shift+drag: depth.", "rim": ""}[d.anchor()]
+	if where != "":
+		_label(_card_box, where, 14, Color(0.65, 0.7, 0.8))
+
+
+## Cards and decor together, as a preset.
+func layout_data(p_name: String) -> Dictionary:
+	var data := cards.layout_data(p_name)
+	if decor:
+		data.decor = decor.to_data()
+	return data
 
 
 # --- presets ---
@@ -529,7 +697,7 @@ func _on_save_as() -> void:
 
 func _save(p_name: String) -> void:
 	p_name = p_name.strip_edges()
-	var error := LayoutPresets.save(p_name, cards.layout_data(p_name))
+	var error := LayoutPresets.save(p_name, layout_data(p_name))
 	if error != "":
 		_set_status(error)
 		return

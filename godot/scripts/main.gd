@@ -36,6 +36,7 @@ var monitor: Monitor
 var menu: MonitorMenu
 var hud: Hud
 var editor: TankEditor
+var decor: TankDecor
 var tracking: TrackingCam
 var mode := Mode.MENU
 var _mode_before_edit := Mode.MENU
@@ -63,6 +64,7 @@ func _ready() -> void:
 		push_error("Linguini: the native extension isn't loaded, so streaming is unavailable. Build it with `scons`.")
 
 	room = RoomBuilder.build(self)
+	Quality.attach(room.environment)
 	var tank: Node3D = room.tank
 	var inner: AABB = room.tank_inner
 	var water := AABB(
@@ -91,9 +93,16 @@ func _ready() -> void:
 	cards.fish = fish
 	cards.front_z = inner.end.z
 
+	decor = TankDecor.new()
+	decor.name = "Decor"
+	decor.water = AABB(Vector3(inner.position.x, RoomBuilder.GRAVEL_TOP, inner.position.z),
+		Vector3(inner.size.x, room.water_level - RoomBuilder.GRAVEL_TOP, inner.size.z))
+	tank.add_child(decor)
+
 	editor = TankEditor.new()
 	editor.name = "TankEditor"
 	editor.cards = cards
+	editor.decor = decor
 	editor.water_local = AABB(Vector3(inner.position.x, RoomBuilder.GRAVEL_TOP, inner.position.z),
 		Vector3(inner.size.x, room.water_level - RoomBuilder.GRAVEL_TOP, inner.size.z))
 	editor.focus = tank.global_position + Vector3(0, 0.28, 0)
@@ -217,6 +226,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _process(_delta: float) -> void:
+	RenderingServer.global_shader_parameter_set("fish_position", fish.global_position)
 	var view := get_viewport().get_camera_3d()
 	var underwater := view != null and _water.has_point(view.global_position)
 	room.environment.fog_enabled = underwater

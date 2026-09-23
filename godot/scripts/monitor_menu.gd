@@ -207,11 +207,20 @@ func _show_launching() -> void:
 	_focus_first()
 
 
-## "Tank cam" on/off plus its overlay style (the OBS-capturable window).
+## "Tank cam" on/off plus its overlay style (the OBS-capturable window), and
+## the graphics quality preset.
 func _tracking_row() -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
 	_page.add_child(row)
+	var quality := OptionButton.new()
+	var auto_name: String = Quality.NAMES[Quality.auto_level()]
+	var values := ["auto", "low", "medium", "high"]
+	for label in ["Graphics: Auto (%s)" % auto_name, "Graphics: Low", "Graphics: Medium", "Graphics: High"]:
+		quality.add_item(label)
+	quality.selected = maxi(values.find(Quality.setting), 0)
+	quality.item_selected.connect(func(i: int) -> void: Quality.set_setting(values[i]))
+	row.add_child(quality)
 	var toggle := Button.new()
 	toggle.toggle_mode = true
 	toggle.button_pressed = Settings.tracking_enabled()

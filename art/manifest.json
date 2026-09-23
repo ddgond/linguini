@@ -1,0 +1,66 @@
+{
+  "airstone": {
+    "output": "art/decor/airstone.glb",
+    "inputs": "a5117fed090c3e58"
+  },
+  "bonfire": {
+    "output": "art/decor/bonfire.glb",
+    "inputs": "5b10bc5ad1d7702a"
+  },
+  "castle": {
+    "output": "art/decor/castle.glb",
+    "inputs": "6f0a31bc0d3d5f7e"
+  },
+  "chest": {
+    "output": "art/decor/chest.glb",
+    "inputs": "02a3ea84f1517480"
+  },
+  "driftwood": {
+    "output": "art/decor/driftwood.glb",
+    "inputs": "61d7533501f7d66a"
+  },
+  "filter": {
+    "output": "art/decor/filter.glb",
+    "inputs": "12681271f367802e"
+  },
+  "fish": {
+    "output": "art/fish.glb",
+    "inputs": "7ae9f1264778c5dd"
+  },
+  "lily_pad": {
+    "output": "art/decor/lily_pad.glb",
+    "inputs": "e375aeafbd39fc8b"
+  },
+  "moss_ball": {
+    "output": "art/decor/moss_ball.glb",
+    "inputs": "78bf2ae27c0f7d75"
+  },
+  "plant_broadleaf": {
+    "output": "art/decor/plant_broadleaf.glb",
+    "inputs": "4b0bee8de7c4a42b"
+  },
+  "plant_grass": {
+    "output": "art/decor/plant_grass.glb",
+    "inputs": "e62ae30f7ac8faa8"
+  },
+  "rock_flat": {
+    "output": "art/decor/rock_flat.glb",
+    "inputs": "cae22286a5933c59"
+  },
+  "rock_round": {
+    "output": "art/decor/rock_round.glb",
+    "inputs": "8bbad6895a0d386a"
+  },
+  "rock_tall": {
+    "output": "art/decor/rock_tall.glb",
+    "inputs": "13e29f736e7a9c2c"
+  },
+  "sign": {
+    "output": "art/decor/sign.glb",
+    "inputs": "23a23adedbc2659a"
+  },
+  "tank": {
+    "output": "art/tank.glb",
+    "inputs": "b5580b4032964bd3"
+  }
+}

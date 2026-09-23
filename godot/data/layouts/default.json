@@ -1,6 +1,6 @@
 {
 	"name": "Default",
-	"comment": "Card centres in tank-local metres. One card per input, all on the back wall: sticks along the middle and bottom, the D-pad down the left edge, the face buttons down the right, and stick clicks, BACK, START, triggers and bumpers along the top. The tank interior spans x -0.6..0.6, y 0..0.56 (water line), z -0.25..0.25 with the front glass at +z. Every card faces the front glass.",
+	"comment": "Card centres and decor in tank-local metres (see godot/data/decor.json for decor types). One card per input, all on the back wall: sticks along the middle and bottom, the D-pad down the left edge, the face buttons down the right, and stick clicks, BACK, START, triggers and bumpers along the top. The tank interior spans x -0.6..0.6, y 0..0.56 (water line), z -0.25..0.25 with the front glass at +z. Every card faces the front glass.",
 	"cards": [
 		{ "inputs": ["L_UP"], "position": [-0.04, 0.296, -0.225] },
 		{ "inputs": ["L_DOWN"], "position": [0.096, 0.296, -0.225] },
@@ -26,5 +26,18 @@
 		{ "inputs": ["R_LEFT"], "position": [-0.17, 0.07, -0.225] },
 		{ "inputs": ["R_RIGHT"], "position": [0.232, 0.07, -0.225] },
 		{ "inputs": ["R3"], "position": [-0.138, 0.52, -0.225] }
+	],
+	"decor": [
+		{ "type": "plant_grass", "position": [0.19, 0.03, -0.13], "yaw": 0, "size": "M", "variant": 0 },
+		{ "type": "plant_broadleaf", "position": [-0.03, 0.03, -0.15], "yaw": 40, "size": "S", "variant": 0 },
+		{ "type": "plant_grass", "position": [-0.575, 0.03, -0.215], "yaw": 120, "size": "M", "variant": 2 },
+		{ "type": "plant_grass", "position": [0.575, 0.03, -0.2], "yaw": 250, "size": "M", "variant": 1 },
+		{ "type": "airstone", "position": [0.08, 0.03, -0.19], "yaw": 0, "size": "M", "variant": 0 },
+		{ "type": "castle", "position": [0.5, 0.03, -0.1], "yaw": -20, "size": "S", "variant": 0 },
+		{ "type": "sign", "position": [0.43, 0.03, 0.07], "yaw": 15, "size": "S", "variant": 0 },
+		{ "type": "bonfire", "position": [0.53, 0.03, 0.18], "yaw": 0, "size": "S", "variant": 0 },
+		{ "type": "filter", "position": [-0.17, 0.6, -0.25], "yaw": 0, "size": "M", "variant": 0 },
+		{ "type": "moss_ball", "position": [0.33, 0.47, 0.1], "yaw": 0, "size": "M", "variant": 0 },
+		{ "type": "lily_pad", "position": [-0.42, 0.56, 0.1], "yaw": 30, "size": "M", "variant": 0 }
 	]
 }

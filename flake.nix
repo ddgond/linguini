@@ -9,6 +9,11 @@
       forAll = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
     in {
       devShells = forAll (pkgs: {
+        # Blender for regenerating the models in art/ (art/build.sh). Kept out
+        # of the default shell because it's large and only needed for art.
+        art = pkgs.mkShell {
+          packages = with pkgs; [ blender python3 ];
+        };
         default = pkgs.mkShell {
           packages = with pkgs; [
             godot_4

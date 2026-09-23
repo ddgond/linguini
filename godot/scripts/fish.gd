@@ -61,6 +61,7 @@ var yaw := 0.0
 var pitch := 0.0
 var roll := 0.0
 var effort := 0.0
+var yaw_rate := 0.0 ## rad/s, this physics tick
 var tail_phase := 0.0
 var fin_phase := 0.0
 var dart_timer := 0.0
@@ -124,7 +125,7 @@ func simulate(delta: float) -> void:
 	_time += delta
 	dart_timer = maxf(dart_timer - delta, 0.0)
 
-	var yaw_rate := 0.0
+	yaw_rate = 0.0
 	var effort_target := 0.0
 	var swimming := urge_strength > 0.05 and not backing
 

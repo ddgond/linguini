@@ -1,0 +1,127 @@
+{
+  "project": "Linguini",
+  "now": "3b",
+  "milestones": [
+    {
+      "id": "1",
+      "title": "Vertical slice",
+      "status": "done",
+      "summary": "Pair, stream to the monitor, swim, press cards.",
+      "items": [
+        {
+          "text": "Moonlight client extension (pairing, streaming, decode, audio, input)",
+          "status": "done"
+        },
+        {
+          "text": "Greybox bedroom, tank and monitor menu",
+          "status": "done"
+        },
+        {
+          "text": "Real Fishy Movement and third-person camera with gaze",
+          "status": "done"
+        },
+        {
+          "text": "24 flash cards covering the controller",
+          "status": "done"
+        },
+        {
+          "text": "Linux and macOS release packaging, landing page, tag releases",
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "title": "Editing, tank cam, room audio",
+      "status": "done",
+      "summary": "Rearrange the tank, macro cards, OBS feed, speakers in the room.",
+      "items": [
+        {
+          "text": "Combo and sequence cards; stick diagonals",
+          "status": "done"
+        },
+        {
+          "text": "Tank editor and named presets",
+          "status": "done"
+        },
+        {
+          "text": "Tank cam window with Minimal, Earnest and Over-the-top overlays",
+          "status": "done"
+        },
+        {
+          "text": "Game audio from the room speakers, muffled underwater",
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "3a",
+      "title": "Fish, tank, water",
+      "status": "done",
+      "summary": "Blender-scripted art pipeline, the fantail, the tank and its water, editable decor, quality presets.",
+      "items": [
+        {
+          "text": "Progress tracker (this page)",
+          "status": "done"
+        },
+        {
+          "text": "Blender pipeline: art/build.sh, committed .glb, staleness check, renders",
+          "status": "done"
+        },
+        {
+          "text": "Fancy fantail with vertex-shader swimming",
+          "status": "done"
+        },
+        {
+          "text": "Tank: glass, rims, lid, seams, algae, gravel, stand",
+          "status": "done"
+        },
+        {
+          "text": "Water surface, refraction and caustics",
+          "status": "done"
+        },
+        {
+          "text": "Decor catalogue: plants, rocks, driftwood, air stone, filter, ornaments",
+          "status": "done"
+        },
+        {
+          "text": "Decor in the tank editor and presets (move, rotate, size, colour)",
+          "status": "done"
+        },
+        {
+          "text": "Solid decor, swaying plants, tank cam occlusion",
+          "status": "done"
+        },
+        {
+          "text": "Bubbles and the filter trickle",
+          "status": "done"
+        },
+        {
+          "text": "Low / Medium / High quality presets, auto-picked",
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "3b",
+      "title": "Bedroom and lighting",
+      "status": "planned",
+      "summary": "Modelled furniture, the streamer setup, clutter and lighting mood. Next up: its Q&A.",
+      "items": []
+    },
+    {
+      "id": "3c",
+      "title": "Cards, UI, tank cam",
+      "status": "planned",
+      "summary": "Card faces and fonts, menu theme, editor panel look, a more convincing overlay. Q&A first.",
+      "items": []
+    },
+    {
+      "id": "3d",
+      "title": "Feel and sound",
+      "status": "planned",
+      "summary": "Bubbles, filter, card presses, camera polish, room tone. Q&A first.",
+      "items": []
+    }
+  ]
+}

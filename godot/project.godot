@@ -13,6 +13,7 @@ config/features=PackedStringArray("4.5", "Forward Plus")
 
 InputSetup="*res://scripts/input_setup.gd"
 Settings="*res://scripts/settings.gd"
+Quality="*res://scripts/quality.gd"
 
 [display]
 
@@ -27,3 +28,22 @@ common/physics_ticks_per_second=120
 
 textures/vram_compression/import_etc2_astc=true
 anti_aliasing/quality/msaa_3d=2
+
+[shader_globals]
+
+tank_water_min={
+"type": "vec3",
+"value": Vector3(-0.6, 0.83, -0.25)
+}
+tank_water_max={
+"type": "vec3",
+"value": Vector3(0.6, 1.36, 0.25)
+}
+caustics_strength={
+"type": "float",
+"value": 1.0
+}
+fish_position={
+"type": "vec3",
+"value": Vector3(0, 0, 0)
+}

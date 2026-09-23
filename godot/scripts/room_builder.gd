@@ -24,6 +24,11 @@ const SCREEN_CENTER := Vector3(1.62, 1.12, 0.0)
 const SCREEN_SIZE := Vector2(0.8, 0.45)
 const ROOM_CAMERA_POS := Vector3(0.0, 1.08, 1.6)
 
+const TANK_MODEL := preload("res://art/tank.glb")
+const GLASS_SHADER := preload("res://shaders/tank_glass.gdshader")
+const WATER_SHADER := preload("res://shaders/water_surface.gdshader")
+const WATER_LOW_SHADER := preload("res://shaders/water_surface_low.gdshader")
+
 var root: Node3D
 var result := {}
 
@@ -91,8 +96,6 @@ func _room() -> void:
 
 
 func _tank() -> void:
-	_box("TankStand", Vector3(1.3, 0.8, 0.6), Vector3(0.0, 0.4, 0.0), _mat(Color(0.12, 0.1, 0.09), 0.6))
-
 	var tank := Node3D.new()
 	tank.name = "Tank"
 	tank.position = TANK_ORIGIN
@@ -101,38 +104,39 @@ func _tank() -> void:
 	result.tank_inner = TANK_INNER
 	result.water_level = WATER_LEVEL
 
-	var glass := StandardMaterial3D.new()
-	glass.albedo_color = Color(0.8, 0.95, 1.0, 0.08)
-	glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	glass.roughness = 0.05
-	glass.metallic_specular = 0.9
-	glass.cull_mode = BaseMaterial3D.CULL_DISABLED
+	# The glass, trim, hood, gravel and stand (art/models/tank.py). A few of its
+	# materials get Godot's own versions by name.
+	var model: Node3D = TANK_MODEL.instantiate()
+	model.name = "TankModel"
+	tank.add_child(model)
+	for mi: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
+		for i in mi.mesh.get_surface_count():
+			var imported := mi.mesh.surface_get_material(i)
+			match imported.resource_name if imported else "":
+				"Glass":
+					var glass := ShaderMaterial.new()
+					glass.shader = GLASS_SHADER
+					mi.set_surface_override_material(i, glass)
+				"Lamp":
+					var lamp := StandardMaterial3D.new()
+					lamp.albedo_color = Color(1.0, 0.97, 0.9)
+					lamp.emission_enabled = true
+					lamp.emission = Color(1.0, 0.96, 0.88)
+					lamp.emission_energy_multiplier = 4.0
+					mi.set_surface_override_material(i, lamp)
+				"Gravel":
+					var gravel: StandardMaterial3D = imported.duplicate()
+					mi.set_surface_override_material(i, gravel)
+					Quality.add_caustics(gravel)
+				"Silicone":
+					var silicone := StandardMaterial3D.new()
+					silicone.albedo_color = Color(0.08, 0.1, 0.1, 0.75)
+					silicone.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+					silicone.roughness = 0.3
+					mi.set_surface_override_material(i, silicone)
 	var w := TANK_INNER.size.x
 	var h := TANK_INNER.size.y
 	var d := TANK_INNER.size.z
-	var g := GLASS
-	_box("GlassFront", Vector3(w + 2 * g, h, g), Vector3(0, h / 2, d / 2 + g / 2), glass, tank)
-	_box("GlassBack", Vector3(w + 2 * g, h, g), Vector3(0, h / 2, -d / 2 - g / 2), glass, tank)
-	_box("GlassLeft", Vector3(g, h, d), Vector3(-w / 2 - g / 2, h / 2, 0), glass, tank)
-	_box("GlassRight", Vector3(g, h, d), Vector3(w / 2 + g / 2, h / 2, 0), glass, tank)
-
-	var frame := _mat(Color(0.05, 0.05, 0.05), 0.4)
-	for y in [0.0, h]:
-		_box("RimFront", Vector3(w + 0.04, 0.02, 0.02), Vector3(0, y, d / 2 + g), frame, tank)
-		_box("RimBack", Vector3(w + 0.04, 0.02, 0.02), Vector3(0, y, -d / 2 - g), frame, tank)
-		_box("RimLeft", Vector3(0.02, 0.02, d + 0.04), Vector3(-w / 2 - g, y, 0), frame, tank)
-		_box("RimRight", Vector3(0.02, 0.02, d + 0.04), Vector3(w / 2 + g, y, 0), frame, tank)
-
-	_box("Gravel", Vector3(w, GRAVEL_TOP, d), Vector3(0, GRAVEL_TOP / 2, 0), _mat(Color(0.62, 0.52, 0.38), 1.0), tank)
-	for rock in [Vector3(-0.5, 0.03, 0.18), Vector3(0.52, 0.03, 0.16), Vector3(0.25, 0.03, 0.2)]:
-		var mi := MeshInstance3D.new()
-		var sphere := SphereMesh.new()
-		sphere.radius = 0.03
-		sphere.height = 0.035
-		mi.mesh = sphere
-		mi.material_override = _mat(Color(0.35, 0.35, 0.37), 0.9)
-		mi.position = rock
-		tank.add_child(mi)
 
 	# Water: a tinted volume seen from outside (back faces culled, so it vanishes
 	# once the camera is inside) and a surface seen from both sides.
@@ -145,15 +149,22 @@ func _tank() -> void:
 	surface.name = "WaterSurface"
 	var plane := PlaneMesh.new()
 	plane.size = Vector2(w, d)
+	plane.subdivide_width = 60
+	plane.subdivide_depth = 25
 	surface.mesh = plane
-	var surface_mat := StandardMaterial3D.new()
-	surface_mat.albedo_color = Color(0.55, 0.85, 0.9, 0.35)
-	surface_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	surface_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	surface_mat.roughness = 0.05
+	var surface_mat := ShaderMaterial.new()
 	surface.material_override = surface_mat
 	surface.position = Vector3(0, WATER_LEVEL, 0)
 	tank.add_child(surface)
+	var use_quality := func(level: int) -> void:
+		surface_mat.shader = WATER_LOW_SHADER if level == 0 else WATER_SHADER
+	use_quality.call(Quality.level)
+	Quality.changed.connect(use_quality)
+	result.water_surface = surface
+
+	# Where the caustics shine: the water volume, in world space.
+	RenderingServer.global_shader_parameter_set("tank_water_min", TANK_ORIGIN + Vector3(-w / 2, 0.0, -d / 2))
+	RenderingServer.global_shader_parameter_set("tank_water_max", TANK_ORIGIN + Vector3(w / 2, WATER_LEVEL, d / 2))
 
 	# The fish's world: gravel floor, glass walls and the water surface.
 	var bounds := StaticBody3D.new()
@@ -167,13 +178,16 @@ func _tank() -> void:
 	_shape(bounds, Vector3(w, h, t), Vector3(0, h / 2, -d / 2 - t / 2))
 	_shape(bounds, Vector3(w, h, t), Vector3(0, h / 2, d / 2 + t / 2))
 
+	# The hood's lamp.
 	var tank_light := SpotLight3D.new()
-	tank_light.position = Vector3(0, 0.9, 0.1)
+	tank_light.name = "TankLight"
+	tank_light.position = Vector3(0, h + 0.004, 0.02)
 	tank_light.rotation.x = -PI / 2
-	tank_light.light_color = Color(0.8, 0.95, 1.0)
-	tank_light.light_energy = 2.0
-	tank_light.spot_range = 1.5
-	tank_light.spot_angle = 50.0
+	tank_light.light_color = Color(0.92, 0.97, 1.0)
+	tank_light.light_energy = 1.6
+	tank_light.spot_range = 1.2
+	tank_light.spot_angle = 72.0
+	tank_light.shadow_enabled = true
 	tank.add_child(tank_light)
 
 
