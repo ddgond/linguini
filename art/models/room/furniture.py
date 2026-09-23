@@ -111,7 +111,7 @@ def monitor(m):
 def chair(m):
     """A gaming chair rolled aside (out of the fish's view of the monitor),
     with a hoodie over its back."""
-    cx, cz, yaw = 1.2, -0.28, 35.0
+    cx, cz, yaw = 0.98, -0.32, 35.0  # its widest reach stays short of the desk at x 1.4
     parts = [
         _ybox("ChairSeat", (0.5, 0.1, 0.5), (cx, 0.5, cz), m["fabric_teal"], 0.04, 3, yaw, (cx, 0, cz)),
         _ybox("ChairBack", (0.1, 0.75, 0.48), (cx + 0.24, 0.93, cz), m["fabric_teal"], 0.05, 3, yaw, (cx, 0, cz)),
@@ -181,7 +181,7 @@ def bed(m):
         grid.append(for_i)
     for i in range(nx):
         for j in range(nz):
-            bm.faces.new((grid[i][j], grid[i + 1][j], grid[i + 1][j + 1], grid[i][j + 1]))
+            bm.faces.new((grid[i][j], grid[i][j + 1], grid[i + 1][j + 1], grid[i + 1][j]))  # facing up
     duvet = mesh_object("Duvet", bm, [m["fabric_teal"]])
     shade_smooth(duvet)
     parts.append(duvet)

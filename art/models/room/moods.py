@@ -13,7 +13,8 @@ from pathlib import Path
 
 import bmesh
 import bpy
-from mathutils import Vector
+from mathutils import Vector, geometry
+from mathutils.bvhtree import BVHTree
 
 from lib.common import G, material, mesh_object, srgb_to_linear
 from lib.render import use_cycles
@@ -85,8 +86,41 @@ def lightmap_uvs(room):
     bpy.ops.uv.smart_project(angle_limit=math.radians(60), island_margin=0.004, area_weight=0.0,
                              correct_aspect=True, scale_to_bounds=False)
     bpy.ops.object.mode_set(mode="OBJECT")
+    _decal_uvs(me)
     me.uv_layers["UVMap"].active_render = True
     me.uv_layers.active = me.uv_layers["UVMap"]
+
+
+def _decal_uvs(me):
+    """Lettering (faces marked "Decal") is too thin for lightmap texels of its
+    own, so it borrows the lightmap of the surface it's printed on."""
+    if "Decal" not in me.attributes:
+        return
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    lm = bm.loops.layers.uv["Lightmap"]
+    decal = bm.faces.layers.int["Decal"]
+    base = [f for f in bm.faces if not f[decal]]
+    tree = BVHTree.FromPolygons([v.co for v in bm.verts], [[v.index for v in f.verts] for f in base])
+    for f in bm.faces:
+        if not f[decal]:
+            continue
+        for loop in f.loops:
+            hit, _normal, index, _dist = tree.find_nearest(loop.vert.co)
+            under = base[index]
+            corners = under.loops
+            uv = corners[0][lm].uv.copy()
+            # The fan triangle of the face underneath that holds the point.
+            for i in range(1, len(corners) - 1):
+                a, b, c = corners[0], corners[i], corners[i + 1]
+                if geometry.intersect_point_tri(hit, a.vert.co, b.vert.co, c.vert.co) or i == len(corners) - 2:
+                    p = geometry.barycentric_transform(hit, a.vert.co, b.vert.co, c.vert.co,
+                                                       a[lm].uv.to_3d(), b[lm].uv.to_3d(), c[lm].uv.to_3d())
+                    uv = p.xy
+                    break
+            loop[lm].uv = uv
+    bm.to_mesh(me)
+    bm.free()
 
 
 def window_glass():

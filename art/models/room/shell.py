@@ -83,7 +83,7 @@ def _curtain(name, x_center, width, mat):
         grid.append(row)
     for i in range(cols):
         for j in range(rows):
-            bm.faces.new((grid[i][j], grid[i + 1][j], grid[i + 1][j + 1], grid[i][j + 1]))
+            bm.faces.new((grid[i][j], grid[i][j + 1], grid[i + 1][j + 1], grid[i + 1][j]))  # facing the room
     obj = mesh_object(name, bm, [mat])
     shade_smooth(obj)
     fill_colour(obj)

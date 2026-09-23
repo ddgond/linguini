@@ -79,6 +79,9 @@ def _text(name, body, size, mat, x=0.0, y=0.0, z=0.001, extrude=0.001):
     bpy.context.scene.collection.objects.link(obj)
     me.materials.clear()
     me.materials.append(mat)
+    # Lettering takes its lightmap from the surface under it (moods._decal_uvs).
+    decal = me.attributes.new("Decal", "INT", "FACE")
+    decal.data.foreach_set("value", [1] * len(me.polygons))
     return obj
 
 
@@ -137,7 +140,9 @@ def _yawed(objs, pivot, yaw_deg):
     p = G(*pivot)
     rot = Matrix.Translation(p) @ Matrix.Rotation(math.radians(yaw_deg), 4, "Z") @ Matrix.Translation(-p)
     for o in objs:
-        o.matrix_world = rot @ o.matrix_world
+        # matrix_basis, not matrix_world: the latter isn't updated from a
+        # freshly set location until the scene is evaluated.
+        o.matrix_basis = rot @ o.matrix_basis
     return objs
 
 
@@ -187,9 +192,9 @@ def _poster_tortellini():
         cx, cy, rad = r.uniform(0.05, 0.95), r.uniform(0.05, 0.75), r.uniform(0.01, 0.035)
         ring = np.abs(np.hypot((xs - cx) * w / h, ys - cy) - rad) < 0.004
         img[ring] = (0.75, 0.92, 0.95)
-    _fish(img, xs, ys, 0.52, 0.42, 0.24, w / h)
+    _fish(img, xs, ys, 0.57, 0.42, 0.2, w / h)
     # A little crown: every fan's favourite.
-    ex, ey = (xs - 0.56) * w / h, ys - 0.24
+    ex, ey = (xs - 0.6) * w / h, ys - 0.27
     crown = (ey < 0) & (ey > -0.07) & (np.abs(ex) < 0.07) & ((ey > -0.035) | (np.abs(((ex + 0.07) % 0.047) - 0.0235) < (ey + 0.07) * 0.5))
     img[crown] = (1.0, 0.82, 0.25)
     img[ys > 0.8] = (0.95, 0.5, 0.2)
@@ -529,17 +534,18 @@ def posters(m):
 
 
 def plush(m):
-    """A goldfish plush, propped against the pillows."""
-    x, y, z = -1.5, 0.57, -0.52
-    parts = [_ball("PlushBody", (x, y, z), (0.08, 0.09, 0.13), m["orange"], 3)]
-    tail = ribbon("PlushTail", [G(x, y, z - 0.1), G(x, y + 0.03, z - 0.17), G(x, y + 0.05, z - 0.23)],
-                  [0.02, 0.1, 0.13], m["orange"], normal_hint=Vector((1, 0, 0)), fold=0.1)
-    fin = ribbon("PlushFin", [G(x, y + 0.08, z + 0.02), G(x, y + 0.12, z - 0.02), G(x, y + 0.12, z - 0.06)],
-                 [0.05, 0.05, 0.01], m["orange"], normal_hint=Vector((1, 0, 0)))
-    parts += [tail, fin]
+    """A goldfish plush lying on the duvet, looking at the room."""
+    x, y, z = -1.6, 0.64, -0.1
+    o = m["orange"]
+    parts = [_ball("PlushBody", (x, y, z), (0.08, 0.09, 0.13), o, 3),
+             # A big soft fan tail, a dorsal fin and two little side fins.
+             _ball("PlushTail", (x, y + 0.03, z - 0.17), (0.018, 0.08, 0.07), o, 2),
+             _ball("PlushDorsal", (x, y + 0.09, z - 0.01), (0.014, 0.035, 0.06), o, 2)]
     for side in (-1, 1):
+        parts.append(_ball("PlushFin", (x + side * 0.08, y - 0.03, z + 0.02), (0.012, 0.025, 0.045), o, 1))
         parts.append(_ball("PlushEye", (x + side * 0.058, y + 0.025, z + 0.07), (0.018, 0.018, 0.012), m["black"], 1))
-    return _yawed(parts, (x, y, z), -25)
+    parts.append(_ball("PlushMouth", (x, y - 0.01, z + 0.128), (0.02, 0.012, 0.008), m["fabric_rose"], 1))
+    return _yawed(parts, (x, y, z), 60)
 
 
 def build(m):

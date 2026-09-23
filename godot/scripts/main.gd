@@ -16,7 +16,8 @@ extends Node3D
 ##   --gaze                 hold the gaze button
 ##   --zones                show card trigger zones
 ##   --room-camera          view through the room camera
-##   --overview             view the whole room from the doorway
+##   --overview[=EYE;AT]    view the room from the doorway, or from EYE toward AT
+##                          (x,y,z each, in the room model's coordinates)
 ##   --mood=NAME            night, rainy or golden, just for this run
 ##   --edit                 open the tank editor
 ##   --tracking=STYLE       open the tank cam window (minimal, earnest, over-the-top)
@@ -325,8 +326,16 @@ func _apply_args() -> void:
 		var eye := Camera3D.new()
 		eye.fov = 75.0
 		add_child(eye)
-		var shift: Vector3 = RoomBuilder.TANK_ORIGIN - Vector3(-0.15, 0.8, -1.44)
-		eye.look_at_from_position(Vector3(-1.25, 1.55, 1.55) + shift, Vector3(0.35, 1.0, -1.4) + shift)
+		var shift: Vector3 = room.room_model.position
+		var from := Vector3(-1.25, 1.55, 1.55)
+		var at := Vector3(0.35, 1.0, -1.4)
+		var spec := String(_args.overview)
+		if spec.contains(";"):
+			var a := spec.get_slice(";", 0).split_floats(",")
+			var b := spec.get_slice(";", 1).split_floats(",")
+			from = Vector3(a[0], a[1], a[2])
+			at = Vector3(b[0], b[1], b[2])
+		eye.look_at_from_position(from + shift, at + shift)
 		eye.make_current()
 		hud.visible = false
 	if _args.has("tracking"):

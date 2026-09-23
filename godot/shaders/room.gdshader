@@ -3,8 +3,9 @@ shader_type spatial;
 // mood. The bake holds the light arriving at each surface; the colour comes
 // from the material, so base × lightmap is the baked look. It's emitted rather
 // than lit so live lights (the monitor's glow) can still add on top, and
-// ambient light is off because the bake already has the room's bounce.
-render_mode ambient_light_disabled;
+// ambient light is off because the bake already has the room's bounce. Both
+// sides are drawn: curtains, leaves, the hoodie and lettering are thin sheets.
+render_mode ambient_light_disabled, cull_disabled;
 
 uniform vec4 albedo : source_color = vec4(1.0);
 uniform sampler2D albedo_texture : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
