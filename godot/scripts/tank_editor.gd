@@ -1,7 +1,8 @@
 class_name TankEditor
 extends Node
 ## In-game editor for the flash cards: place, move, rebind, duplicate and
-## delete cards, build combos and sequences, and save or load named presets.
+## delete cards, build combos, toggles and sequences, and save or load named
+## presets.
 ##
 ## Mouse: click a card to select it and drag to move it across the tank;
 ## Shift+drag moves it nearer or further from the glass. Right-drag orbits the
@@ -270,10 +271,11 @@ func _rebuild_card_panel() -> void:
 	_label(kind_row, "Type", 16, Color(0.75, 0.8, 0.9)).custom_minimum_size.x = 70
 	var kind := OptionButton.new()
 	kind.add_item("Hold", CardBinding.Kind.HOLD)
+	kind.add_item("Toggle", CardBinding.Kind.TOGGLE)
 	kind.add_item("Sequence", CardBinding.Kind.SEQUENCE)
-	kind.selected = b.kind
+	kind.select(kind.get_item_index(b.kind))
 	kind.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	kind.item_selected.connect(_on_kind_changed)
+	kind.item_selected.connect(func(idx: int) -> void: _on_kind_changed(kind.get_item_id(idx)))
 	kind_row.add_child(kind)
 
 	var name_row := HBoxContainer.new()
@@ -287,8 +289,11 @@ func _rebuild_card_panel() -> void:
 	name_edit.focus_exited.connect(func() -> void: _on_label_changed(name_edit.text))
 	name_row.add_child(name_edit)
 
-	if b.kind == CardBinding.Kind.HOLD:
-		_label(_card_box, "Held while the fish stays. Pick one or more inputs:", 15, Color(0.75, 0.8, 0.9))
+	if b.kind != CardBinding.Kind.SEQUENCE:
+		var hint := "Held while the fish stays." if b.kind == CardBinding.Kind.HOLD \
+			else "Switched on when the fish arrives, off when it arrives again."
+		var help := _label(_card_box, hint + " Pick one or more inputs:", 15, Color(0.75, 0.8, 0.9))
+		help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		var grid := GridContainer.new()
 		grid.columns = 6
 		_card_box.add_child(grid)
@@ -387,9 +392,10 @@ func _on_kind_changed(kind: int) -> void:
 			at += 120
 		_apply(CardBinding.sequence(steps, b.label))
 	else:
-		var hold := CardBinding.hold(b.all_inputs())
-		hold.label = b.label
-		_apply(hold)
+		var held := CardBinding.hold(b.all_inputs())
+		held.kind = kind
+		held.label = b.label
+		_apply(held)
 
 
 func _on_label_changed(text: String) -> void:

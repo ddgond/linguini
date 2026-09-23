@@ -185,7 +185,7 @@ func held_text() -> String:
 	return " + ".join(names)
 
 
-## Names of the cards the fish is in front of, or whose sequence is playing.
+## Names of the cards the fish is in front of, playing a sequence, or toggled on.
 func zone_text() -> String:
 	if cards == null:
 		return "-"

@@ -16,6 +16,8 @@ extends Node3D
 ## What a card sends is its CardBinding. A HOLD card presses its inputs for as
 ## long as the fish stays; a SEQUENCE card plays its macro once when the fish
 ## arrives, finishing even if the fish swims off. Arriving again replays it.
+## A TOGGLE card switches its inputs on when the fish arrives and keeps them
+## held after it leaves, until it arrives again. Menus switch toggles off.
 
 signal held_changed(inputs: PackedStringArray)
 
@@ -88,6 +90,8 @@ var _zones: Array[AABB] = []
 var _release_timers: Array[float] = []
 ## Milliseconds into each card's sequence, or -1 when it isn't playing.
 var _play_ms: Array[float] = []
+## Whether each toggle card is switched on.
+var _latched: Array[bool] = []
 var _pressed := PackedStringArray()
 var _state := PackedInt32Array([0, 0, 0, 0, 0, 0, 0])
 var _show_zones := false
@@ -135,6 +139,7 @@ func clear() -> void:
 	_zones.clear()
 	_release_timers.clear()
 	_play_ms.clear()
+	_latched.clear()
 	_publish()
 
 
@@ -146,6 +151,7 @@ func add_card(binding: CardBinding, pos: Vector3) -> FlashCard:
 	_zones.append(zone_for(pos))
 	_release_timers.append(0.0)
 	_play_ms.append(-1.0)
+	_latched.append(false)
 	if _show_zones:
 		card.show_zone(_zones[-1], true)
 	return card
@@ -159,6 +165,7 @@ func remove_card(card: FlashCard) -> void:
 	_zones.remove_at(i)
 	_release_timers.remove_at(i)
 	_play_ms.remove_at(i)
+	_latched.remove_at(i)
 	remove_child(card)
 	card.queue_free()
 	_publish()
@@ -185,6 +192,7 @@ func rebind_card(card: FlashCard, binding: CardBinding) -> FlashCard:
 	card.queue_free()
 	cards[i] = fresh
 	_play_ms[i] = -1.0
+	_latched[i] = false
 	if _show_zones:
 		fresh.show_zone(_zones[i], true)
 	_publish()
@@ -215,6 +223,8 @@ func set_enabled(value: bool) -> void:
 			cards[i].active = false
 			_release_timers[i] = 0.0
 			_play_ms[i] = -1.0
+			_latched[i] = false
+			cards[i].latched = false
 		_publish()
 
 
@@ -228,15 +238,18 @@ func _physics_process(delta: float) -> void:
 func update(fish_pos: Vector3, delta: float) -> void:
 	for i in cards.size():
 		var card := cards[i]
-		var sequence := card.binding.kind == CardBinding.Kind.SEQUENCE
+		var kind := card.binding.kind
 		if _play_ms[i] >= 0.0:
 			_play_ms[i] += delta * 1000.0
 			if _play_ms[i] >= card.binding.duration_ms():
 				_play_ms[i] = -1.0
 		var zone := _zones[i].grow(HYSTERESIS) if card.active else _zones[i]
 		if zone.has_point(fish_pos):
-			if not card.active and sequence:
-				_play_ms[i] = 0.0
+			if not card.active:
+				if kind == CardBinding.Kind.SEQUENCE:
+					_play_ms[i] = 0.0
+				elif kind == CardBinding.Kind.TOGGLE:
+					_latched[i] = not _latched[i]
 			card.active = true
 			_release_timers[i] = RELEASE_DELAY
 		elif card.active:
@@ -244,6 +257,7 @@ func update(fish_pos: Vector3, delta: float) -> void:
 			if _release_timers[i] <= 0.0:
 				card.active = false
 		card.playing = _play_ms[i] >= 0.0
+		card.latched = _latched[i]
 	_publish()
 
 
@@ -258,11 +272,12 @@ func held() -> PackedStringArray:
 	return _pressed
 
 
-## Cards the fish is in front of, or whose sequence is still playing.
+## Cards the fish is in front of, whose sequence is still playing, or that
+## are toggled on.
 func engaged_cards() -> Array[FlashCard]:
 	var out: Array[FlashCard] = []
 	for i in cards.size():
-		if cards[i].active or _play_ms[i] >= 0.0:
+		if cards[i].active or _play_ms[i] >= 0.0 or _latched[i]:
 			out.append(cards[i])
 	return out
 
@@ -287,11 +302,16 @@ func _publish() -> void:
 	for i in cards.size():
 		var card := cards[i]
 		var ids := PackedStringArray()
-		if card.binding.kind == CardBinding.Kind.SEQUENCE:
-			if _play_ms[i] >= 0.0:
-				ids = card.binding.inputs_at(_play_ms[i])
-		elif card.active:
-			ids = card.binding.inputs
+		match card.binding.kind:
+			CardBinding.Kind.SEQUENCE:
+				if _play_ms[i] >= 0.0:
+					ids = card.binding.inputs_at(_play_ms[i])
+			CardBinding.Kind.TOGGLE:
+				if _latched[i]:
+					ids = card.binding.inputs
+			_:
+				if card.active:
+					ids = card.binding.inputs
 		for id in ids:
 			if id not in pressed:
 				pressed.append(id)

@@ -46,7 +46,14 @@ func test_editing_cards() -> void:
 	editor._on_step_changed(1, "at", 300)
 	check(editor.selected.binding.duration_ms() == 380, "editing a step's start moves it (%d ms)" % editor.selected.binding.duration_ms())
 
+	editor._on_kind_changed(CardBinding.Kind.TOGGLE)
+	var toggle := editor.selected.binding
+	check(toggle.kind == CardBinding.Kind.TOGGLE and toggle.inputs == PackedStringArray(["A", "B"]), "switching to a toggle keeps the inputs (%s)" % toggle.inputs)
+	editor._on_hold_input_toggled(false, "B")
+	check(editor.selected.binding.kind == CardBinding.Kind.TOGGLE and editor.selected.binding.inputs == PackedStringArray(["A"]), "a toggle's inputs can be edited")
+
 	editor._on_kind_changed(CardBinding.Kind.HOLD)
+	editor._on_hold_input_toggled(true, "B")
 	editor._on_hold_input_toggled(false, "A")
 	editor._on_hold_input_toggled(false, "B")
 	check(not editor.selected.binding.inputs.is_empty(), "a hold card can't be left with no inputs")

@@ -5,6 +5,9 @@ extends RefCounted
 ## HOLD: a set of inputs held together for as long as the fish stays in front
 ## of the card: one button, a diagonal (L_UP + L_RIGHT), a chord (RB + A).
 ##
+## TOGGLE: a set of inputs like HOLD, switched on when the fish arrives and
+## held after it leaves, until it arrives again: aim down sights, sprint.
+##
 ## SEQUENCE: a timed macro that plays once each time the fish arrives. Each
 ## step holds one input from `at` for `hold` milliseconds; steps may overlap
 ## to press several inputs together.
@@ -12,9 +15,10 @@ extends RefCounted
 ## Layout files store bindings as:
 ##   {"inputs": ["L_UP", "L_RIGHT"]}                                 hold
 ##   {"input": "A"}                                                  hold (older layouts)
+##   {"inputs": ["LT"], "toggle": true}                              toggle
 ##   {"label": "Roll", "sequence": [{"input": "B", "at": 0, "hold": 80}, ...]}
 
-enum Kind { HOLD, SEQUENCE }
+enum Kind { HOLD, SEQUENCE, TOGGLE }
 
 const MIN_HOLD_MS := 16
 const MAX_SEQUENCE_MS := 10000
@@ -30,6 +34,12 @@ var label := ""
 static func hold(p_inputs: Array) -> CardBinding:
 	var b := CardBinding.new()
 	b.inputs = PackedStringArray(p_inputs)
+	return b
+
+
+static func toggle(p_inputs: Array) -> CardBinding:
+	var b := hold(p_inputs)
+	b.kind = Kind.TOGGLE
 	return b
 
 
@@ -49,7 +59,7 @@ static func from_dict(d: Dictionary) -> CardBinding:
 	if d.has("sequence"):
 		b = sequence(d.sequence, String(d.get("label", "")))
 	elif d.has("inputs"):
-		b = hold(d.inputs)
+		b = toggle(d.inputs) if d.get("toggle", false) else hold(d.inputs)
 		b.label = String(d.get("label", ""))
 	elif d.has("input"):
 		b = hold([d.input])
@@ -69,6 +79,8 @@ func to_dict() -> Dictionary:
 		d.sequence = steps.duplicate(true)
 	else:
 		d.inputs = Array(inputs)
+		if kind == Kind.TOGGLE:
+			d.toggle = true
 	if label != "":
 		d.label = label
 	return d
@@ -85,7 +97,7 @@ func duplicate_binding() -> CardBinding:
 
 ## "" if the binding can be used, otherwise what's wrong with it.
 func validate() -> String:
-	if kind == Kind.HOLD:
+	if kind != Kind.SEQUENCE:
 		if inputs.is_empty():
 			return "no inputs"
 		for id in inputs:
@@ -126,7 +138,7 @@ func inputs_at(t_ms: float) -> PackedStringArray:
 
 ## Every input the card can press, in first-use order.
 func all_inputs() -> PackedStringArray:
-	if kind == Kind.HOLD:
+	if kind != Kind.SEQUENCE:
 		return inputs
 	var out := PackedStringArray()
 	for s in steps:

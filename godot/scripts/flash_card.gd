@@ -5,7 +5,8 @@ extends Node3D
 ## CardSystem; this node is just the physical card and its highlight.
 ##
 ## Faces: one input shows its button or arrow; a stick or D-pad diagonal shows
-## one combined arrow; other combos and sequences show their name.
+## one combined arrow; other combos and sequences show their name. Toggle
+## cards say TOGGLE, and stay lit while they're switched on.
 
 const SEQUENCE_COLOR := Color(0.1, 0.62, 0.6)
 
@@ -20,6 +21,9 @@ var active := false:
 ## True while the card's sequence is playing.
 var playing := false:
 	set = set_playing
+## True while the card is a toggle that's switched on.
+var latched := false:
+	set = set_latched
 
 var _border_mat: StandardMaterial3D
 var _face: Node3D
@@ -59,8 +63,9 @@ func _ready() -> void:
 	_add_box(_face, Vector3(size.x, size.y, 0.003), Vector3.ZERO, paper)
 
 	var arrow := _combined_arrow(ids)
-	var single := binding.kind == CardBinding.Kind.HOLD and ids.size() == 1
-	var caption_text: String = info.get("caption", "")
+	var toggle := binding.kind == CardBinding.Kind.TOGGLE
+	var single := binding.kind != CardBinding.Kind.SEQUENCE and ids.size() == 1
+	var caption_text: String = "TOGGLE" if toggle else info.get("caption", "")
 	if single or arrow != Vector2.ZERO:
 		_add_badge(color)
 		if arrow != Vector2.ZERO:
@@ -79,7 +84,7 @@ func _ready() -> void:
 		_face.add_child(name_label)
 		if binding.kind == CardBinding.Kind.SEQUENCE:
 			caption_text = "SEQUENCE · %.1f s" % (binding.duration_ms() / 1000.0)
-		else:
+		elif not toggle:
 			caption_text = "COMBO"
 
 	if caption_text != "":
@@ -116,8 +121,16 @@ func set_playing(value: bool) -> void:
 		_update_highlight()
 
 
+func set_latched(value: bool) -> void:
+	if value == latched:
+		return
+	latched = value
+	if _face != null:
+		_update_highlight()
+
+
 func _update_highlight() -> void:
-	_border_mat.emission_energy_multiplier = 3.0 if (active or playing) else 0.0
+	_border_mat.emission_energy_multiplier = 3.0 if (active or playing or latched) else 0.0
 	_face.scale = Vector3.ONE * (1.08 if active else 1.0)
 
 
@@ -127,7 +140,7 @@ func set_selected(value: bool) -> void:
 		return
 	_border_mat.albedo_color = Color(1.0, 0.85, 0.2) if value else card_color().darkened(0.2)
 	_border_mat.emission = Color(1.0, 0.85, 0.2) if value else card_color()
-	_border_mat.emission_energy_multiplier = 1.5 if value else (3.0 if (active or playing) else 0.0)
+	_border_mat.emission_energy_multiplier = 1.5 if value else (3.0 if (active or playing or latched) else 0.0)
 
 
 ## Shows the card's trigger zone as a translucent box (F3).
@@ -147,10 +160,10 @@ func show_zone(zone: AABB, visible_: bool) -> void:
 	_zone_debug.visible = visible_
 
 
-## For a hold card of only stick directions (one stick) or only D-pad
-## directions, the direction they add up to; otherwise zero.
+## For a hold or toggle card of only stick directions (one stick) or only
+## D-pad directions, the direction they add up to; otherwise zero.
 func _combined_arrow(ids: PackedStringArray) -> Vector2:
-	if binding.kind != CardBinding.Kind.HOLD or ids.size() < 2:
+	if binding.kind == CardBinding.Kind.SEQUENCE or ids.size() < 2:
 		return CardSystem.INPUTS[ids[0]].get("arrow", Vector2.ZERO) if ids.size() == 1 else Vector2.ZERO
 	var group := ""
 	var sum := Vector2.ZERO

@@ -1,6 +1,6 @@
 extends "res://tests/test_case.gd"
-## Flash cards: zone geometry, press/hold/release timing, combos, sequences,
-## layouts and presets, and the controller state sent to the host.
+## Flash cards: zone geometry, press/hold/release timing, combos, toggles,
+## sequences, layouts and presets, and the controller state sent to the host.
 
 const DT := 1.0 / 120.0
 
@@ -56,7 +56,7 @@ func test_press_hold_and_release() -> void:
 	check(client.last()[0] == CardSystem.BUTTON_FLAGS.A, "A pressed while the fish is in front of it")
 	check(client.sent.size() == 1, "state is sent once on change, not every frame (%d sends)" % client.sent.size())
 
-	var away := Vector3(0.0, 0.42, 0.2) # open water between START/BACK and the shoulders
+	var away := Vector3(0.0, 0.42, 0.2) # open water between the left stick and the top row
 	_hold(cards, away, 0.1)
 	check(client.last()[0] == CardSystem.BUTTON_FLAGS.A, "A still held just after leaving (debounce)")
 	_hold(cards, away, 0.1)
@@ -111,14 +111,6 @@ func test_sticks_and_triggers() -> void:
 	_hold(cards, _in_front(_card(cards, "L_UP")), 0.2)
 	check(client.last()[3] == 0 and client.last()[4] == CardSystem.STICK_MAX, "L_UP pushes the left stick fully up")
 
-	var up := _card(cards, "L_UP").position
-	var right := _card(cards, "L_RIGHT").position
-	var corner := Vector3(right.x - CardSystem.CARD_SIZE.x / 2, up.y - CardSystem.CARD_SIZE.y / 2, 0.1)
-	cards.set_enabled(false) # start with nothing held, so no hysteresis margin applies
-	cards.set_enabled(true)
-	_hold(cards, corner, 0.5)
-	check(cards.held().is_empty(), "the gap between a stick arm and its diagonal presses nothing (%s)" % cards.held())
-
 	_hold(cards, _in_front(_card(cards, "RT")), 0.5)
 	check(client.last()[2] == CardSystem.TRIGGER_MAX and client.last()[1] == 0, "RT pulls the right trigger fully")
 	cards.queue_free()
@@ -127,7 +119,7 @@ func test_sticks_and_triggers() -> void:
 func test_default_layout_is_unambiguous() -> void:
 	var s := _system()
 	var cards: CardSystem = s[0]
-	check(cards.cards.size() == 32, "default layout: the full controller plus 8 stick diagonals (%d cards)" % cards.cards.size())
+	check(cards.cards.size() == CardSystem.INPUTS.size(), "default layout: one card per input (%d cards)" % cards.cards.size())
 	var ids := {}
 	for card in cards.cards:
 		var n := card.binding.display_name()
@@ -150,8 +142,26 @@ func test_default_layout_is_unambiguous() -> void:
 	cards.queue_free()
 
 
+## A left stick laid out as a 3x3 grid with combo cards on the diagonals, and
+## one right-stick diagonal.
+func _diagonal_system() -> Array:
+	var s := _system("")
+	var cards: CardSystem = s[0]
+	var grid := {
+		"L_UP": [0, 1], "L_DOWN": [0, -1], "L_LEFT": [-1, 0], "L_RIGHT": [1, 0],
+		"L_UP+L_LEFT": [-1, 1], "L_UP+L_RIGHT": [1, 1], "L_DOWN+L_LEFT": [-1, -1], "L_DOWN+L_RIGHT": [1, -1],
+	}
+	var entries := []
+	for ids: String in grid:
+		var cell: Array = grid[ids]
+		entries.append({"inputs": ids.split("+"), "position": [-0.4 + cell[0] * 0.115, 0.15 + cell[1] * 0.08, -0.225]})
+	entries.append({"inputs": ["R_DOWN", "R_LEFT"], "position": [0.3, 0.15, -0.225]})
+	cards.load_layout_data({"cards": entries})
+	return s
+
+
 func test_diagonal_combo() -> void:
-	var s := _system()
+	var s := _diagonal_system()
 	var cards: CardSystem = s[0]
 	var client: FakeClient = s[1]
 	_hold(cards, _in_front(_card(cards, ["L_UP", "L_RIGHT"])), 0.2)
@@ -160,6 +170,62 @@ func test_diagonal_combo() -> void:
 	_hold(cards, _in_front(_card(cards, ["R_DOWN", "R_LEFT"])), 0.5)
 	st = client.last()
 	check(st[5] == -CardSystem.STICK_MAX and st[6] == -CardSystem.STICK_MAX and st[3] == 0, "down-left on the right stick (%s)" % st)
+
+	var up := _card(cards, "L_UP").position
+	var right := _card(cards, "L_RIGHT").position
+	var corner := Vector3(right.x - CardSystem.CARD_SIZE.x / 2, up.y - CardSystem.CARD_SIZE.y / 2, 0.1)
+	cards.set_enabled(false) # start with nothing held, so no hysteresis margin applies
+	cards.set_enabled(true)
+	_hold(cards, corner, 0.5)
+	check(cards.held().is_empty(), "the gap between a stick arm and its diagonal presses nothing (%s)" % cards.held())
+	cards.queue_free()
+
+
+func _toggle_system() -> Array:
+	var s := _system("")
+	var cards: CardSystem = s[0]
+	cards.load_layout_data({"cards": [
+		{"inputs": ["LT"], "toggle": true, "position": [0.0, 0.2, -0.225]},
+		{"inputs": ["A"], "position": [0.3, 0.2, -0.225]},
+	]})
+	return s
+
+
+func test_toggle_switches_on_each_arrival() -> void:
+	var s := _toggle_system()
+	var cards: CardSystem = s[0]
+	var client: FakeClient = s[1]
+	var toggle := cards.cards[0]
+	var away := Vector3(-0.4, 0.45, 0.2)
+	check(toggle.binding.kind == CardBinding.Kind.TOGGLE, "a card with \"toggle\": true loads as a toggle")
+
+	_hold(cards, _in_front(toggle), 0.3)
+	check(client.last()[1] == CardSystem.TRIGGER_MAX, "arriving switches LT on")
+	_hold(cards, away, 1.0)
+	check(client.last()[1] == CardSystem.TRIGGER_MAX and toggle.latched, "LT stays held after the fish leaves")
+	_hold(cards, _in_front(cards.cards[1]), 0.3)
+	check(client.last()[0] == CardSystem.BUTTON_FLAGS.A and client.last()[1] == CardSystem.TRIGGER_MAX, "other cards press on top of it")
+	check(toggle in cards.engaged_cards(), "a toggled-on card counts as engaged")
+
+	_hold(cards, away, 0.3)
+	_hold(cards, _in_front(toggle), 0.3)
+	check(client.last()[1] == 0 and not toggle.latched, "arriving again switches LT off")
+	_hold(cards, away, 1.0)
+	check(client.last()[1] == 0, "and it stays off after the fish leaves")
+
+	# Lingering or drifting along the edge doesn't flip it back.
+	_hold(cards, _in_front(toggle), 0.3)
+	var zone := cards.zone_for(toggle.position)
+	for i in 10:
+		_hold(cards, Vector3(zone.position.x - 0.01, toggle.position.y, 0.1), 0.05)
+		_hold(cards, Vector3(zone.position.x + 0.005, toggle.position.y, 0.1), 0.05)
+	check(client.last()[1] == CardSystem.TRIGGER_MAX, "one visit is one switch, however long the fish stays")
+
+	cards.enabled = false
+	check(client.last() == PackedInt32Array([0, 0, 0, 0, 0, 0, 0]) and not toggle.latched, "menus switch toggles off")
+	cards.enabled = true
+	_hold(cards, away, 0.3)
+	check(client.last()[1] == 0, "and they stay off afterwards")
 	cards.queue_free()
 
 
@@ -225,6 +291,7 @@ func test_layout_round_trip() -> void:
 	var cards: CardSystem = s[0]
 	var seq := CardBinding.sequence([{"input": "A", "at": 0, "hold": 50}], "Jump")
 	cards.add_card(seq, Vector3(0.0, 0.3, -0.05))
+	cards.add_card(CardBinding.toggle(["LT", "L3"]), Vector3(0.0, 0.4, -0.05))
 	var data := cards.layout_data("Round trip")
 	var copy := CardSystem.new()
 	add(copy)
@@ -242,6 +309,7 @@ func test_layout_round_trip() -> void:
 func test_invalid_bindings_are_skipped() -> void:
 	check(CardBinding.from_dict({"inputs": []}) == null, "no inputs")
 	check(CardBinding.from_dict({"inputs": ["TURBO"]}) == null, "unknown input")
+	check(CardBinding.from_dict({"inputs": [], "toggle": true}) == null, "toggle with no inputs")
 	check(CardBinding.from_dict({"sequence": [{"input": "A", "at": 0, "hold": 5}]}) == null, "step too short")
 	check(CardBinding.from_dict({"sequence": [{"input": "A", "at": 20000, "hold": 50}]}) == null, "too long")
 	check(CardBinding.from_dict({"input": "A"}) != null, "older single-input cards still load")
