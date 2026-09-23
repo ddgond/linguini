@@ -41,7 +41,7 @@ The extension is C++ on top of [godot-cpp](https://github.com/godotengine/godot-
 - [moonlight-common-c](https://github.com/moonlight-stream/moonlight-common-c), for the streaming session.
 - `libgamestream` from [moonlight-embedded](https://github.com/moonlight-stream/moonlight-embedded), for pairing, the app list and launching.
 
-It needs Godot 4.5+ and SCons. It also needs these libraries: FFmpeg (libavcodec, libavutil), Opus, OpenSSL, libcurl, expat and (on Linux) libuuid.
+It needs Godot 4.5+ and SCons. It also needs these libraries: FFmpeg (libavcodec, libavutil), Opus, OpenSSL, libcurl and expat.
 
 ```sh
 git submodule update --init --recursive
@@ -68,13 +68,28 @@ The tests cover:
 Two headless tools help on machines without a display:
 
 ```sh
-godot --headless --path godot -s res://tools/pair.gd -- HOST                    # prints a PIN, waits for it to be entered
-godot --headless --path godot -s res://tools/stream_check.gd -- HOST Desktop 15 frame.png
+godot --headless --path godot -- --tool=pair HOST                     # prints a PIN, waits for it to be entered
+godot --headless --path godot -- --tool=stream_check HOST Desktop 15 frame.png
+./Linguini.x86_64 --headless -- --tool=pair HOST                      # the same from a packaged build
 ```
 
-`pair.gd` pairs with a host. `stream_check.gd` launches an app on a paired host and streams for the given number of seconds. It then reports decoded video, audio received and input, saves the last frame's luma plane, and quits the app.
+`pair` pairs with a host. `stream_check` launches an app on a paired host and streams for the given number of seconds. It then reports decoded video, audio received and input, saves the last frame's luma plane, and quits the app.
 
 `main.tscn` also accepts `-- --swim --test-video=PATH --gaze --zones --room-camera --screenshot=PATH` for manual checks without a host. The full list is in `godot/scripts/main.gd`.
+
+## Packaging
+
+```sh
+packaging/linux/package.sh     # -> dist/builds/linguini-linux-x86_64.tar.gz
+```
+
+The Linux release build is made in Docker (`packaging/linux/Dockerfile`, Ubuntu 22.04), so it runs on most distributions:
+- **Static dependencies:** OpenSSL, Opus, expat, curl and FFmpeg are built from source as static libraries. FFmpeg is cut down to H.264, HEVC and AV1 decoding plus VA-API.
+- **What's left:** the extension needs only glibc 2.35 or newer and libva from the user's system. The script fails if the extension picks up any other dynamic dependency.
+
+After building, the script exports the project with the `Linux` preset (`godot/export_presets.cfg`). It then packs the executable, the extension, a README and the third-party licences.
+
+It needs Docker, plus a Godot editor with matching export templates. Set `GODOT` and `GODOT_TEMPLATES`, or let it take both from the Nix flake. It keeps its own Godot data directory, so your editor settings aren't touched.
 
 ## Landing page
 
@@ -112,6 +127,6 @@ third_party/           submodules
 - Only the Linux build has been built and tested. The macOS and Windows paths in `SConstruct`, the shims, and the CI jobs are written but haven't been run.
 - Hosts are added by IP or hostname. There's no mDNS discovery yet.
 - Frames are decoded on the GPU where possible and copied back to system memory for upload. Zero-copy rendering is future work.
-- The extension links system libraries dynamically. Packaging them for export isn't set up yet.
+- Only Linux has a packaged release build so far. Windows and macOS need their own packaging.
 - libgamestream requests can't be cancelled. "Back" during pairing stops waiting, but the host keeps the PIN prompt open until it's entered or times out.
 - libgamestream names the client "roth" on the host's paired-devices list.

@@ -35,7 +35,7 @@ PLATFORMS = [
         "name": "Linux",
         "arch": "x86_64",
         "pattern": re.compile(r"linux", re.I),
-        "note": "Needs FFmpeg, Opus, OpenSSL, libcurl, expat and libuuid from your distribution.",
+        "note": "glibc 2.35+ (Ubuntu 22.04, Debian 12, Fedora 36 or newer) and libva.",
     },
     {
         "id": "windows",

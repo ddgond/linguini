@@ -15,6 +15,9 @@ extends Node3D
 ##   --zones                show card trigger zones
 ##   --room-camera          view through the room camera
 ##   --screenshot=PATH      save a screenshot after --delay seconds (default 2) and quit
+##   --tool=NAME [ARGS...]  run res://tools/NAME.gd instead of the room (headless
+##                          helpers such as pair and stream_check; this also works
+##                          in exported builds, which ignore `-s`)
 
 enum Mode { MENU, SWIM }
 
@@ -32,10 +35,16 @@ var _audio: AudioStreamPlayer
 var _playback: AudioStreamGeneratorPlayback
 var _has_swum := false
 var _args := {}
+var _positional := PackedStringArray()
 
 
 func _ready() -> void:
 	_args = _parse_args()
+	if _args.has("tool"):
+		set_process(false)
+		set_process_unhandled_input(false)
+		_run_tool(_args.tool)
+		return
 
 	if ClassDB.class_exists("MoonlightClient"):
 		client = ClassDB.instantiate("MoonlightClient")
@@ -186,9 +195,24 @@ func _make_fish() -> Fish:
 func _parse_args() -> Dictionary:
 	var out := {}
 	for arg in OS.get_cmdline_user_args():
+		if not arg.begins_with("--"):
+			_positional.append(arg)
+			continue
 		var parts := arg.trim_prefix("--").split("=", true, 1)
 		out[parts[0]] = parts[1] if parts.size() > 1 else ""
 	return out
+
+
+func _run_tool(tool_name: String) -> void:
+	var path := "res://tools/%s.gd" % tool_name
+	if not ResourceLoader.exists(path):
+		printerr("No tool named '%s'" % tool_name)
+		get_tree().quit(2)
+		return
+	var tool: Node = load(path).new()
+	tool.name = tool_name
+	tool.args = _positional
+	add_child(tool)
 
 
 func _apply_args() -> void:

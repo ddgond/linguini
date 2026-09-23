@@ -1,11 +1,14 @@
-extends SceneTree
+extends Node
 ## Headless end-to-end check against a paired host: launch an app, stream for a
 ## while, and report what arrived.
-##   godot --headless --path godot -s res://tools/stream_check.gd -- HOST [APP] [SECONDS] [SNAPSHOT.png]
+##   godot --headless --path godot -- --tool=stream_check HOST [APP] [SECONDS] [SNAPSHOT.png]
 ##
 ## Reports decoded video (size, fps, decoder), audio frames received, and taps
 ## the A button on the virtual gamepad. Saves the luma plane of the last frame as
 ## a greyscale PNG if a path is given. Quits the app on the host afterwards.
+
+## Positional command-line arguments, set by main.gd before the tool starts.
+var args := PackedStringArray()
 
 var client: Node
 var host: String
@@ -14,18 +17,17 @@ var seconds: float
 var snapshot: String
 
 
-func _initialize() -> void:
-	var args := OS.get_cmdline_user_args()
+func _ready() -> void:
 	host = args[0] if args.size() > 0 else "127.0.0.1"
 	app_name = args[1] if args.size() > 1 else "Desktop"
 	seconds = float(args[2]) if args.size() > 2 else 15.0
 	snapshot = args[3] if args.size() > 3 else ""
 
 	client = ClassDB.instantiate("MoonlightClient")
-	root.add_child(client)
+	add_child(client)
 	client.request_failed.connect(func(request: String, message: String) -> void:
 		print("FAILED (%s): %s" % [request, message])
-		quit(1))
+		get_tree().quit(1))
 	client.stream_stage.connect(func(stage: String) -> void: print("  stage: ", stage))
 	client.stream_ended.connect(func(code: int, message: String) -> void:
 		if code != 0:
@@ -38,8 +40,8 @@ func _run() -> void:
 	client.connect_host(host)
 	var info: Dictionary = (await client.host_ready)
 	if not info.paired:
-		print("Not paired; run res://tools/pair.gd first.")
-		quit(1)
+		print("Not paired; run the pair tool first.")
+		get_tree().quit(1)
 		return
 
 	client.fetch_apps()
@@ -47,7 +49,7 @@ func _run() -> void:
 	var matches := apps.filter(func(a: Dictionary) -> bool: return a.name == app_name)
 	if matches.is_empty():
 		print("No app named '%s'. Apps: %s" % [app_name, apps.map(func(a: Dictionary) -> String: return a.name)])
-		quit(1)
+		get_tree().quit(1)
 		return
 
 	var options := {"width": 1280, "height": 720, "fps": 60, "bitrate_kbps": 10000, "codec": "auto"}
@@ -65,7 +67,7 @@ func _run() -> void:
 	var pressed := false
 	var peak_fps := 0.0
 	while Time.get_ticks_msec() - started < seconds * 1000.0 and client.is_streaming():
-		await process_frame
+		await get_tree().process_frame
 		audio_frames += client.pop_audio(48000).size()
 		if first_frame_ms < 0 and client.has_video():
 			first_frame_ms = Time.get_ticks_msec() - started
@@ -95,5 +97,5 @@ func _run() -> void:
 
 	print("Quitting '%s' on the host…" % app_name)
 	client.stop_stream(true)
-	await create_timer(3.0).timeout
-	quit(0 if client.has_video() else 1)
+	await get_tree().create_timer(3.0).timeout
+	get_tree().quit(0 if client.has_video() else 1)

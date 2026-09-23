@@ -1,4 +1,5 @@
-// Minimal Windows stand-in for libuuid, covering what libgamestream uses.
+// Stand-in for libuuid covering what libgamestream uses (random v4 UUIDs for
+// request IDs). Used on every platform so libuuid isn't a dependency.
 #pragma once
 
 #include <stdio.h>

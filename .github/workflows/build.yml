@@ -5,7 +5,7 @@ on:
   pull_request:
 
 env:
-  GODOT_VERSION: 4.5.1
+  GODOT_VERSION: 4.7.2
 
 jobs:
   linux:
@@ -18,7 +18,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y scons pkg-config ffmpeg libavcodec-dev libavutil-dev libopus-dev \
-            libssl-dev libcurl4-openssl-dev libexpat1-dev uuid-dev
+            libssl-dev libcurl4-openssl-dev libexpat1-dev
       - name: Build extension
         run: scons -j4
       - name: Run tests
@@ -31,6 +31,32 @@ jobs:
         with:
           name: linguini-linux
           path: godot/bin/
+
+  package-linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install Godot and export templates
+        run: |
+          base="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          curl -sSL -o godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip && mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+          curl -sSL -o templates.tpz "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q templates.tpz -d "$RUNNER_TEMP" && echo "GODOT_TEMPLATES=$RUNNER_TEMP/templates" >> "$GITHUB_ENV"
+      - name: Package
+        run: packaging/linux/package.sh
+      - name: Build the landing page
+        run: python3 site/build.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linguini-linux-x86_64
+          path: dist/builds/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: dist/site/
 
   macos:
     runs-on: macos-14

@@ -4,9 +4,11 @@
 #   scons                      # debug build for the host platform
 #   scons target=template_release
 #
-# System dependencies (FFmpeg, Opus, OpenSSL, libcurl, expat, libuuid) are found
+# System dependencies (FFmpeg, Opus, OpenSSL, libcurl, expat) are found
 # with pkg-config on Linux and macOS. On Windows, point LINGUINI_DEPS_PREFIX at a
 # prefix containing include/ and lib/ (e.g. a vcpkg installed/x64-windows tree).
+# On Linux, LINGUINI_DEPS_PREFIX links them statically instead; see
+# packaging/linux/package.sh for the portable release build.
 import os
 import subprocess
 
@@ -19,8 +21,6 @@ ML_COMMON = "third_party/moonlight-common-c"
 GAMESTREAM = "third_party/moonlight-embedded/libgamestream"
 
 PKG_MODULES = ["libavcodec", "libavutil", "opus", "openssl", "libcurl", "expat"]
-if platform == "linux":
-    PKG_MODULES.append("uuid")
 
 
 def pkg_config(env, modules):
@@ -32,12 +32,19 @@ def pkg_config(env, modules):
     env.MergeFlags(flags)
 
 
-if platform in ["linux", "macos"]:
+if platform == "linux" and os.environ.get("LINGUINI_DEPS_PREFIX"):
+    # Portable build (packaging/linux): static FFmpeg, curl, OpenSSL, Opus and
+    # expat from the prefix; only glibc and libva stay dynamic.
+    prefix = os.environ["LINGUINI_DEPS_PREFIX"]
+    env.Append(CPPPATH=[os.path.join(prefix, "include")], LIBPATH=[os.path.join(prefix, "lib")])
+    env.MergeFlags(subprocess.check_output(["pkg-config", "--cflags", "opus"]).decode())
+    env.Append(LIBS=["avcodec", "avutil", "curl", "ssl", "crypto", "expat", "opus"])
+    env.Append(LIBS=["va", "va-drm", "pthread", "dl", "m"])
+    # Keep the static libraries' symbols private, and fail at link time rather
+    # than load time if anything is missing.
+    env.Append(LINKFLAGS=["-Wl,--exclude-libs,ALL", "-Wl,--no-undefined"])
+elif platform in ["linux", "macos"]:
     pkg_config(env, PKG_MODULES)
-    if platform == "linux":
-        # libgamestream includes <uuid/uuid.h>; uuid.pc points inside that directory.
-        uuid_dir = subprocess.check_output(["pkg-config", "--variable=includedir", "uuid"]).decode().strip()
-        env.Append(CPPPATH=[uuid_dir])
 elif platform == "windows":
     prefix = os.environ.get("LINGUINI_DEPS_PREFIX")
     if not prefix:
@@ -95,9 +102,10 @@ c_sources += [
 # libgamestream: pairing, server info, app list, launch. discover.c (Avahi) and
 # sps.c (h264bitstream) are not needed.
 genv = cenv.Clone()
-genv.Append(CPPPATH=["native/compat"])
+# native/compat also provides <uuid/uuid.h>, so libuuid isn't needed.
+genv.Prepend(CPPPATH=["native/compat"])
 if platform == "windows":
-    genv.Append(CPPPATH=["native/compat/win32"])
+    genv.Prepend(CPPPATH=["native/compat/win32"])
 if is_msvc:
     genv.Append(CCFLAGS=["/FIlibgamestream_compat.h"])
 else:

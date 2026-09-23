@@ -19,7 +19,6 @@
             openssl.dev
             curl.dev
             expat.dev
-            libuuid.dev
             libopus.dev
             # Tests: fixture generation, headless screenshots
             ffmpeg
