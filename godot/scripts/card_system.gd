@@ -2,21 +2,21 @@ class_name CardSystem
 extends Node3D
 ## Turns the fish's position into controller input on the host.
 ##
-## Each card's trigger zone is the card's footprint (slightly enlarged) extruded
-## forward to the front glass. Since every card faces the glass, the zones
+## Each card's trigger zone is the middle of the card's footprint (ZONE_SCALE
+## of it) extruded forward to the front glass. Since every card faces the glass, the zones
 ## match what the room camera sees: the fish "in front of" a card from the
 ## camera's point of view is pressing it.
 ##
-## A card presses the moment the fish's core touches its zone and releases once
-## the fish has been clear of it (plus a small hysteresis margin) for
-## RELEASE_DELAY, so a fish drifting along a boundary doesn't flicker the button.
-## Buttons are held for as long as the fish stays.
+## A card presses the moment the centre of the fish enters its zone. The rest of
+## the body doesn't count, so brushing past with a fin or the tail does nothing.
+## It releases once the fish has been clear of it (plus a small hysteresis
+## margin) for RELEASE_DELAY, so a fish drifting along a boundary doesn't
+## flicker the button. Buttons are held for as long as the fish stays.
 
 signal held_changed(inputs: PackedStringArray)
 
 const CARD_SIZE := Vector2(0.11, 0.08)
-const ZONE_SCALE := 1.1
-const FISH_RADIUS := 0.015
+const ZONE_SCALE := 0.9
 const HYSTERESIS := 0.015
 const RELEASE_DELAY := 0.15
 const STICK_MAX := 32767
@@ -111,7 +111,7 @@ func add_card(input_id: String, pos: Vector3) -> FlashCard:
 	return card
 
 
-## The trigger zone of a card centred at `pos`: its enlarged footprint,
+## The trigger zone of a card centred at `pos`: the middle of its footprint,
 ## extruded from the card face to the front glass.
 func zone_for(pos: Vector3) -> AABB:
 	var half := CARD_SIZE * ZONE_SCALE * 0.5
@@ -134,12 +134,12 @@ func _physics_process(delta: float) -> void:
 	update(to_local(fish.global_position), delta)
 
 
-## Advances the press/release logic for a fish core at `fish_pos` (this node's space).
+## Advances the press/release logic for the fish's centre at `fish_pos` (this node's space).
 func update(fish_pos: Vector3, delta: float) -> void:
 	for i in cards.size():
 		var card := cards[i]
 		var zone := _zones[i].grow(HYSTERESIS) if card.active else _zones[i]
-		if _sphere_overlaps(zone, fish_pos, FISH_RADIUS):
+		if zone.has_point(fish_pos):
 			card.active = true
 			_release_timers[i] = RELEASE_DELAY
 		elif card.active:
@@ -208,8 +208,3 @@ func _publish() -> void:
 	_state = state
 	resend()
 	held_changed.emit(held())
-
-
-static func _sphere_overlaps(box: AABB, center: Vector3, radius: float) -> bool:
-	var closest := center.clamp(box.position, box.end)
-	return closest.distance_squared_to(center) <= radius * radius

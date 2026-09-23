@@ -7,7 +7,7 @@ You play from inside a fish tank in a streamer's bedroom. The game stream plays 
 ## Status: milestone 1 (vertical slice)
 
 - Pair with a Sunshine or GeForce Experience host, pick an app and stream it. Video and audio go to the monitor in the room. All of this happens on the monitor itself.
-- **Real Fishy Movement:** the stick or WASD sets the direction the fish wants to go and how hard to swim, not a velocity. The fish turns at a limited rate and moves in tail-beat pulses, so it swims in arcs. With no input it drifts.
+- **Real Fishy Movement:** the stick or WASD steers from the fish's point of view, not the camera's. Forward swims along its heading, left and right turn it, and back makes it back up slowly. Input is an urge, not a velocity: the fish turns at a limited rate and moves in tail-beat pulses, so it swims in arcs. With no input it drifts.
 - Third-person camera. Hold the gaze button to look past the fish at the monitor.
 - 24 flash cards cover the whole controller.
 
@@ -17,7 +17,8 @@ Milestone 2 adds the card editor and presets, the fake ML tracking-camera window
 
 | | Keyboard / mouse | Gamepad |
 |---|---|---|
-| Swim | WASD | Left stick |
+| Swim forward / back up | W / S | Left stick up / down |
+| Turn left / right | A / D | Left stick left / right |
 | Rise / sink | Space / C | RB / LB |
 | Dart | Shift | A |
 | Look around | Mouse | Right stick |
@@ -29,11 +30,11 @@ Your own keyboard and gamepad never reach the host. Only the cards do.
 
 ## Flash cards
 
-The default layout is in `godot/data/layouts/default.json`. Every card faces the front glass, where the room camera is. A card's trigger zone is its footprint, enlarged by 10%, extruded forward to the glass. From the room camera's point of view, the fish covering a card presses it.
+The default layout is in `godot/data/layouts/default.json`. Every card faces the front glass, where the room camera is. A card's trigger zone is the middle 90% of its footprint, extruded forward to the glass. From the room camera's point of view, the fish covering a card presses it.
 
-- **Pressing:** a card presses as soon as the fish's body touches its zone. It stays held while the fish stays there.
+- **Pressing:** a card presses as soon as the centre of the fish enters its zone. Fins, tail and the rest of the body don't count. It stays held while the fish stays there.
 - **Releasing:** a card releases once the fish has been out of the zone for 150 ms. The zone also has a 1.5 cm margin while held, so a fish drifting along an edge doesn't make the button flicker.
-- **Stick diagonals:** stick directions are arranged as a cross with an empty centre. Swim into the corner between two arms to get a diagonal.
+- **Stick diagonals:** not supported yet. Stick directions are arranged as a cross with an empty centre, and the corner between two arms presses neither. Diagonals will come with tank editing and macros.
 
 ## Building
 

@@ -72,6 +72,20 @@ func test_behind_card_does_nothing() -> void:
 	cards.queue_free()
 
 
+func test_only_the_fish_centre_counts() -> void:
+	var s := _system()
+	var cards: CardSystem = s[0]
+	var client: FakeClient = s[1]
+	var a := _card(cards, "A")
+	var zone := cards.zone_for(a.position)
+	# Centred just outside the zone, the fish's body overlaps it but its centre doesn't.
+	_hold(cards, Vector3(zone.end.x + 0.01, a.position.y, 0.1), 0.5)
+	check(client.last()[0] == 0, "a fish centred 1 cm outside A's zone doesn't press it")
+	_hold(cards, Vector3(zone.end.x - 0.005, a.position.y, 0.1), 0.1)
+	check(client.last()[0] == CardSystem.BUTTON_FLAGS.A, "A presses once the fish's centre is inside")
+	cards.queue_free()
+
+
 func test_hysteresis_prevents_flicker() -> void:
 	var s := _system()
 	var cards: CardSystem = s[0]
@@ -80,7 +94,7 @@ func test_hysteresis_prevents_flicker() -> void:
 	_hold(cards, _in_front(b), 0.2)
 	var zone := cards.zone_for(b.position)
 	# Drift back and forth across the edge, within the hysteresis margin.
-	var edge_x := zone.position.x - CardSystem.FISH_RADIUS
+	var edge_x := zone.position.x
 	for i in 20:
 		_hold(cards, Vector3(edge_x - 0.01, b.position.y, 0.1), 0.05)
 		_hold(cards, Vector3(edge_x + 0.005, b.position.y, 0.1), 0.05)
@@ -88,7 +102,7 @@ func test_hysteresis_prevents_flicker() -> void:
 	cards.queue_free()
 
 
-func test_sticks_triggers_and_diagonals() -> void:
+func test_sticks_and_triggers() -> void:
 	var s := _system()
 	var cards: CardSystem = s[0]
 	var client: FakeClient = s[1]
@@ -98,10 +112,10 @@ func test_sticks_triggers_and_diagonals() -> void:
 	var up := _card(cards, "L_UP").position
 	var right := _card(cards, "L_RIGHT").position
 	var corner := Vector3(right.x - CardSystem.CARD_SIZE.x / 2, up.y - CardSystem.CARD_SIZE.y / 2, 0.1)
+	cards.set_enabled(false) # start with nothing held, so no hysteresis margin applies
+	cards.set_enabled(true)
 	_hold(cards, corner, 0.5)
-	var st := client.last()
-	check(st[3] == CardSystem.STICK_MAX and st[4] == CardSystem.STICK_MAX, "between L_UP and L_RIGHT: up-right diagonal (%s)" % st)
-	check(cards.held().size() == 2, "a diagonal holds exactly the two arms (%s)" % cards.held())
+	check(cards.held().is_empty(), "the corner between two stick arms presses neither (%s)" % cards.held())
 
 	_hold(cards, _in_front(_card(cards, "RT")), 0.5)
 	check(client.last()[2] == CardSystem.TRIGGER_MAX and client.last()[1] == 0, "RT pulls the right trigger fully")

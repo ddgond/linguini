@@ -37,9 +37,10 @@ func test_swimming_into_a_card_presses_it() -> void:
 	var fish: Fish = main.fish
 	var cards: CardSystem = main.cards
 	var b_card: FlashCard = cards.cards.filter(func(c: FlashCard) -> bool: return c.input_id == "B")[0]
-	# Start in open water below B and swim up into its zone.
+	# Start in open water below B, facing it, and swim up into its zone.
 	fish.player_control = false
 	fish.position = Vector3(b_card.position.x, 0.12, 0.12)
+	fish.yaw = 0.0
 	fish.drive(Vector3.UP, 0.6, 1.0)
 	var pressed := false
 	for i in 40:

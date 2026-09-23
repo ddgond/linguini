@@ -101,3 +101,36 @@ func test_rise_keeps_heading() -> void:
 	check(f.pitch > 0.3, "fish pitches nose-up to rise")
 	check(absf(f.yaw) < 0.01, "rising doesn't change heading")
 	f.free()
+
+
+## Presses `actions` (fully) and steps the fish under player control.
+func _run_input(f: Fish, actions: Array, seconds: float) -> Vector3:
+	for a in actions:
+		Input.action_press(a)
+	var path := _run(f, seconds, func(x: Fish) -> void: x.read_player_input())
+	for a in actions:
+		Input.action_release(a)
+	return path
+
+
+func test_controls_are_fish_relative() -> void:
+	var f := _fish()
+	f.yaw = PI / 2 # facing -X
+	var path := _run_input(f, ["fish_forward"], 2.0)
+	check(path.x < -0.2 and absf(path.z) < 0.02, "forward swims along the fish's heading (%s)" % path)
+	check(absf(angle_difference(f.yaw, PI / 2)) < 0.01, "forward alone doesn't turn the fish")
+
+	var before := f.yaw
+	_run_input(f, ["fish_right"], 0.25)
+	var turned := angle_difference(before, f.yaw)
+	check(turned < -0.2, "right turns the fish to its right (%.2f rad)" % turned)
+	check(turned > -f.turn_rate * 0.25, "and no faster than turn_rate")
+
+	f.yaw = PI / 2
+	f.velocity = Vector3.ZERO
+	path = _run_input(f, ["fish_back"], 3.0)
+	check(f.backing and path.x > 0.05, "back backs up away from the heading (%s)" % path)
+	before = f.yaw
+	_run_input(f, ["fish_back", "fish_left"], 0.5)
+	check(angle_difference(before, f.yaw) > 0.2, "left turns the fish while backing up")
+	f.free()

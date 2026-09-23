@@ -1,6 +1,6 @@
 {
 	"name": "Default",
-	"comment": "Card centres in tank-local metres. Stick directions form a cross with an empty centre so a fish at the corner between two arms gets a clean diagonal. The tank interior spans x -0.6..0.6, y 0..0.56 (water line), z -0.25..0.25 with the front glass at +z. Every card faces the front glass.",
+	"comment": "Card centres in tank-local metres. Stick directions form a cross with an empty centre. The tank interior spans x -0.6..0.6, y 0..0.56 (water line), z -0.25..0.25 with the front glass at +z. Every card faces the front glass.",
 	"cards": [
 		{ "input": "L_UP",    "position": [-0.40, 0.23, -0.225] },
 		{ "input": "L_DOWN",  "position": [-0.40, 0.07, -0.225] },

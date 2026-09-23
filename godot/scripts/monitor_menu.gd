@@ -7,7 +7,7 @@ extends Control
 signal swim_requested
 signal resume_requested
 
-const CONTROLS_HELP := "Swim  WASD / left stick      Rise / sink  Space, C / RB, LB      Dart  Shift / A\nLook  mouse / right stick      Watch the monitor  hold right mouse / LT      Menu  Esc / Start"
+const CONTROLS_HELP := "Swim, turn  WASD / left stick      Rise / sink  Space, C / RB, LB      Dart  Shift / A\nLook  mouse / right stick      Watch the monitor  hold right mouse / LT      Menu  Esc / Start"
 
 var client: Object
 

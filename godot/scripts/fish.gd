@@ -8,6 +8,10 @@ extends CharacterBody3D
 ## come out as arcs. Water drag is much stronger sideways than lengthways, which
 ## makes the velocity follow the heading the way a real fish's does.
 ##
+## The player steers from the fish's point of view, not the camera's: forward
+## swims along the fish's heading, back makes it back up, and left and right
+## turn it.
+##
 ## With no input the fish hovers: pectoral-fin sculling, a slow bob and a lazy
 ## wander that steers away from the glass.
 
@@ -16,12 +20,14 @@ signal darted
 @export_group("Swimming")
 @export var cruise_speed := 0.30 ## m/s at full effort
 @export var turn_rate := 3.2 ## rad/s at full effort
+@export var turn_response := 4.0 ## 1/s: turning slows as the heading nears the urge
 @export var pitch_rate := 2.0 ## rad/s
 @export var max_pitch := deg_to_rad(55.0)
 @export var tail_freq_idle := 1.1 ## tail beats per second
 @export var tail_freq_max := 5.0
 @export var rise_accel := 0.25 ## m/s^2 of swim-bladder assist for rise/sink
 @export var back_speed := 0.07 ## m/s when backing up on pectoral fins
+@export var back_turn_rate := 1.2 ## rad/s when turning while backing up
 
 @export_group("Water")
 @export var forward_drag := 1.8 ## 1/s
@@ -47,9 +53,8 @@ var vertical_urge := 0.0
 var backing := false
 var dart_requested := false
 
-## When true, the fish reads the keyboard/gamepad relative to `view`.
+## When true, the fish reads the keyboard/gamepad each physics tick.
 var player_control := false
-var view: Node3D
 
 # Body state, readable by the model and camera.
 var yaw := 0.0
@@ -101,22 +106,18 @@ func read_player_input() -> void:
 	if Input.is_action_just_pressed("fish_dart"):
 		request_dart()
 
-	var cam_yaw := view.global_rotation.y if view else yaw
-	var cam_forward := Vector3(-sin(cam_yaw), 0.0, -cos(cam_yaw))
-	var cam_right := Vector3(cos(cam_yaw), 0.0, -sin(cam_yaw))
-
-	# Pulling straight back while the camera is behind the fish means "back up",
-	# not "turn around": fish reverse slowly on their pectoral fins.
-	var fish_forward := Vector3(-sin(yaw), 0.0, -cos(yaw))
-	var back := stick.y < -0.3 and absf(stick.x) < 0.5 * absf(stick.y) and cam_forward.dot(fish_forward) > 0.3
-
-	var dir := cam_right * stick.x + cam_forward * stick.y
-	if back:
-		drive(Vector3.ZERO, 0.0, vertical, true)
+	# Left/right points the urge off to that side of the fish's heading, by an
+	# angle that makes it turn at turn_rate with the stick fully over.
+	var heading := yaw - stick.x * turn_rate / turn_response
+	var dir := Vector3(-sin(heading), 0.0, -cos(heading))
+	if stick.y < -0.3:
+		# Fish don't swim backwards: they back up slowly on their pectoral fins.
+		drive(dir, 0.0, vertical, true)
 		return
-	# Rising or sinking with no stick input tilts the fish that way as it swims.
-	dir += Vector3.UP * vertical * 0.6
-	drive(dir, maxf(stick.length(), absf(vertical) * 0.6), vertical)
+	# A fish can't turn on the spot, so turning alone swims it round gently.
+	var thrust := maxf(stick.y, absf(stick.x) * 0.35)
+	# Rising or sinking tilts the fish that way as it swims.
+	drive(dir * thrust + Vector3.UP * vertical * 0.6, maxf(thrust, absf(vertical) * 0.6), vertical)
 
 
 func simulate(delta: float) -> void:
@@ -135,17 +136,24 @@ func simulate(delta: float) -> void:
 		if horizontal < 0.2:
 			turn = 0.0 # mostly vertical urge: keep heading, just pitch
 		var max_step := turn_rate * (0.5 + 0.5 * urge_strength) * delta
-		var step := clampf(turn, -max_step, max_step)
+		var step := clampf(turn * turn_response * delta, -max_step, max_step)
 		yaw_rate = step / delta
 		yaw = wrapf(yaw + step, -PI, PI)
 		pitch = move_toward(pitch, target_pitch, pitch_rate * delta)
 		# Fish ease off while turning hard: the tail is busy steering.
 		effort_target = urge_strength * lerpf(1.0, 0.45, absf(turn) / PI)
-	else:
-		yaw_rate = 0.0 if backing else _idle_steer()
+	elif backing:
+		# Backing up can still turn toward the urge, slowly.
+		var turn := angle_difference(yaw, atan2(-urge_dir.x, -urge_dir.z)) if urge_dir != Vector3.ZERO else 0.0
+		yaw_rate = clampf(turn * turn_response, -back_turn_rate, back_turn_rate)
 		yaw = wrapf(yaw + yaw_rate * delta, -PI, PI)
 		pitch = move_toward(pitch, 0.0, 0.6 * delta)
-		effort_target = 0.0 if backing else idle_effort
+		effort_target = 0.0
+	else:
+		yaw_rate = _idle_steer()
+		yaw = wrapf(yaw + yaw_rate * delta, -PI, PI)
+		pitch = move_toward(pitch, 0.0, 0.6 * delta)
+		effort_target = idle_effort
 
 	effort = lerpf(effort, effort_target, 1.0 - exp(-4.0 * delta))
 

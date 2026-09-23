@@ -73,7 +73,6 @@ func _ready() -> void:
 	camera.bounds = water
 	add_child(camera)
 	camera.make_current()
-	fish.view = camera
 
 	cards = CardSystem.new()
 	cards.name = "Cards"
