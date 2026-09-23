@@ -130,3 +130,7 @@ third_party/           submodules
 - Only Linux has a packaged release build so far. Windows and macOS need their own packaging.
 - libgamestream requests can't be cancelled. "Back" during pairing stops waiting, but the host keeps the PIN prompt open until it's entered or times out.
 - libgamestream names the client "roth" on the host's paired-devices list.
+
+## License
+
+Linguini is licensed under the [GNU General Public License v3.0](LICENSE). It builds in moonlight-common-c and moonlight-embedded, which are GPLv3 as well.

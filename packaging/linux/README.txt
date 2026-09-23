@@ -16,4 +16,5 @@ Keep liblinguini.linux.template_release.x86_64.so next to the executable.
 
 Pairing and settings are stored in ~/.local/share/godot/app_userdata/Linguini/.
 
-Licences for Linguini's third-party components are in licenses/.
+Linguini is free software under the GNU General Public License v3
+(LICENSE.txt). Licences for its third-party components are in licenses/.
