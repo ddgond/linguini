@@ -24,6 +24,8 @@ func _enter_tree() -> void:
 	_bind_mouse("gaze", MOUSE_BUTTON_RIGHT)
 	_bind("menu_toggle", [KEY_ESCAPE], [JOY_BUTTON_START], [])
 	_bind("debug_zones", [KEY_F3], [], [])
+	_bind("edit_tank", [KEY_F2], [], [])
+	_bind("tracking_cam", [KEY_F4], [], [])
 
 
 func _bind(action: StringName, keys: Array, buttons: Array, axes: Array) -> void:

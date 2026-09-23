@@ -2,10 +2,12 @@ extends Node3D
 ## Linguini's room. Builds the scene and connects the Moonlight client, the fish,
 ## the flash cards and the monitor.
 ##
-## Two modes:
+## Three modes:
 ## - MENU: the camera frames the monitor from inside the tank; mouse, keyboard and
 ##   gamepad drive the monitor's menu; cards are released.
 ## - SWIM: the player is the fish; cards press buttons on the host.
+## - EDIT: the tank editor (F2, or Edit tank on the monitor); the fish waits
+##   and cards are released while they're rearranged.
 ##
 ## Command-line options (after `--`), mostly for testing and screenshots:
 ##   --swim                 start swimming instead of in the menu
@@ -14,12 +16,16 @@ extends Node3D
 ##   --gaze                 hold the gaze button
 ##   --zones                show card trigger zones
 ##   --room-camera          view through the room camera
+##   --edit                 open the tank editor
+##   --tracking=STYLE       open the tank cam window (minimal, earnest, over-the-top)
+##   --tracking-shot=PATH   with --screenshot, also save the tank cam window
+##   --select=N             select card N in the editor
 ##   --screenshot=PATH      save a screenshot after --delay seconds (default 2) and quit
 ##   --tool=NAME [ARGS...]  run res://tools/NAME.gd instead of the room (headless
 ##                          helpers such as pair and stream_check; this also works
 ##                          in exported builds, which ignore `-s`)
 
-enum Mode { MENU, SWIM }
+enum Mode { MENU, SWIM, EDIT }
 
 var client: Node
 var room: Dictionary
@@ -29,10 +35,13 @@ var cards: CardSystem
 var monitor: Monitor
 var menu: MonitorMenu
 var hud: Hud
+var editor: TankEditor
+var tracking: TrackingCam
 var mode := Mode.MENU
+var _mode_before_edit := Mode.MENU
 
-var _audio: AudioStreamPlayer
-var _playback: AudioStreamGeneratorPlayback
+var audio: RoomAudio
+var _water := AABB()
 var _has_swum := false
 var _args := {}
 var _positional := PackedStringArray()
@@ -60,6 +69,7 @@ func _ready() -> void:
 		tank.global_position + Vector3(inner.position.x, RoomBuilder.GRAVEL_TOP, inner.position.z),
 		Vector3(inner.size.x, room.water_level - RoomBuilder.GRAVEL_TOP, inner.size.z))
 
+	_water = water
 	fish = _make_fish()
 	fish.bounds = water
 	tank.add_child(fish)
@@ -80,7 +90,18 @@ func _ready() -> void:
 	cards.client = client
 	cards.fish = fish
 	cards.front_z = inner.end.z
-	cards.load_layout("res://data/layouts/default.json")
+
+	editor = TankEditor.new()
+	editor.name = "TankEditor"
+	editor.cards = cards
+	editor.water_local = AABB(Vector3(inner.position.x, RoomBuilder.GRAVEL_TOP, inner.position.z),
+		Vector3(inner.size.x, room.water_level - RoomBuilder.GRAVEL_TOP, inner.size.z))
+	editor.focus = tank.global_position + Vector3(0, 0.28, 0)
+	add_child(editor)
+	editor.closed.connect(_on_editor_closed)
+	if not editor.load_preset(Settings.layout_preset()):
+		editor.load_preset(LayoutPresets.DEFAULT)
+	editor.preset_changed.connect(func(p: String) -> void: Settings.set_layout_preset(p))
 
 	menu = MonitorMenu.new()
 	menu.client = client
@@ -91,17 +112,25 @@ func _ready() -> void:
 	hud = Hud.new()
 	hud.client = client
 	add_child(hud)
+
+	tracking = TrackingCam.new()
+	tracking.fish = fish
+	tracking.cards = cards
+	tracking.visible = false
+	add_child(tracking)
+	tracking.follow(room.room_camera)
+	set_tracking(Settings.tracking_enabled(), Settings.tracking_style())
+	menu.tracking_changed.connect(set_tracking)
 	cards.held_changed.connect(hud.set_held)
 
-	_audio = AudioStreamPlayer.new()
-	var generator := AudioStreamGenerator.new()
-	generator.mix_rate = 48000
-	generator.buffer_length = 0.08
-	_audio.stream = generator
-	add_child(_audio)
+	audio = RoomAudio.new()
+	audio.name = "RoomAudio"
+	add_child(audio)
+	audio.setup(room.speakers)
 
 	menu.swim_requested.connect(set_mode.bind(Mode.SWIM))
 	menu.resume_requested.connect(set_mode.bind(Mode.SWIM))
+	menu.edit_requested.connect(open_editor)
 	if client:
 		client.stream_started.connect(_on_stream_started)
 		client.stream_ended.connect(_on_stream_ended)
@@ -113,19 +142,62 @@ func _ready() -> void:
 func set_mode(new_mode: Mode) -> void:
 	mode = new_mode
 	var swimming := mode == Mode.SWIM
+	var editing := mode == Mode.EDIT
 	_has_swum = _has_swum or swimming
 	fish.player_control = swimming
 	if not swimming:
 		fish.drive(Vector3.ZERO, 0.0)
+	# The fish holds still while its cards are rearranged around it.
+	fish.set_physics_process(not editing)
 	camera.menu_view = not swimming
 	monitor.menu_visible = not swimming
 	cards.enabled = swimming
 	hud.visible = swimming
+	if editing and not editor.is_open():
+		editor.open()
+	elif not editing and editor.is_open():
+		editor.close()
+	if not editing:
+		camera.make_current()
 	if DisplayServer.get_name() != "headless":
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if swimming else Input.MOUSE_MODE_VISIBLE
 
 
+func set_tracking(enabled: bool, style: int) -> void:
+	tracking.style = style
+	tracking.visible = enabled
+
+
+func open_editor() -> void:
+	if mode == Mode.EDIT:
+		return
+	_mode_before_edit = mode
+	set_mode(Mode.EDIT)
+
+
+func _on_editor_closed() -> void:
+	if mode != Mode.EDIT:
+		return
+	set_mode(_mode_before_edit)
+	if mode == Mode.MENU:
+		if client and client.is_streaming():
+			menu.show_in_stream()
+		else:
+			menu.show_home()
+
+
 func _unhandled_input(event: InputEvent) -> void:
+	if mode == Mode.EDIT:
+		return # the editor handles its own input, including Esc
+	if event.is_action_pressed("tracking_cam"):
+		get_viewport().set_input_as_handled()
+		set_tracking(not tracking.visible, tracking.style)
+		Settings.set_tracking(tracking.visible, tracking.style)
+		return
+	if event.is_action_pressed("edit_tank"):
+		get_viewport().set_input_as_handled()
+		open_editor()
+		return
 	if event.is_action_pressed("menu_toggle"):
 		get_viewport().set_input_as_handled()
 		if mode == Mode.SWIM:
@@ -145,23 +217,24 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _process(_delta: float) -> void:
-	room.environment.fog_enabled = camera.is_underwater()
+	var view := get_viewport().get_camera_3d()
+	var underwater := view != null and _water.has_point(view.global_position)
+	room.environment.fog_enabled = underwater
+	audio.underwater = underwater
 	_pump_audio()
 
 
 func _pump_audio() -> void:
+	audio.mode = RoomAudio.Mode.STEREO if Settings.get_stream("audio", "room") == "stereo" else RoomAudio.Mode.ROOM
 	if client == null or not client.is_streaming():
-		if _audio.playing:
-			_audio.stop()
+		if audio.is_playing():
+			audio.stop()
 		return
-	if not _audio.playing:
-		_audio.play()
-		_playback = _audio.get_stream_playback()
-	var frames := _playback.get_frames_available()
+	if not audio.is_playing():
+		audio.start()
+	var frames := audio.frames_available()
 	if frames > 0:
-		var pcm: PackedVector2Array = client.pop_audio(frames)
-		if not pcm.is_empty():
-			_playback.push_buffer(pcm)
+		audio.push(client.pop_audio(frames))
 
 
 func _on_stream_started() -> void:
@@ -234,10 +307,22 @@ func _apply_args() -> void:
 	if _args.has("room-camera"):
 		(room.room_camera as Camera3D).make_current()
 		hud.visible = false
+	if _args.has("tracking"):
+		var i := ["minimal", "earnest", "over-the-top"].find(String(_args.tracking))
+		set_tracking(true, i if i >= 0 else TrackingCam.Style.EARNEST)
+	if _args.has("edit"):
+		open_editor()
+		if _args.has("select"):
+			var i := int(_args.select)
+			if i >= 0 and i < cards.cards.size():
+				editor._select(cards.cards[i])
 	if _args.has("screenshot"):
 		await get_tree().create_timer(float(_args.get("delay", "2"))).timeout
 		await RenderingServer.frame_post_draw
 		var img := get_viewport().get_texture().get_image()
 		img.save_png(_args.screenshot)
 		print("Saved screenshot to ", _args.screenshot)
+		if _args.has("tracking-shot") and tracking.visible:
+			tracking.get_texture().get_image().save_png(_args["tracking-shot"])
+			print("Saved tank cam screenshot to ", _args["tracking-shot"])
 		get_tree().quit()

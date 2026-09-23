@@ -1,12 +1,17 @@
 extends SceneTree
 ## Headless test runner:
 ##   godot --headless --path godot -s res://tests/run_tests.gd [-- --only=NAME]
+## After adding a class_name script, run `godot --headless --path godot --import`
+## once so the new class is registered.
 
 const SUITES := [
 	"res://tests/test_fish.gd",
 	"res://tests/test_cards.gd",
 	"res://tests/test_extension.gd",
 	"res://tests/test_scene.gd",
+	"res://tests/test_editor.gd",
+	"res://tests/test_tracking.gd",
+	"res://tests/test_audio.gd",
 ]
 
 
@@ -22,7 +27,12 @@ func _run() -> void:
 	var passed := 0
 	var failed := 0
 	for path in SUITES:
-		var suite: RefCounted = load(path).new()
+		var script: GDScript = load(path)
+		if script == null or not script.can_instantiate():
+			failed += 1
+			print("  FAIL %s: the suite doesn't compile (see errors above)" % path.get_file())
+			continue
+		var suite: RefCounted = script.new()
 		suite.tree = self
 		for method in suite.get_method_list():
 			var name: String = method.name

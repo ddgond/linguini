@@ -11,7 +11,11 @@ extends Node3D
 ## the body doesn't count, so brushing past with a fin or the tail does nothing.
 ## It releases once the fish has been clear of it (plus a small hysteresis
 ## margin) for RELEASE_DELAY, so a fish drifting along a boundary doesn't
-## flicker the button. Buttons are held for as long as the fish stays.
+## flicker the button.
+##
+## What a card sends is its CardBinding. A HOLD card presses its inputs for as
+## long as the fish stays; a SEQUENCE card plays its macro once when the fish
+## arrives, finishing even if the fish swims off. Arriving again replays it.
 
 signal held_changed(inputs: PackedStringArray)
 
@@ -64,6 +68,12 @@ const INPUTS := {
 	"R3": {"label": "R3", "caption": "RIGHT STICK", "color": _STICK_R},
 }
 
+const SHORT_NAMES := {
+	"DPAD_UP": "D↑", "DPAD_DOWN": "D↓", "DPAD_LEFT": "D←", "DPAD_RIGHT": "D→",
+	"L_UP": "L↑", "L_DOWN": "L↓", "L_LEFT": "L←", "L_RIGHT": "L→",
+	"R_UP": "R↑", "R_DOWN": "R↓", "R_LEFT": "R←", "R_RIGHT": "R→",
+}
+
 ## Receives send_controller_state(); normally the MoonlightClient.
 var client: Object
 var fish: Node3D
@@ -76,39 +86,118 @@ var enabled := true:
 var cards: Array[FlashCard] = []
 var _zones: Array[AABB] = []
 var _release_timers: Array[float] = []
+## Milliseconds into each card's sequence, or -1 when it isn't playing.
+var _play_ms: Array[float] = []
+var _pressed := PackedStringArray()
 var _state := PackedInt32Array([0, 0, 0, 0, 0, 0, 0])
 var _show_zones := false
 
 
+static func short_name(id: String) -> String:
+	return SHORT_NAMES.get(id, INPUTS[id].get("label", id))
+
+
 func load_layout(path: String) -> bool:
-	var text := FileAccess.get_file_as_string(path)
-	var data: Variant = JSON.parse_string(text)
-	if typeof(data) != TYPE_DICTIONARY or not data.has("cards"):
+	var data := LayoutPresets.read(path)
+	if data.is_empty():
 		push_error("CardSystem: can't read layout " + path)
 		return false
+	load_layout_data(data)
+	return true
+
+
+func load_layout_data(data: Dictionary) -> void:
+	clear()
+	for entry: Dictionary in data.get("cards", []):
+		var binding := CardBinding.from_dict(entry)
+		var p: Array = entry.get("position", [])
+		if binding == null or p.size() != 3:
+			continue
+		add_card(binding, Vector3(p[0], p[1], p[2]))
+
+
+## The current cards as layout data (see CardBinding for the card format).
+func layout_data(layout_name: String) -> Dictionary:
+	var out := []
 	for card in cards:
+		var entry := card.binding.to_dict()
+		var p := card.position
+		entry.position = [snappedf(p.x, 0.001), snappedf(p.y, 0.001), snappedf(p.z, 0.001)]
+		out.append(entry)
+	return {"name": layout_name, "cards": out}
+
+
+func clear() -> void:
+	for card in cards:
+		remove_child(card)
 		card.queue_free()
 	cards.clear()
 	_zones.clear()
 	_release_timers.clear()
-	for entry: Dictionary in data.cards:
-		var id: String = entry.input
-		if not INPUTS.has(id):
-			push_warning("CardSystem: unknown input '%s' in %s" % [id, path])
-			continue
-		var p: Array = entry.position
-		add_card(id, Vector3(p[0], p[1], p[2]))
-	return true
+	_play_ms.clear()
+	_publish()
 
 
-func add_card(input_id: String, pos: Vector3) -> FlashCard:
-	var card := FlashCard.new(input_id, CARD_SIZE)
+func add_card(binding: CardBinding, pos: Vector3) -> FlashCard:
+	var card := FlashCard.new(binding, CARD_SIZE)
 	card.position = pos
 	add_child(card)
 	cards.append(card)
 	_zones.append(zone_for(pos))
 	_release_timers.append(0.0)
+	_play_ms.append(-1.0)
+	if _show_zones:
+		card.show_zone(_zones[-1], true)
 	return card
+
+
+func remove_card(card: FlashCard) -> void:
+	var i := cards.find(card)
+	if i < 0:
+		return
+	cards.remove_at(i)
+	_zones.remove_at(i)
+	_release_timers.remove_at(i)
+	_play_ms.remove_at(i)
+	remove_child(card)
+	card.queue_free()
+	_publish()
+
+
+func move_card(card: FlashCard, pos: Vector3) -> void:
+	var i := cards.find(card)
+	if i < 0:
+		return
+	card.position = pos
+	_zones[i] = zone_for(pos)
+	card.show_zone(_zones[i], _show_zones)
+
+
+## Replaces a card's binding; returns the new card node (faces are rebuilt).
+func rebind_card(card: FlashCard, binding: CardBinding) -> FlashCard:
+	var i := cards.find(card)
+	if i < 0:
+		return card
+	var fresh := FlashCard.new(binding, CARD_SIZE)
+	fresh.position = card.position
+	add_child(fresh)
+	remove_child(card)
+	card.queue_free()
+	cards[i] = fresh
+	_play_ms[i] = -1.0
+	if _show_zones:
+		fresh.show_zone(_zones[i], true)
+	_publish()
+	return fresh
+
+
+## Where cards may sit: inside the water, clear of the glass.
+func clamp_position(pos: Vector3, water: AABB) -> Vector3:
+	var half := CARD_SIZE * 0.5
+	return Vector3(
+		clampf(pos.x, water.position.x + half.x, water.end.x - half.x),
+		clampf(pos.y, water.position.y + half.y, water.end.y - half.y),
+		clampf(pos.z, water.position.z + 0.025, front_z - 0.05))
 
 
 ## The trigger zone of a card centred at `pos`: the middle of its footprint,
@@ -125,6 +214,7 @@ func set_enabled(value: bool) -> void:
 		for i in cards.size():
 			cards[i].active = false
 			_release_timers[i] = 0.0
+			_play_ms[i] = -1.0
 		_publish()
 
 
@@ -138,14 +228,22 @@ func _physics_process(delta: float) -> void:
 func update(fish_pos: Vector3, delta: float) -> void:
 	for i in cards.size():
 		var card := cards[i]
+		var sequence := card.binding.kind == CardBinding.Kind.SEQUENCE
+		if _play_ms[i] >= 0.0:
+			_play_ms[i] += delta * 1000.0
+			if _play_ms[i] >= card.binding.duration_ms():
+				_play_ms[i] = -1.0
 		var zone := _zones[i].grow(HYSTERESIS) if card.active else _zones[i]
 		if zone.has_point(fish_pos):
+			if not card.active and sequence:
+				_play_ms[i] = 0.0
 			card.active = true
 			_release_timers[i] = RELEASE_DELAY
 		elif card.active:
 			_release_timers[i] -= delta
 			if _release_timers[i] <= 0.0:
 				card.active = false
+		card.playing = _play_ms[i] >= 0.0
 	_publish()
 
 
@@ -155,11 +253,17 @@ func resend() -> void:
 		client.send_controller_state(_state[0], _state[1], _state[2], _state[3], _state[4], _state[5], _state[6])
 
 
+## Inputs currently pressed on the host, from all cards.
 func held() -> PackedStringArray:
-	var out := PackedStringArray()
-	for card in cards:
-		if card.active and card.input_id not in out:
-			out.append(card.input_id)
+	return _pressed
+
+
+## Cards the fish is in front of, or whose sequence is still playing.
+func engaged_cards() -> Array[FlashCard]:
+	var out: Array[FlashCard] = []
+	for i in cards.size():
+		if cards[i].active or _play_ms[i] >= 0.0:
+			out.append(cards[i])
 	return out
 
 
@@ -169,20 +273,45 @@ func controller_state() -> PackedInt32Array:
 
 
 func toggle_zones() -> void:
-	_show_zones = not _show_zones
+	set_zones_visible(not _show_zones)
+
+
+func set_zones_visible(value: bool) -> void:
+	_show_zones = value
 	for i in cards.size():
 		cards[i].show_zone(_zones[i], _show_zones)
 
 
 func _publish() -> void:
+	var pressed := PackedStringArray()
+	for i in cards.size():
+		var card := cards[i]
+		var ids := PackedStringArray()
+		if card.binding.kind == CardBinding.Kind.SEQUENCE:
+			if _play_ms[i] >= 0.0:
+				ids = card.binding.inputs_at(_play_ms[i])
+		elif card.active:
+			ids = card.binding.inputs
+		for id in ids:
+			if id not in pressed:
+				pressed.append(id)
+	var state := compose_state(pressed)
+	if state == _state:
+		return
+	_state = state
+	_pressed = pressed
+	resend()
+	held_changed.emit(_pressed)
+
+
+## Controller state for a set of pressed inputs. Opposite stick directions
+## cancel out; adjacent ones make a diagonal.
+static func compose_state(pressed: PackedStringArray) -> PackedInt32Array:
 	var buttons := 0
 	var triggers := Vector2i.ZERO
 	var left := Vector2.ZERO
 	var right := Vector2.ZERO
-	for card in cards:
-		if not card.active:
-			continue
-		var id := card.input_id
+	for id in pressed:
 		var info: Dictionary = INPUTS[id]
 		if BUTTON_FLAGS.has(id):
 			buttons |= BUTTON_FLAGS[id]
@@ -198,13 +327,8 @@ func _publish() -> void:
 				right += info.arrow
 	left = left.clamp(-Vector2.ONE, Vector2.ONE)
 	right = right.clamp(-Vector2.ONE, Vector2.ONE)
-	var state := PackedInt32Array([
+	return PackedInt32Array([
 		buttons, triggers.x, triggers.y,
 		int(left.x * STICK_MAX), int(left.y * STICK_MAX),
 		int(right.x * STICK_MAX), int(right.y * STICK_MAX),
 	])
-	if state == _state:
-		return
-	_state = state
-	resend()
-	held_changed.emit(held())

@@ -1,5 +1,6 @@
 extends Node
-## Persistent settings: saved hosts and stream options (user://settings.cfg).
+## Persistent settings: saved hosts, stream options and the card layout in use
+## (user://settings.cfg).
 
 const PATH := "user://settings.cfg"
 
@@ -56,6 +57,29 @@ func stream_options() -> Dictionary:
 		"codec": get_stream("codec", "auto"),
 		"hardware_decode": get_stream("hardware_decode", true),
 	}
+
+
+func layout_preset() -> String:
+	return _cfg.get_value("tank", "layout", LayoutPresets.DEFAULT)
+
+
+func set_layout_preset(preset_name: String) -> void:
+	_cfg.set_value("tank", "layout", preset_name)
+	save()
+
+
+func tracking_enabled() -> bool:
+	return _cfg.get_value("tracking", "enabled", false)
+
+
+func tracking_style() -> int:
+	return _cfg.get_value("tracking", "style", 1) # TrackingCam.Style.EARNEST
+
+
+func set_tracking(enabled: bool, style: int) -> void:
+	_cfg.set_value("tracking", "enabled", enabled)
+	_cfg.set_value("tracking", "style", style)
+	save()
 
 
 func save() -> void:

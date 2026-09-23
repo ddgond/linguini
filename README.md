@@ -4,14 +4,17 @@ A [Moonlight](https://moonlight-stream.org/) game-streaming client, inspired by 
 
 You play from inside a fish tank in a streamer's bedroom. The game stream plays on the monitor across the room. Flash cards in the tank press controller buttons on the host while the fish swims in front of them.
 
-## Status: milestone 1 (vertical slice)
+## Status: milestone 2 (editing, tank cam, room audio)
 
 - Pair with a Sunshine or GeForce Experience host, pick an app and stream it. Video and audio go to the monitor in the room. All of this happens on the monitor itself.
 - **Real Fishy Movement:** the stick or WASD steers from the fish's point of view, not the camera's. Forward swims along its heading, left and right turn it, and back makes it back up slowly. Input is an urge, not a velocity: the fish turns at a limited rate and moves in tail-beat pulses, so it swims in arcs. With no input it drifts.
 - Third-person camera. Hold the gaze button to look past the fish at the monitor.
-- 24 flash cards cover the whole controller.
+- Flash cards cover the whole controller, plus the stick diagonals. Cards can hold several inputs at once (combos) or play a timed macro (sequences).
+- A tank editor (F2) places, rebinds, duplicates and deletes cards, and saves named presets.
+- A **tank cam** window (F4) shows the room camera's view with a fake ML fish-tracking overlay, ready for OBS to capture.
+- Game audio plays from the speakers next to the monitor, and it's muffled while the camera is underwater.
 
-Milestone 2 adds the card editor and presets, the fake ML tracking-camera window, and 3D speaker audio. Milestone 3 is the art pass.
+Milestone 3 is the art pass.
 
 ## Controls
 
@@ -24,17 +27,44 @@ Milestone 2 adds the card editor and presets, the fake ML tracking-camera window
 | Look around | Mouse | Right stick |
 | Watch the monitor | Hold right mouse (or Tab) | Hold LT |
 | Menu | Esc | Start |
+| Edit the tank | F2 | |
+| Tank cam window | F4 | |
 | Show card trigger zones | F3 | |
 
 Your own keyboard and gamepad never reach the host. Only the cards do.
 
 ## Flash cards
 
-The default layout is in `godot/data/layouts/default.json`. Every card faces the front glass, where the room camera is. A card's trigger zone is the middle 90% of its footprint, extruded forward to the glass. From the room camera's point of view, the fish covering a card presses it.
+The built-in Default layout is `godot/data/layouts/default.json`. Every card faces the front glass, where the room camera is. A card's trigger zone is the middle 90% of its footprint, extruded forward to the glass. From the room camera's point of view, the fish covering a card presses it.
 
 - **Pressing:** a card presses as soon as the centre of the fish enters its zone. Fins, tail and the rest of the body don't count. It stays held while the fish stays there.
 - **Releasing:** a card releases once the fish has been out of the zone for 150 ms. The zone also has a 1.5 cm margin while held, so a fish drifting along an edge doesn't make the button flicker.
-- **Stick diagonals:** not supported yet. Stick directions are arranged as a cross with an empty centre, and the corner between two arms presses neither. Diagonals will come with tank editing and macros.
+- **Combos:** a card can hold several inputs together, such as RB + A. Each stick is laid out as a 3×3 grid: the four directions, combo cards for the four diagonals in the corners, and an empty centre.
+- **Sequences:** a card can instead play a timed macro once each time the fish arrives. For example, "B for 80 ms, then RB at 180 ms for 80 ms". Each step holds one input from its start time for its length, and steps can overlap to press inputs together. A sequence finishes even if the fish swims off. Arriving again replays it.
+
+### Tank editor
+
+Press F2, or choose **Edit tank** on the monitor. The fish waits and nothing is sent to the host while you edit.
+- **Moving cards:** click a card to select it, then drag to move it across the tank. Shift+drag moves it nearer or further from the glass. The panel also has exact position fields.
+- **Camera:** right-drag orbits, and the wheel zooms.
+- **Editing a card:** choose **Hold** and pick one or more inputs, or choose **Sequence** and edit its steps. You can give it a name, which is shown on the card.
+- **Card actions:** **+ Add card**, **Duplicate** and **Delete card**.
+- **Presets:** **Load**, **Save**, **Save as** and **Delete**. Default is built in and read-only. Your presets are saved as JSON in the app's user folder under `layouts/`. The preset in use is remembered between sessions.
+
+Esc or **Done** leaves the editor. Changes stay in the tank until you quit, even if they aren't saved.
+
+## Tank cam
+
+The tank cam is a second window, titled "Linguini Tank Cam" and 1280×720, showing the room camera's view of the tank. To stream it, add a **Window Capture** source in OBS and pick that window. Turn it on with F4, or with **Tank cam window** on the monitor menu, which also sets the overlay style.
+
+Nothing in it is machine learning. The "detector" is the fish's real position projected into the camera. Its confidence score drops when a card hides the fish from the camera. There are three styles:
+- **Earnest** (default): a straight-faced research tool. It shows a bounding box with a jittering confidence score, a motion trail, a heatmap of where the fish spends its time, the cards it's engaging, the inputs it's holding, and "TortelliNet-v3 · inference 31.4 fps".
+- **Minimal:** the box, its label and the held inputs.
+- **Over-the-top:** everything in Earnest, plus fake layer activations, an "INTENT" prediction, a scrolling log and scanlines.
+
+## Game audio
+
+The host's audio plays from the two speakers next to the monitor, placed in 3D: the left channel on the left speaker and the right on the right. When the camera is underwater, a low-pass filter muffles everything through the water and glass. It clears when the camera leaves the water, such as in the editor. To hear it without the room, set **Room speakers / Stereo** on the monitor's stream settings to Stereo.
 
 ## Building
 
@@ -61,7 +91,10 @@ LINGUINI_TEST_HOST=192.168.1.20 godot --headless --path godot -s res://tests/run
 
 The tests cover:
 - Fish behaviour: drift, cruise pulses, arcs, dart, backing up, rising.
-- Card timing and geometry, and the controller state sent to the host.
+- Card timing and geometry, combos and sequences, layouts and presets, and the controller state sent to the host.
+- The tank editor: entering and leaving it, card edits, and saving and loading presets.
+- The tank cam's detector: tracking, occlusion and what it reports.
+- Game audio: channel routing and the underwater filter.
 - The decode path, from an H.264 test stream to the Y/UV planes.
 - Host requests.
 - The fish staying inside the tank under physics.

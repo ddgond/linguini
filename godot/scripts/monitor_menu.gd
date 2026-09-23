@@ -6,8 +6,10 @@ extends Control
 
 signal swim_requested
 signal resume_requested
+signal edit_requested
+signal tracking_changed(enabled: bool, style: int)
 
-const CONTROLS_HELP := "Swim, turn  WASD / left stick      Rise / sink  Space, C / RB, LB      Dart  Shift / A\nLook  mouse / right stick      Watch the monitor  hold right mouse / LT      Menu  Esc / Start"
+const CONTROLS_HELP := "Swim, turn  WASD / left stick      Rise / sink  Space, C / RB, LB      Dart  Shift / A\nLook  mouse / right stick      Watch the monitor  hold right mouse / LT      Menu  Esc / Start      Edit tank  F2      Tank cam  F4"
 
 var client: Object
 
@@ -78,6 +80,7 @@ func show_home(message := "") -> void:
 		_label("The native Linguini library isn't loaded, so streaming is unavailable. Build it with `scons`.", 24, Color(1.0, 0.55, 0.45))
 		_spacer()
 		_button("Just swim", func() -> void: swim_requested.emit())
+		_button("Edit tank", func() -> void: edit_requested.emit())
 		_button("Quit", func() -> void: get_tree().quit())
 		_focus_first()
 		return
@@ -109,8 +112,14 @@ func show_home(message := "") -> void:
 	_button("Add & connect", add, add_row)
 
 	_spacer()
-	_button("Just swim", func() -> void: swim_requested.emit())
-	_button("Quit", func() -> void: get_tree().quit())
+	var actions := HBoxContainer.new()
+	actions.add_theme_constant_override("separation", 12)
+	_page.add_child(actions)
+	for entry in [["Just swim", func() -> void: swim_requested.emit()],
+			["Edit tank", func() -> void: edit_requested.emit()],
+			["Quit", func() -> void: get_tree().quit()]]:
+		_button(entry[0], entry[1], actions).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_tracking_row()
 	_label(CONTROLS_HELP, 18, Color(0.65, 0.7, 0.8))
 	_focus_first()
 
@@ -120,6 +129,8 @@ func show_in_stream() -> void:
 	_title("Streaming", _app_name)
 	_stats_label = _label("", 22, Color(0.7, 0.85, 0.9))
 	_button("Resume", func() -> void: resume_requested.emit())
+	_button("Edit tank", func() -> void: edit_requested.emit())
+	_tracking_row()
 	_button("Disconnect", func() -> void: client.stop_stream(false))
 	_button("Quit game and disconnect", func() -> void: client.stop_stream(true))
 	_spacer()
@@ -173,6 +184,7 @@ func _show_apps(message := "") -> void:
 	_option(settings, Settings.FRAME_RATES.map(func(f: int) -> String: return "%d fps" % f), Settings.FRAME_RATES, "fps", 60)
 	_option(settings, Settings.BITRATES_KBPS.map(func(b: int) -> String: return "%d Mbps" % (b / 1000)), Settings.BITRATES_KBPS, "bitrate_kbps", 10000)
 	_option(settings, Settings.CODECS.map(func(c: String) -> String: return c.to_upper()), Settings.CODECS, "codec", "auto")
+	_option(settings, ["Room speakers", "Stereo"], ["room", "stereo"], "audio", "room")
 
 	_spacer()
 	var row := HBoxContainer.new()
@@ -193,6 +205,29 @@ func _show_launching() -> void:
 	_title("Starting " + _app_name, _host)
 	_stage_label = _label("Launching on host…", 28, Color.WHITE)
 	_focus_first()
+
+
+## "Tank cam" on/off plus its overlay style (the OBS-capturable window).
+func _tracking_row() -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	_page.add_child(row)
+	var toggle := Button.new()
+	toggle.toggle_mode = true
+	toggle.button_pressed = Settings.tracking_enabled()
+	toggle.text = "Tank cam window: " + ("on" if toggle.button_pressed else "off")
+	row.add_child(toggle)
+	var style := OptionButton.new()
+	for n in TrackingCam.STYLE_NAMES:
+		style.add_item(n)
+	style.selected = Settings.tracking_style()
+	row.add_child(style)
+	var apply := func() -> void:
+		toggle.text = "Tank cam window: " + ("on" if toggle.button_pressed else "off")
+		Settings.set_tracking(toggle.button_pressed, style.selected)
+		tracking_changed.emit(toggle.button_pressed, style.selected)
+	toggle.toggled.connect(func(_on: bool) -> void: apply.call())
+	style.item_selected.connect(func(_i: int) -> void: apply.call())
 
 
 # --- actions ---
