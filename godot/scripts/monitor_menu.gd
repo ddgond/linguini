@@ -78,6 +78,7 @@ func show_home(message := "") -> void:
 		_label("The native Linguini library isn't loaded, so streaming is unavailable. Build it with `scons`.", 24, Color(1.0, 0.55, 0.45))
 		_spacer()
 		_button("Just swim", func() -> void: swim_requested.emit())
+		_button("Quit", func() -> void: get_tree().quit())
 		_focus_first()
 		return
 
@@ -109,6 +110,7 @@ func show_home(message := "") -> void:
 
 	_spacer()
 	_button("Just swim", func() -> void: swim_requested.emit())
+	_button("Quit", func() -> void: get_tree().quit())
 	_label(CONTROLS_HELP, 18, Color(0.65, 0.7, 0.8))
 	_focus_first()
 

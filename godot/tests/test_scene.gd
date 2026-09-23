@@ -1,6 +1,6 @@
 extends "res://tests/test_case.gd"
-## The assembled room: the fish under real physics can't leave the water, and
-## swimming into a card zone presses it.
+## The assembled room: the fish under real physics can't leave the water,
+## swimming into a card zone presses it, and the home menu offers a way out.
 
 
 func _main() -> Node3D:
@@ -49,4 +49,11 @@ func test_swimming_into_a_card_presses_it() -> void:
 			pressed = true
 			break
 	check(pressed, "swimming up into B's zone presses B (fish at %s, held %s)" % [fish.position, cards.held()])
+	main.queue_free()
+
+
+func test_home_menu_offers_quit() -> void:
+	var main := await _main()
+	var buttons: Array = main.menu.find_children("*", "Button", true, false).map(func(b: Button) -> String: return b.text)
+	check("Quit" in buttons, "home menu has a Quit button (buttons: %s)" % [buttons])
 	main.queue_free()
