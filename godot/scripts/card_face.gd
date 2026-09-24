@@ -34,6 +34,10 @@ static func request(p_binding: CardBinding, p_color: Color, card_size: Vector2, 
 		_waiting[key].append(done)
 		return
 	_waiting[key] = [done]
+	if DisplayServer.get_name() == "headless":
+		# Nothing draws headless, so frame_post_draw never comes.
+		_finish(key, _plain_paper())
+		return
 	var face := CardFace.new()
 	face.binding = p_binding
 	face.color = p_color
@@ -65,16 +69,23 @@ static func _render(key: String, face: CardFace) -> void:
 		img.generate_mipmaps()
 		texture = ImageTexture.create_from_image(img)
 	else:
-		# No renderer (headless): a plain paper texture.
-		var plain := Image.create(4, 4, false, Image.FORMAT_RGB8)
-		plain.fill(PAPER)
-		texture = ImageTexture.create_from_image(plain)
+		texture = _plain_paper()
 	vp.queue_free()
+	_finish(key, texture)
+
+
+static func _finish(key: String, texture: Texture2D) -> void:
 	_cache[key] = texture
 	for done: Callable in _waiting.get(key, []):
 		if done.is_valid():
 			done.call(texture)
 	_waiting.erase(key)
+
+
+static func _plain_paper() -> Texture2D:
+	var plain := Image.create(4, 4, false, Image.FORMAT_RGB8)
+	plain.fill(PAPER)
+	return ImageTexture.create_from_image(plain)
 
 
 func _draw() -> void:

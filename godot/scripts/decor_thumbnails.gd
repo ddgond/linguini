@@ -19,6 +19,10 @@ static func request(id: String, host: Node, done: Callable) -> void:
 		_waiting[id].append(done)
 		return
 	_waiting[id] = [done]
+	if DisplayServer.get_name() == "headless":
+		# Nothing draws headless, so frame_post_draw never comes.
+		_finish(id, _blank())
+		return
 	_render(id, host)
 
 
@@ -76,11 +80,18 @@ static func _render(id: String, host: Node) -> void:
 	if img != null and not img.is_empty():
 		texture = ImageTexture.create_from_image(img)
 	else:
-		var blank := Image.create(SIZE, SIZE, false, Image.FORMAT_RGBA8)
-		texture = ImageTexture.create_from_image(blank)
+		texture = _blank()
 	vp.queue_free()
+	_finish(id, texture)
+
+
+static func _finish(id: String, texture: Texture2D) -> void:
 	_cache[id] = texture
 	for done: Callable in _waiting.get(id, []):
 		if done.is_valid():
 			done.call(texture)
 	_waiting.erase(id)
+
+
+static func _blank() -> Texture2D:
+	return ImageTexture.create_from_image(Image.create(SIZE, SIZE, false, Image.FORMAT_RGBA8))
