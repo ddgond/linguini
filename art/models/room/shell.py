@@ -39,13 +39,17 @@ def _wall_with_window(mat):
     h = L.ROOM_MAX[1]
     t = L.WALL
     wz = z - t / 2
-    wl = L.WINDOW_CENTER_X - L.WINDOW_WIDTH / 2
-    wr = L.WINDOW_CENTER_X + L.WINDOW_WIDTH / 2
+    # The opening's edges stop inside the window frame (0.06 thick) and the
+    # sill, so no wall face is coplanar with theirs.
+    wl = L.WINDOW_CENTER_X - L.WINDOW_WIDTH / 2 - 0.03
+    wr = L.WINDOW_CENTER_X + L.WINDOW_WIDTH / 2 + 0.03
+    low = L.WINDOW_SILL - 0.0175
+    top = L.WINDOW_TOP + 0.03
     parts = [
         gbox("BackWallL", (wl - x0, h, t), ((x0 + wl) / 2, h / 2, wz), mat, 0.0),
         gbox("BackWallR", (x1 - wr, h, t), ((wr + x1) / 2, h / 2, wz), mat, 0.0),
-        gbox("BackWallLow", (wr - wl, L.WINDOW_SILL, t), (L.WINDOW_CENTER_X, L.WINDOW_SILL / 2, wz), mat, 0.0),
-        gbox("BackWallHigh", (wr - wl, h - L.WINDOW_TOP, t), (L.WINDOW_CENTER_X, (h + L.WINDOW_TOP) / 2, wz), mat, 0.0),
+        gbox("BackWallLow", (wr - wl, low, t), (L.WINDOW_CENTER_X, low / 2, wz), mat, 0.0),
+        gbox("BackWallHigh", (wr - wl, h - top, t), (L.WINDOW_CENTER_X, (h + top) / 2, wz), mat, 0.0),
     ]
     return parts
 

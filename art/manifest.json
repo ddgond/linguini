@@ -57,7 +57,7 @@
   },
   "room": {
     "output": "art/room/room.glb",
-    "inputs": "c48935435ece64b5"
+    "inputs": "5cb6cd1be3341b61"
   },
   "sign": {
     "output": "art/decor/sign.glb",
