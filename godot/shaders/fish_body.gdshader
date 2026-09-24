@@ -20,8 +20,24 @@ void vertex() {
 	world_normal = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
 }
 
+// Overlapping scales, row on row, drawn here rather than sampled (the
+// texture's rows blurred into stripes). UV runs u round the body, v along it.
+float scale_pattern(vec2 uv) {
+	vec2 g = vec2(uv.x * 1.7, uv.y * 2.4);
+	float row = floor(g.y);
+	g.x += 0.5 * mod(row, 2.0);
+	vec2 f = vec2(fract(g.x) - 0.5, fract(g.y));
+	// Each scale is an arc open toward the tail, its free edge a little darker.
+	float d = length(vec2(f.x, (1.0 - f.y) * 1.1));
+	vec2 fw = fwidth(g);
+	float edge = smoothstep(0.42 - fw.x, 0.5, d);
+	float shade = 0.95 + 0.08 * (1.0 - f.y) - 0.12 * edge;
+	// Finer than a couple of pixels, the pattern fades to its average.
+	return mix(shade, 0.97, smoothstep(0.25, 0.6, max(fw.x, fw.y)));
+}
+
 void fragment() {
-	float s = mix(1.0, texture(scales, UV).r, scale_strength);
+	float s = mix(1.0, scale_pattern(UV), scale_strength);
 	ALBEDO = COLOR.rgb * s;
 	ROUGHNESS = roughness;
 	CLEARCOAT = clearcoat;

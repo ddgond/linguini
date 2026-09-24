@@ -13,6 +13,8 @@ extends Node3D
 ##   --swim                 start swimming instead of in the menu
 ##   --test-video=PATH      loop an H.264/HEVC elementary stream on the monitor
 ##   --fish=X,Y,Z[,YAW]     place the fish (tank space, yaw in degrees)
+##   --fish-pose=EFFORT[,TURN]  hold the fish in place, swimming at EFFORT (0..1)
+##                          and turning at TURN rad/s
 ##   --gaze                 hold the gaze button
 ##   --zones                show card trigger zones
 ##   --room-camera          view through the room camera
@@ -321,6 +323,10 @@ func _apply_args() -> void:
 			fish.yaw = deg_to_rad(v[3])
 		fish.global_basis = Basis.from_euler(Vector3(0, fish.yaw, 0))
 		camera.orbit_yaw = fish.yaw
+	if _args.has("fish-pose"):
+		var p: PackedFloat64Array = String(_args["fish-pose"]).split_floats(",")
+		fish.pose_effort = p[0]
+		fish.pose_turn = p[1] if p.size() > 1 else 0.0
 	if _args.has("test-video") and client:
 		client.play_test_file(_args["test-video"], 30.0)
 		monitor.show_video = true

@@ -66,6 +66,11 @@ var tail_phase := 0.0
 var fin_phase := 0.0
 var dart_timer := 0.0
 
+## For screenshots: when 0 or more, the fish holds its place but keeps
+## swimming in place at this effort, turning at pose_turn rad/s.
+var pose_effort := -1.0
+var pose_turn := 0.0
+
 var _time := 0.0
 var _noise := FastNoiseLite.new()
 
@@ -79,6 +84,9 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if pose_effort >= 0.0:
+		_hold_pose(delta)
+		return
 	if player_control:
 		read_player_input()
 	simulate(delta)
@@ -211,3 +219,10 @@ func _idle_steer() -> float:
 	var to_center := inner.get_center() - global_position
 	var target := atan2(-to_center.x, -to_center.z)
 	return clampf(angle_difference(yaw, target), -1.0, 1.0) * 0.8
+
+
+func _hold_pose(delta: float) -> void:
+	effort = pose_effort
+	yaw_rate = pose_turn
+	tail_phase = fmod(tail_phase + TAU * lerpf(tail_freq_idle, tail_freq_max, effort) * delta, TAU * 64.0)
+	fin_phase += TAU * 2.0 * delta

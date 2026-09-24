@@ -1,6 +1,6 @@
 {
   "project": "Linguini",
-  "now": "4f",
+  "now": "4g",
   "milestones": [
     {
       "id": "1",
@@ -385,31 +385,35 @@
     {
       "id": "4f",
       "title": "Fish polish",
-      "status": "in-progress",
+      "status": "done",
       "summary": "A friendlier face and a more natural swim.",
       "items": [
         {
-          "text": "Mouth: lips and a proper mouth instead of the puckered point",
-          "status": "planned"
+          "text": "Mouth: a blunt, rounded snout with an upper and a fuller lower lip over a dark mouth, instead of the puckered point; the lower lip drops now and then in a gulp",
+          "status": "done"
         },
         {
-          "text": "Body shape: softer peduncle, less conical",
-          "status": "planned"
+          "text": "Eyes: crisp gold irises, a darker rim and round pupils as their own caps (painted vertices left them jagged)",
+          "status": "done"
         },
         {
-          "text": "Swimming: spine bending with rotated cross-sections and corrected normals (no bulging)",
-          "status": "planned"
+          "text": "Body: a fantail's egg that stays full and pinches into the peduncle rather than a cone; procedural scales",
+          "status": "done"
         },
         {
-          "text": "Frame strips of the swim cycle for review",
-          "status": "planned"
+          "text": "Swimming: the spine bends and cross-sections turn with it (no shearing); the fin flutter weights were upside down (glTF flips v), so the whole body pulsed; fixed",
+          "status": "done"
+        },
+        {
+          "text": "--fish-pose to hold the fish swimming in place for screenshots; frame strips of the swim and a gulp",
+          "status": "done"
         }
       ]
     },
     {
       "id": "4g",
       "title": "Polish pass",
-      "status": "planned",
+      "status": "in-progress",
       "summary": "Look at everything together, from every angle and mood; performance on each quality level.",
       "items": [
         {
