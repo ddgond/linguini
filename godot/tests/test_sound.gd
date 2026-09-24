@@ -85,6 +85,14 @@ func test_dart_kick() -> void:
 	main.queue_free()
 
 
+func test_up_close_is_no_louder_than_its_level() -> void:
+	# The fish hears its own swishes from zero distance, where Godot's distance
+	# gain is unbounded; they must stay at their own level, not the +3 dB cap.
+	var p := Sound.play_at("swish_1", Vector3.ZERO, -20.0)
+	check(p.max_db <= -20.0, "a one-shot's ceiling is its own volume (%.1f dB)" % p.max_db)
+	p.queue_free()
+
+
 func test_motes_and_shafts_follow_quality() -> void:
 	var original: String = Quality.setting
 	var main := await _main()

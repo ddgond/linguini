@@ -117,13 +117,17 @@ func stream(sound_name: String, loop := false) -> AudioStream:
 	return _streams[key]
 
 
-## Plays a one-shot at a point in the world (Room bus). `pitch_jitter` varies
-## the pitch a little so repeats don't sound mechanical.
+## Plays a one-shot at a point in the world (Room bus), at `volume_db` from
+## up close, quieter further off. `pitch_jitter` varies the pitch a little so
+## repeats don't sound mechanical.
 func play_at(sound_name: String, pos: Vector3, volume_db := 0.0, pitch_jitter := 0.06, unit_size := 1.5) -> AudioStreamPlayer3D:
 	var p := AudioStreamPlayer3D.new()
 	p.stream = stream(sound_name)
 	p.bus = "Room"
 	p.volume_db = volume_db
+	# Heard up close (the fish's own sounds, from its ears) a sound would
+	# otherwise swell to Godot's +3 dB ceiling whatever its volume.
+	p.max_db = volume_db
 	p.unit_size = unit_size
 	p.pitch_scale = 1.0 + randf_range(-pitch_jitter, pitch_jitter)
 	p.attenuation_filter_cutoff_hz = CLEAR_HZ  # the Water bus does the muffling

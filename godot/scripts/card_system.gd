@@ -245,7 +245,7 @@ func update(fish_pos: Vector3, delta: float) -> void:
 			_play_ms[i] += delta * 1000.0
 			for step: Dictionary in card.binding.steps:
 				if step.at > before and step.at <= _play_ms[i]:
-					_sound(card, "seq_tick", -8.0)
+					_sound(card, "seq_tick", -11.0)
 			if _play_ms[i] >= card.binding.duration_ms():
 				_play_ms[i] = -1.0
 		var zone := _zones[i].grow(HYSTERESIS) if card.active else _zones[i]
@@ -255,14 +255,14 @@ func update(fish_pos: Vector3, delta: float) -> void:
 					_play_ms[i] = 0.0
 				elif kind == CardBinding.Kind.TOGGLE:
 					_latched[i] = not _latched[i]
-				_sound(card, "card_press", -4.0)
+				_sound(card, "card_press", -12.0)
 			card.active = true
 			_release_timers[i] = RELEASE_DELAY
 		elif card.active:
 			_release_timers[i] -= delta
 			if _release_timers[i] <= 0.0:
 				card.active = false
-				_sound(card, "card_release", -9.0)
+				_sound(card, "card_release", -7.0)
 		card.playing = _play_ms[i] >= 0.0
 		card.latched = _latched[i]
 		if kind == CardBinding.Kind.SEQUENCE:

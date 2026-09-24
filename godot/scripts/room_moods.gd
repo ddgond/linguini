@@ -17,7 +17,7 @@ const MOODS := {
 		"ambient": [Color(0.42, 0.45, 0.7), 0.22],
 		"window": [Color(0.55, 0.65, 1.0), 0.12, Vector3(0.0, -0.5, 1.0)],
 		"lamps": 0.9, "fairy": 0.35, "accent": 0.9, "tank": 1.7, "screen": 0.6,
-		"tone": {"fan": -8.0, "city": -2.0},
+		"tone": {"fan": -13.0, "city": -20.5},
 	},
 	"rainy": {
 		"exposure": 1.0, "view": 0.9, "rain": 1.0,
@@ -27,7 +27,7 @@ const MOODS := {
 		"ambient": [Color(0.6, 0.66, 0.78), 0.35],
 		"window": [Color(0.7, 0.78, 0.92), 0.35, Vector3(0.0, -0.4, 1.0)],
 		"lamps": 0.9, "fairy": 0.35, "accent": 0.35, "tank": 1.4, "screen": 0.45,
-		"tone": {"fan": -12.0, "rain": 2.0},
+		"tone": {"fan": -17.0, "rain": -27.0},
 	},
 	"golden": {
 		"exposure": 1.25, "view": 1.0, "rain": 0.0,
@@ -37,7 +37,7 @@ const MOODS := {
 		"ambient": [Color(1.0, 0.82, 0.66), 0.35],
 		"window": [Color(1.0, 0.72, 0.45), 1.6, Vector3(-0.3, -0.75, 1.0)],
 		"lamps": 0.0, "fairy": 0.1, "accent": 0.15, "tank": 0.9, "screen": 0.35,
-		"tone": {"fan": -14.0, "birds": 0.0, "breeze": -4.0},
+		"tone": {"fan": -19.0, "birds": -25.5, "breeze": -19.5},
 	},
 }
 

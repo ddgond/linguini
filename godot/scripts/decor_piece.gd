@@ -87,9 +87,9 @@ func _build() -> void:
 	if not quiet:
 		# Bubbles sound as busy as they look; the filter trickles.
 		if bubble_rate > 0.0:
-			Sound.loop_on(self, "bubbles", -22.0 + 10.0 * log(bubble_rate) / log(10.0), 0.8)
+			Sound.loop_on(self, "bubbles", -40.0 + 10.0 * log(bubble_rate) / log(10.0), 0.8)
 		if info().get("spill", false):
-			Sound.loop_on(self, "trickle", -8.0, 0.8)
+			Sound.loop_on(self, "trickle", -32.0, 0.8)
 	if info().has("glow"):
 		_glow = OmniLight3D.new()
 		_glow.light_color = _colour(colours.get(info().glow, "#ff7b2b"))

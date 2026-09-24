@@ -251,7 +251,7 @@ func _tank() -> void:
 	result.atmosphere = atmosphere
 
 	# The lamp's ballast and the pump, humming softly.
-	Sound.loop_on(tank, "tank_hum", -10.0, 1.0)
+	Sound.loop_on(tank, "tank_hum", -21.0, 1.0)
 
 
 ## The monitor's picture (the room model has the monitor itself), its glow
