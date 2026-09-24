@@ -184,6 +184,25 @@ void fragment() {
 		albedo *= mix(1.0, 0.6, puddle * wet);
 		gloss_amt = max(gloss_amt, mix(0.3, 1.0, puddle) * wet * flatness);
 		spec = mix(spec, 0.8, wet * flatness);
+		// Raindrops ringing the puddles (and, fainter, all wet ground).
+		if (flatness > 0.5) {
+			vec2 dn = vec2(0.0);
+			for (int layer = 0; layer < 2; layer++) {
+				vec2 p = local_pos.xz * 1.7 + float(layer) * vec2(0.37, 0.61);
+				vec2 cell = floor(p);
+				vec2 c = vec2(s_hash(cell + 1.3), s_hash(cell + 7.1)) * 0.6 + 0.2;
+				float period = 0.9 + 0.8 * s_hash(cell + 4.4);
+				float age = fract(TIME / period + s_hash(cell + 9.2));
+				vec2 d = fract(p) - c;
+				float r = length(d) / 1.7;
+				float front = age * 0.18;
+				float ring = cos((r - front) * 110.0) * smoothstep(0.03, 0.0, abs(r - front)) * (1.0 - age);
+				dn += normalize(d + 1e-4) * ring;
+			}
+			float amount = mix(0.15, 1.0, puddle) * wet * flatness * detail_fade(fwidth(local_pos.x) * 30.0);
+			n = normalize(n + vec3(dn.x, 0.0, dn.y) * 0.25 * amount);
+			NORMAL = normalize((VIEW_MATRIX * vec4(n, 0.0)).xyz);
+		}
 	}
 
 	ALBEDO = albedo;

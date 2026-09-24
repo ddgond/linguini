@@ -54,9 +54,10 @@ float s_fbm(vec2 p) {
 vec3 street_sky(vec3 d) {
 	float h = clamp(d.y, -0.2, 1.0);
 	vec3 c = mix(street_sky_horizon.rgb, street_sky_zenith.rgb, pow(clamp(h, 0.0, 1.0), 0.55));
-	// A glow around the sun, low in the sky.
+	// A wide glow toward the sun, strongest low in the sky.
 	float s = max(dot(d, normalize(street_sun_dir)), 0.0);
-	c += street_sun_color.rgb * pow(s, 8.0) * 0.35 * (1.0 - street_night);
+	float low = 1.0 - clamp(d.y, 0.0, 1.0) * 0.6;
+	c += street_sun_color.rgb * (pow(s, 4.0) * 0.5 + pow(s, 24.0) * 0.8) * low * (1.0 - street_night);
 	// Below the horizon, the far city: the haze colour.
 	c = mix(c, street_haze.rgb, smoothstep(0.02, -0.12, d.y));
 	return c;

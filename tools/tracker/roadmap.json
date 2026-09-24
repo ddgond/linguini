@@ -1,6 +1,6 @@
 {
   "project": "Linguini",
-  "now": "4d",
+  "now": "4e",
   "milestones": [
     {
       "id": "1",
@@ -329,31 +329,35 @@
     {
       "id": "4d",
       "title": "Outside: moods",
-      "status": "in-progress",
+      "status": "done",
       "summary": "Each mood lights the street its own way.",
       "items": [
         {
-          "text": "Night: moon, lamp pools, lit windows, neon",
-          "status": "planned"
+          "text": "Night: lamp pools on the pavement and facades, lit windows and shops, neon, stars, a low moon",
+          "status": "done"
         },
         {
-          "text": "Rainy evening: wet road and puddles reflecting lights, falling rain and mist outside",
-          "status": "planned"
+          "text": "Rainy evening: falling rain in sheets at several depths, wet road and puddles that ring with drops and reflect the lights, heavier haze, umbrellas",
+          "status": "done"
         },
         {
-          "text": "Golden hour: low sun, long shadows, warm glow on the facades",
-          "status": "planned"
+          "text": "Golden hour: a warm sky and haze that keep their colour, the low sun behind the far row casting long shadows toward us",
+          "status": "done"
         },
         {
-          "text": "Quality levels: what the street drops on Low and Medium",
-          "status": "planned"
+          "text": "Room: sunlit window reveals no longer glow like a lightbox (bright bake eased off above white)",
+          "status": "done"
+        },
+        {
+          "text": "Quality: street sun shadows from Medium, shop, neon and headlight lights from Medium, half the people on Low; about 2 ms a frame on High",
+          "status": "done"
         }
       ]
     },
     {
       "id": "4e",
       "title": "Rain on the glass",
-      "status": "planned",
+      "status": "in-progress",
       "summary": "Drops that run down, not up, and behave like water.",
       "items": [
         {

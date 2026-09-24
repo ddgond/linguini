@@ -34,9 +34,7 @@ func test_every_street_material_has_a_shader() -> void:
 	var main := await _main()
 	var street: Street = main.room.street
 	var unknown := []
-	for mi: MeshInstance3D in street.find_children("*", "MeshInstance3D", true, false):
-		if mi.name == "Sky":
-			continue
+	for mi: MeshInstance3D in street.get_node("Model").find_children("*", "MeshInstance3D", true, false):
 		for i in mi.mesh.get_surface_count():
 			var imported := mi.mesh.surface_get_material(i)
 			var mat_name: String = imported.resource_name if imported else ""

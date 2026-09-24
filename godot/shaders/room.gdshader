@@ -24,6 +24,13 @@ void fragment() {
 		base *= texture(albedo_texture, UV).rgb;
 	}
 	vec3 baked = texture(lightmap, UV2).rgb * exposure;
+	// Ease off light above white (sunlit window reveals bake several times
+	// brighter than white and bloomed into a lightbox), keeping its colour.
+	float lum = max(max(baked.r, baked.g), baked.b);
+	if (lum > 1.0) {
+		float over = lum - 1.0;
+		baked *= (1.0 + over / (1.0 + over * 0.9)) / lum;
+	}
 	ALBEDO = base;
 	ROUGHNESS = roughness;
 	SPECULAR = 0.3;
