@@ -34,6 +34,7 @@ var _host := ""
 var _host_info := {}
 var _apps: Array = []
 var _app_name := ""
+var _notice := "" ## shown on the apps page once they've reloaded
 var _stage_label: Label
 var _stats_label: Label
 var _idle := false
@@ -76,12 +77,23 @@ func _ready() -> void:
 	rule.custom_minimum_size = Vector2(0, 2)
 	rule.color = Color(1, 1, 1, 0.06)
 	outer.add_child(rule)
+	# A page taller than the window scrolls rather than running under the taskbar.
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	outer.add_child(scroll)
+	var gutter := MarginContainer.new() # keeps the scrollbar off the buttons
+	gutter.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	gutter.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	gutter.add_theme_constant_override("margin_right", 10)
+	scroll.add_child(gutter)
 	_page = VBoxContainer.new()
-	_page.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_page.add_theme_constant_override("separation", 14)
-	outer.add_child(_page)
+	gutter.add_child(_page)
 	_status = _plain_label("", 22, UiStyle.DANGER, 600)
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_status.visible = false
 	outer.add_child(_status)
 
 	_idle_note = PanelContainer.new()
@@ -111,6 +123,7 @@ func _ready() -> void:
 
 func _taskbar() -> void:
 	var bar := PanelContainer.new()
+	bar.name = "Taskbar"
 	bar.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	bar.offset_top = -58
 	var sb := UiStyle.box(Color(0.05, 0.055, 0.085, 0.92), 0, 10)
@@ -168,6 +181,7 @@ func _process(_delta: float) -> void:
 # --- pages ---
 
 func show_home(message := "") -> void:
+	_notice = ""
 	_begin_page(message)
 	_title("Linguini", "a Moonlight client for fish")
 
@@ -209,29 +223,27 @@ func show_home(message := "") -> void:
 	_button("Add & connect", add, add_row)
 
 	_spacer()
-	var actions := HBoxContainer.new()
-	actions.add_theme_constant_override("separation", 12)
-	_page.add_child(actions)
-	for entry in [["Just swim", func() -> void: swim_requested.emit()],
+	_button_row([["Just swim", func() -> void: swim_requested.emit()],
 			["Edit tank", func() -> void: edit_requested.emit()],
-			["Quit", func() -> void: get_tree().quit()]]:
-		_button(entry[0], entry[1], actions).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			["Quit", func() -> void: get_tree().quit()]])
 	_tracking_row()
 	_volume_row()
 	_controls_help()
 	_focus_first()
 
 
+## Kept to fit the window: the taskbar already says we're live, so the title
+## is the game and the stream's stats go beside it.
 func show_in_stream() -> void:
 	_begin_page()
-	_title("Streaming", _app_name)
-	_stats_label = _label("", 22, UiStyle.MUTED)
-	_button("Resume", func() -> void: resume_requested.emit())
-	_button("Edit tank", func() -> void: edit_requested.emit())
+	_title(_app_name, "")
+	_stats_label = _window_subtitle
+	_button_row([["Resume", func() -> void: resume_requested.emit()],
+			["Edit tank", func() -> void: edit_requested.emit()]])
 	_tracking_row()
 	_volume_row()
-	_button("Disconnect", func() -> void: client.stop_stream(false))
-	_button("Quit game and disconnect", func() -> void: client.stop_stream(true))
+	_button_row([["Disconnect", func() -> void: client.stop_stream(false)],
+			["Quit game and disconnect", func() -> void: client.stop_stream(true)]])
 	_spacer()
 	_controls_help()
 	_focus_first()
@@ -437,7 +449,8 @@ func _on_apps_ready(apps: Array) -> void:
 		return
 	_pending = ""
 	_apps = apps
-	_show_apps()
+	_show_apps(_notice)
+	_notice = ""
 
 
 func _on_request_failed(request: String, message: String) -> void:
@@ -448,7 +461,8 @@ func _on_request_failed(request: String, message: String) -> void:
 		_pending = ""
 		show_home("%s: %s" % [_host, message])
 	elif request == "quit":
-		_status.text = "Couldn't quit the game: " + message
+		_notice = "Couldn't quit the game: " + message
+		_set_status(_notice)
 
 
 func _on_stream_stage(stage: String) -> void:
@@ -463,7 +477,10 @@ func _on_stream_started() -> void:
 
 func _on_stream_ended(error_code: int, message: String) -> void:
 	_stats_label = null
-	_show_apps("" if error_code == 0 else message)
+	# Ask the host again what's running: the game may have been quit, by us or
+	# on the host, or left running to resume.
+	_notice = "" if error_code == 0 else message
+	_connect(_host)
 
 
 # --- building blocks ---
@@ -473,7 +490,12 @@ func _begin_page(message := "") -> void:
 	_stats_label = null
 	for child in _page.get_children():
 		child.queue_free()
+	_set_status(message)
+
+
+func _set_status(message: String) -> void:
 	_status.text = message
+	_status.visible = message != ""
 
 
 func _title(text: String, subtitle: String) -> void:
@@ -535,6 +557,15 @@ func _button(text: String, callback: Callable, parent: Control = null) -> Button
 	b.pressed.connect(callback)
 	(parent if parent else _page).add_child(b)
 	return b
+
+
+## Buttons sharing a row equally, from [text, callback] pairs.
+func _button_row(entries: Array) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	_page.add_child(row)
+	for entry: Array in entries:
+		_button(entry[0], entry[1], row).size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 
 func _option(parent: Control, labels: Array, values: Array, key: String, default: Variant) -> void:

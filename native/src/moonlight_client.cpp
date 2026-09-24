@@ -404,6 +404,10 @@ void MoonlightClient::stop_stream(bool quit_app) {
 			int ret = gs_quit_app(&server);
 			if (ret != GS_OK) {
 				emit_deferred("request_failed", "quit", gs_message(ret));
+			} else {
+				// gs_quit_app leaves currentGame set, and gs_start_app would then
+				// ask the host to resume a game that's gone.
+				server.currentGame = 0;
 			}
 		}
 	});
