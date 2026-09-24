@@ -29,10 +29,12 @@ const LAYER := 4
 ## Surface materials: shader kind (street_surface.gdshader), roughness, metallic, gloss.
 const SURFACES := {
 	"Brick": [1, 0.9, 0.0, 0.0], "Stucco": [10, 0.85, 0.0, 0.0], "Stone": [11, 0.8, 0.0, 0.0],
+	"Siding": [13, 0.8, 0.0, 0.0], "GhostPaint": [14, 0.9, 0.0, 0.0],
 	"Trim": [0, 0.55, 0.0, 0.05], "Wood": [12, 0.6, 0.0, 0.03], "Roof": [4, 0.95, 0.0, 0.0],
 	"Asphalt": [2, 0.9, 0.0, 0.0], "Concrete": [3, 0.9, 0.0, 0.0], "Curb": [11, 0.85, 0.0, 0.0],
 	"RoadPaint": [0, 0.7, 0.0, 0.0], "Soil": [0, 1.0, 0.0, 0.0], "Metal": [5, 0.45, 0.6, 0.1],
 	"MetalPaint": [0, 0.4, 0.0, 0.1], "Iron": [0, 0.55, 0.3, 0.0], "Brass": [0, 0.3, 1.0, 0.1],
+	"Grate": [0, 0.75, 0.0, 0.0],
 	"Wire": [0, 0.6, 0.0, 0.0], "Bark": [6, 0.95, 0.0, 0.0], "Foliage": [0, 0.8, 0.0, 0.0],
 	"Awning": [7, 0.9, 0.0, 0.0], "SignPaint": [0, 0.5, 0.0, 0.0], "SignalHousing": [0, 0.6, 0.0, 0.0],
 	"CarPaint": [8, 0.3, 0.3, 0.6], "CarGlass": [9, 0.05, 0.0, 1.0], "Rubber": [0, 0.9, 0.0, 0.0],
@@ -360,7 +362,8 @@ func _spawn(lane_index: int) -> void:
 	holder.rotation.y = 0.0 if dir > 0.0 else PI
 	var paints := [Color(0.75, 0.75, 0.74), Color(0.35, 0.37, 0.4), Color(0.04, 0.04, 0.05), Color(0.08, 0.12, 0.25),
 		Color(0.5, 0.06, 0.05), Color(0.1, 0.2, 0.14), Color(0.95, 0.72, 0.1), Color(0.8, 0.8, 0.8)]
-	body.set_instance_shader_parameter("paint", paints[_rng.randi() % paints.size()])
+	var taxi: bool = info.get("taxi", false)
+	body.set_instance_shader_parameter("paint", Color.WHITE if taxi else paints[_rng.randi() % paints.size()])
 	# Headlights on the road ahead.
 	var beam := SpotLight3D.new()
 	beam.light_cull_mask = LAYER

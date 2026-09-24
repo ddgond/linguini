@@ -99,10 +99,10 @@ def build(b, rng, layout):
     # Manholes and drains.
     iron = lin((0.12, 0.12, 0.12))
     for x, z in ((-7.5, zc + 1.6), (6.0, zc - 1.8), (-31.0, zc + 1.4), (27.0, zc - 1.2), (14.0, -45.0)):
-        _disc(b, x, z, 0.33, "Metal", iron)
+        _disc(b, x, z, 0.33, "Grate", iron)
     for x in range(int(x0), int(x1), 23):
         for z, d in ((S.NEAR_CURB_Z - 0.02, -1), (S.FAR_CURB_Z + 0.02, 1)):
-            b.box((x, S.ROAD_Y + 0.001, min(z, z + d * 0.4)), (x + 0.9, S.ROAD_Y + 0.006, max(z, z + d * 0.4)), "Metal",
+            b.box((x, S.ROAD_Y + 0.001, min(z, z + d * 0.4)), (x + 0.9, S.ROAD_Y + 0.006, max(z, z + d * 0.4)), "Grate",
                   col=iron, skip=("bottom",))
 
     # Tree pits in our sidewalk and the far one (trees themselves are props).

@@ -1,6 +1,6 @@
 {
   "project": "Linguini",
-  "now": "4b",
+  "now": "4c",
   "milestones": [
     {
       "id": "1",
@@ -261,31 +261,43 @@
     {
       "id": "4b",
       "title": "Outside: buildings",
-      "status": "in-progress",
+      "status": "done",
       "summary": "Facades that read as a real neighbourhood: brick rowhouses and a corner shop, with rooms behind the windows.",
       "items": [
         {
-          "text": "Facade kit: brick and stucco, cornices, lintels and sills, stoops, bay windows, fire escapes",
-          "status": "planned"
+          "text": "Facade kit: brick, stucco and clapboard, cornices with brackets and dentils, flat, hooded and arched lintels, stoops, bay windows, fire escapes",
+          "status": "done"
         },
         {
-          "text": "Window rooms: interior-mapped rooms behind the glass, some lit, curtains and blinds, sky reflections",
-          "status": "planned"
+          "text": "Window rooms: interior-mapped rooms behind the glass, lit by mood, with curtains, blinds and sheers, TVs, and cats and plants on the sills; sky reflections",
+          "status": "done"
         },
         {
-          "text": "Ground floor shops: awnings, signs, neon, shop windows",
-          "status": "planned"
+          "text": "Ground floor shops: awnings, painted signs, neon in the windows, a RAMEN blade sign, shelves and counters inside, a laundromat with washers",
+          "status": "done"
         },
         {
-          "text": "Rooftops: water tower, chimneys, AC units, parapets",
-          "status": "planned"
+          "text": "Rooftops: water towers, chimneys, bulkheads, AC units, vents, parapets",
+          "status": "done"
+        },
+        {
+          "text": "A faded TORTELLINI'S ghost sign on a bare party wall",
+          "status": "done"
+        },
+        {
+          "text": "Railings, fences and fire-escape gratings as cut-out panels (see-through, and far fewer triangles)",
+          "status": "done"
+        },
+        {
+          "text": "Cars rebuilt: lofted bodies with glass, pillars, wheels in wells, mirrors and lights; taxis",
+          "status": "done"
         }
       ]
     },
     {
       "id": "4c",
       "title": "Outside: street life",
-      "status": "planned",
+      "status": "in-progress",
       "summary": "The things that fill a street: trees, lamps, parked cars, wires, clutter, and traffic that passes by.",
       "items": [
         {

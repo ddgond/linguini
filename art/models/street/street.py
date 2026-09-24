@@ -21,6 +21,7 @@ from pathlib import Path
 import bpy
 
 from builder import Builder
+import cars
 import facades
 import ground
 import props
@@ -32,6 +33,8 @@ OUT = Path(__file__).resolve().parents[3] / "godot" / "art" / "street"
 MATERIALS = {
     "Brick": {"vertex_color": True, "roughness": 0.9},
     "Stucco": {"vertex_color": True, "roughness": 0.85},
+    "Siding": {"vertex_color": True, "roughness": 0.8},
+    "GhostPaint": {"vertex_color": True, "roughness": 0.9},
     "Stone": {"vertex_color": True, "roughness": 0.8},
     "Trim": {"vertex_color": True, "roughness": 0.6},
     "Wood": {"vertex_color": True, "roughness": 0.7},
@@ -48,6 +51,7 @@ MATERIALS = {
     "Railing": {"vertex_color": True, "roughness": 0.55},
     "Brass": {"vertex_color": True, "roughness": 0.3, "metallic": 1.0},
     "Wire": {"vertex_color": True, "roughness": 0.6},
+    "Grate": {"vertex_color": True, "roughness": 0.75},
     "Bark": {"vertex_color": True, "roughness": 0.95},
     "Foliage": {"vertex_color": True, "roughness": 0.8},
     "Awning": {"vertex_color": True, "roughness": 0.9},
@@ -79,7 +83,7 @@ def add_text(b, t):
         cu.fill_mode = "NONE"
         cu.bevel_depth = t["size"] * 0.035
         cu.bevel_resolution = 0
-    else:
+    elif not t.get("flat"):
         cu.extrude = 0.006
     obj = bpy.data.objects.new("Text", cu)
     bpy.context.scene.collection.objects.link(obj)
@@ -101,7 +105,7 @@ def build():
               "lanes": [], "cars": []}
 
     # Where the trees go (their pits are part of the ground).
-    layout["trees"] = [[6.4, -5.0], [-16.0, -5.0], [22.5, -5.0], [-34.0, -5.0],
+    layout["trees"] = [[5.6, -5.0], [-16.0, -5.0], [22.5, -5.0], [-34.0, -5.0],
                        [-23.5, -17.4], [-8.5, -17.4], [31.0, -17.4], [45.0, -17.4], [-45.0, -17.4],
                        [9.3, -42.0], [9.3, -74.0], [18.7, -56.0], [18.7, -95.0]]
 
@@ -119,8 +123,10 @@ def build():
     for i, (x, z) in enumerate(layout["trees"]):
         big = i == 0
         tint = rng.choice([(1.0, 1.0, 1.0), (0.95, 1.05, 0.9), (1.1, 1.0, 0.8)])
-        props.tree(pb, leaves, x, z, rng, height=9.8 if big else rng.uniform(8.0, 10.0),
-                   spread=2.9 if big else rng.uniform(2.4, 3.0), tint=tint)
+        # The one outside our window tops out about level with the sill, so
+        # you look out over its crown.
+        props.tree(pb, leaves, x, z, rng, height=7.6 if big else rng.uniform(8.0, 10.0),
+                   spread=2.6 if big else rng.uniform(2.4, 3.0), tint=tint)
     for x in (-12.0, 13.0, -38.0, 36.0):
         props.street_lamp(pb, x, S.NEAR_CURB_Z + 0.4, (0, -1), layout)
     for x in (-17.0, 2.5, 27.0, 46.0, -44.0):
@@ -166,12 +172,13 @@ def build():
     objects.append(lv)
 
     # Cars for the game to drive past: at the origin, facing +x, on the road.
-    for kind in props.CAR_TYPES:
-        cb = Builder()
-        props.car(cb, kind, 0.0, 0.0, 0.0, (1.0, 1.0, 1.0), rng)
-        o = cb.build("CarTemplate_" + kind, MATERIALS)
-        objects.append(o)
-        layout["cars"].append({"name": o.name, "length": props.CAR_TYPES[kind]["length"]})
+    for kind in cars.TYPES:
+        for taxi in (False, True) if kind == "sedan" else (False,):
+            cb = Builder()
+            cars.place(cb, kind, 0.0, 0.0, 0.0, (0.95, 0.72, 0.1) if taxi else (1.0, 1.0, 1.0), taxi, y=S.ROAD_Y)
+            o = cb.build("CarTemplate_" + kind + ("_taxi" if taxi else ""), MATERIALS)
+            objects.append(o)
+            layout["cars"].append({"name": o.name, "length": cars.TYPES[kind]["length"], "taxi": taxi})
     layout["lanes"] = [
         {"z": S.NEAR_CURB_Z - S.PARKING - 1.6, "dir": 1, "x": list(S.STREET_X)},
         {"z": S.FAR_CURB_Z + S.PARKING + 1.6, "dir": -1, "x": list(S.STREET_X)},

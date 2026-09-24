@@ -19,23 +19,25 @@ void vertex() {
 
 void fragment() {
 	vec2 m = vec2(UV.x, -UV.y);
-	// Gratings (horizontal) get a crossed grid.
 	vec3 n = normalize(world_normal);
+	// Gratings (horizontal) get a crossed grid; railings upright bars.
 	bool grating = abs(n.y) > 0.7;
-	float fw = fwidth(m.x / spacing);
-	float x = abs(fract(m.x / spacing) - 0.5) * 2.0;
-	float width = bar / spacing;
-	// Keep at least ~a pixel of bar, and fade the whole panel as bars merge.
-	float w = max(width, fw * 0.9);
-	float cover = 1.0 - smoothstep(1.0 - w - fw, 1.0 - w + fw, 1.0 - x);
-	cover = max(cover, 1.0 - smoothstep(1.0 - w - fw, 1.0 - w + fw, x));
+	// Distance to the nearest bar's centre, in cells (0 on a bar, 0.5 between).
+	float cell = m.x / spacing;
+	float fw = max(fwidth(cell), 1e-4);
+	float d = abs(fract(cell + 0.5) - 0.5);
+	// Half a bar wide, but never thinner than about a pixel: far away the
+	// bars thicken into a see-through haze rather than breaking up.
+	float half_w = max(bar / spacing * 0.5, fw * 0.6);
+	float cover = 1.0 - smoothstep(half_w - fw * 0.5, half_w + fw * 0.5, d);
 	if (grating) {
-		float fz = fwidth(m.y / spacing);
-		float y = abs(fract(m.y / spacing) - 0.5) * 2.0;
-		cover = max(cover, 1.0 - smoothstep(1.0 - w - fz, 1.0 - w + fz, 1.0 - y));
+		float cz = m.y / spacing;
+		float fz = max(fwidth(cz), 1e-4);
+		float dz = abs(fract(cz + 0.5) - 0.5);
+		float hz = max(bar / spacing * 0.5, fz * 0.6);
+		cover = max(cover, 1.0 - smoothstep(hz - fz * 0.5, hz + fz * 0.5, dz));
 	}
-	// A rail along the bottom.
-	ALPHA = clamp(cover, 0.0, 1.0);
+	ALPHA = cover;
 	ALPHA_SCISSOR_THRESHOLD = 0.5;
 	vec3 albedo = COLOR.rgb;
 	if (!FRONT_FACING) {

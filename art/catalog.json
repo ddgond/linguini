@@ -167,7 +167,8 @@
         "models/street/facades.py",
         "models/street/ground.py",
         "models/street/props.py",
-        "models/street/skyline.py"
+        "models/street/skyline.py",
+        "models/street/cars.py"
       ],
       "output": "art/street/street.glb",
       "status": "in-progress"

@@ -182,6 +182,17 @@ class Builder:
                 self.face(q, mat, col=col, uv=uv, uv2=[u2] * 4 if u2 is not None else None)
             length += seg
 
+    def merge(self, other, xf):
+        """Adds another builder's faces, their points mapped through xf."""
+        base = len(self.verts)
+        self.verts.extend(xf(v) for v in other.verts)
+        for f, m, uv, uv2, cols in zip(other.faces, other.mats, other.uvs, other.uv2s, other.cols):
+            self.faces.append(tuple(i + base for i in f))
+            self.mats.append(self._mat(other.mat_names[m]))
+            self.uvs.append(uv)
+            self.uv2s.append(uv2)
+            self.cols.append(cols)
+
     # --- output ---------------------------------------------------------------
 
     def build(self, name, materials):

@@ -156,6 +156,25 @@ def window(b, fr, u0, u1, y0, y1, st, rng, depth=WALL_D, wall_mat="Brick", wall_
         # A projecting hood with a little cornice.
         fr.box(b, u0 - 0.12, u1 + 0.12, y1, y1 + 0.22, -0.02, 0.05, "Stone", stone, skip=("back",))
         fr.box(b, u0 - 0.18, u1 + 0.18, y1 + 0.22, y1 + 0.3, -0.02, 0.12, "Stone", stone, skip=("back",))
+    elif lintel == "arch":
+        # A segmental arch of stone over the window, with a keystone.
+        uc, half, rise, band = (u0 + u1) / 2, (u1 - u0) / 2 + 0.12, 0.24, 0.2
+        radius = (half * half + rise * rise) / (2 * rise)
+        yc = y1 + rise - radius
+        a0 = math.asin(half / radius)
+        n = 10
+        pts = []
+        for i in range(n + 1):
+            a = -a0 + 2 * a0 * i / n
+            pts.append(((uc + radius * math.sin(a), yc + radius * math.cos(a)),
+                        (uc + (radius + band) * math.sin(a), yc + (radius + band) * math.cos(a))))
+        for (i0, o0), (i1, o1) in zip(pts, pts[1:]):
+            fr.quad(b, [(i0[0], i0[1], 0.025), (i1[0], i1[1], 0.025), (o1[0], o1[1], 0.025), (o0[0], o0[1], 0.025)],
+                    "Stone", col=stone)
+            fr.quad(b, [(o0[0], o0[1], 0.025), (o1[0], o1[1], 0.025), (o1[0], o1[1], 0.0), (o0[0], o0[1], 0.0)],
+                    "Stone", col=stone)
+        top = yc + radius
+        fr.box(b, uc - 0.09, uc + 0.09, top - 0.04, top + band + 0.06, 0.0, 0.05, "Stone", stone, skip=("back",))
     elif lintel == "soldier":
         # A soldier course: bricks on end, a shade darker.
         dark = tuple(c * 0.82 for c in wall_col[:3]) + (1.0,)
@@ -256,19 +275,19 @@ def stoop(b, fr, u0, u1, top_y, out, st):
                         (uu, top_y + 0.9, 1.0)], iron)
 
 
-def areaway_fence(b, fr, u0, u1, out, st):
+def areaway_fence(b, fr, u0, u1, out, st, start=0.02):
     """The low iron fence around a garden-level areaway."""
     iron = lin((0.05, 0.05, 0.06))
     y0 = S.WALK_Y
-    fr.tube(b, [(u0, y0 + 0.95, 0.02), (u0, y0 + 0.95, out), (u1, y0 + 0.95, out), (u1, y0 + 0.95, 0.02)], 0.018,
+    fr.tube(b, [(u0, y0 + 0.95, start), (u0, y0 + 0.95, out), (u1, y0 + 0.95, out), (u1, y0 + 0.95, start)], 0.018,
             "Iron", iron, sides=4)
     fr.tube(b, [(u0, y0 + 0.12, out), (u1, y0 + 0.12, out)], 0.015, "Iron", iron, sides=4)
     railing(b, fr, [(u0, y0, out), (u1, y0, out), (u1, y0 + 0.95, out), (u0, y0 + 0.95, out)], iron)
     for uu in (u0, u1):
-        railing(b, fr, [(uu, y0, 0.02), (uu, y0, out), (uu, y0 + 0.95, out), (uu, y0 + 0.95, 0.02)], iron)
+        railing(b, fr, [(uu, y0, start), (uu, y0, out), (uu, y0 + 0.95, out), (uu, y0 + 0.95, start)], iron)
 
 
-def fire_escape(b, fr, u0, u1, floors, st):
+def fire_escape(b, fr, u0, u1, floors, st, ladder=2.2):
     """Platforms with railings at each upper floor, linked by stair runs, and a
     drop ladder above the street."""
     iron = lin(st.get("escape_col", (0.1, 0.1, 0.11)))
@@ -305,9 +324,9 @@ def fire_escape(b, fr, u0, u1, floors, st):
     # Drop ladder under the lowest platform.
     y = floors[0]
     for side in (u1 - 0.7, u1 - 0.3):
-        fr.box(b, side - 0.015, side + 0.015, y - 2.2, y, depth - 0.1, depth - 0.07, "Iron", iron)
-    for k in range(9):
-        fr.box(b, u1 - 0.7, u1 - 0.3, y - 2.1 + k * 0.25, y - 2.08 + k * 0.25, depth - 0.1, depth - 0.07, "Iron", iron,
+        fr.box(b, side - 0.015, side + 0.015, y - ladder, y, depth - 0.1, depth - 0.07, "Iron", iron)
+    for k in range(int(ladder / 0.25)):
+        fr.box(b, u1 - 0.7, u1 - 0.3, y - ladder + 0.1 + k * 0.25, y - ladder + 0.12 + k * 0.25, depth - 0.1, depth - 0.07, "Iron", iron,
                skip=("left", "right", "back"))
 
 
@@ -387,7 +406,15 @@ def building(b, fr, u0, u1, st, rng, lights, texts):
             else:
                 ground_holes.append(("win", u0 + c - ww / 2, u0 + c + ww / 2, base + 0.95, base + 0.95 + wh))
     elif ground in ("shop", "laundromat"):
-        ground_holes.append(("shop", u0 + 0.35, u1 - 0.35, base + 0.45, base + 2.95))
+        ground_holes.append(("shop", u0 + 0.35, u1 - 0.35, base + 0.45, base + 2.8))
+    # A bay window stepping out over the two bays beside the door.
+    bay = None
+    if st.get("bay") and ground == "stoop" and len(bays) >= 3:
+        cs = [c for c in bays if c != door_bay]
+        bay = (u0 + min(cs) - ww / 2 - 0.35, u0 + max(cs) + ww / 2 + 0.35, cs)
+        inside = lambda a, c_: a >= bay[0] - 1e-6 and c_ <= bay[1] + 1e-6
+        holes = [h for h in holes if not inside(h[0], h[1])]
+        ground_holes = [h for h in ground_holes if not (h[0] == "win" and inside(h[1], h[2]))]
     holes += [h[1:] for h in ground_holes]
 
     # The facade, with a band of stone at the ground floor for the shops.
@@ -396,8 +423,11 @@ def building(b, fr, u0, u1, st, rng, lights, texts):
     fr.box(b, u0, u1, base, top, -deep, 0.0, wall_mat, wall_col, skip=("front", "bottom"))
     fr.box(b, u0, u1, top - 0.02, top, -deep, 0.0, "Roof", lin((0.2, 0.2, 0.21)), skip=("front", "bottom"))
 
-    for (a, c_, y0, y1) in holes[:len(floor_y) * len(bays)]:
+    for (a, c_, y0, y1) in holes[:len(holes) - len(ground_holes)]:
         window(b, fr, a, c_, y0, y1, st, rng, wall_mat=wall_mat, wall_col=wall_col)
+    if bay:
+        storeys = [(base + 1.3, floor_y[0])] + [(fy, fy + S.FLOOR_H) for fy in floor_y[:-1]]
+        bay_window(b, fr, bay[0], bay[1], [u0 + c for c in bay[2]], storeys, top - 0.6, st, rng)
 
     for kind, a, c_, y0, y1 in ground_holes:
         if kind == "win":
@@ -416,7 +446,7 @@ def building(b, fr, u0, u1, st, rng, lights, texts):
         stoop(b, fr, u0 + c - 0.75, u0 + c + 0.75, base + 1.3, 3.2, st)
         fence_u = (u0 + 0.15, u0 + c - 1.0) if st.get("door_left", True) is False else (u0 + c + 1.0, u1 - 0.15)
         if fence_u[1] - fence_u[0] > 0.8:
-            areaway_fence(b, fr, fence_u[0], fence_u[1], 1.3, st)
+            areaway_fence(b, fr, fence_u[0], fence_u[1], 1.3, st, start=0.85 if bay else 0.02)
         # A stone band at the parlour floor line.
         fr.box(b, u0, u1, base + 1.2, base + 1.3, 0.0, 0.05, "Stone", lin(STONE), skip=("back",))
     if st.get("belt", True):
@@ -425,7 +455,8 @@ def building(b, fr, u0, u1, st, rng, lights, texts):
 
     if st.get("fire_escape"):
         c = bays[len(bays) // 2]
-        fire_escape(b, fr, u0 + c - 1.4, u0 + c + 1.4, floor_y, st)
+        fire_escape(b, fr, u0 + c - 1.4, u0 + c + 1.4, floor_y, st,
+                    ladder=0.9 if ground in ("shop", "laundromat") else 2.2)
 
     if st.get("top") == "cornice":
         cornice(b, fr, u0, u1, top, st, rng)
@@ -433,6 +464,38 @@ def building(b, fr, u0, u1, st, rng, lights, texts):
         parapet(b, fr, u0, u1, top, st)
     roof_things(b, fr, u0, u1, top, deep, st, rng)
     return top - base
+
+
+def bay_window(b, fr, ua, ub, centres, storeys, roof_y, st, rng, depth=0.8):
+    """A box bay stepping out from the facade, a storey at a time: windows in
+    its front over each bay, a narrow one in each side, on a stone base."""
+    wall_mat, wall_col = st["wall_mat"], st["wall_col"]
+    stone = lin(st.get("stone", STONE))
+    ww, wh = st.get("win", (1.0, 1.75))
+    front = Frame(fr.p(0, 0, depth), fr.r, fr.n)
+    left = Frame(fr.p(ua, 0, 0), fr.n, -fr.r)
+    right = Frame(fr.p(ub, 0, depth), -fr.n, fr.r)
+    for i, (ys, ye) in enumerate(storeys):
+        sill = ys + (0.55 if i == 0 else 0.8)
+        h = wh + (0.3 if i == 0 else 0.0)
+        fh = [(c - ww / 2, c + ww / 2, sill, sill + h) for c in centres]
+        wall(b, front, ua, ub, ys, ye, fh, wall_mat, wall_col)
+        for a, c_, y0, y1 in fh:
+            window(b, front, a, c_, y0, y1, st, rng, depth=0.18, wall_mat=wall_mat, wall_col=wall_col)
+        for side in (left, right):
+            sh = [(0.18, depth - 0.18, sill, sill + h)]
+            wall(b, side, 0.0, depth, ys, ye, sh, wall_mat, wall_col)
+            window(b, side, 0.18, depth - 0.18, sill, sill + h, dict(st, muntins=1, ac=0.0, flowers=0.0), rng,
+                   depth=0.12, wall_mat=wall_mat, wall_col=wall_col)
+        # A stone band between storeys.
+        fr.box(b, ua - 0.04, ub + 0.04, ye - 0.08, ye + 0.04, 0.0, depth + 0.04, "Stone", stone, skip=("back",))
+    # Base down to the sidewalk, and a cap on top.
+    y0 = storeys[0][0]
+    fr.box(b, ua, ub, S.WALK_Y, y0, 0.0, depth, "Stone", stone, skip=("back", "bottom"))
+    y1 = storeys[-1][1]
+    if y1 < roof_y - 0.1:
+        fr.box(b, ua - 0.08, ub + 0.08, y1, y1 + 0.3, 0.0, depth + 0.1, "Trim", lin(st.get("cornice_col", st["trim"])),
+               skip=("back",))
 
 
 def roof_things(b, fr, u0, u1, top, deep, st, rng):
@@ -501,7 +564,7 @@ def shopfront(b, fr, u0, u1, y0, y1, st, rng, lights, texts):
     for m in mullions:
         fr.box(b, m - 0.04, m + 0.04, y0, y1, -0.25, -0.12, "Wood", trim)
     # Sign band above, and lettering.
-    sy0, sy1 = y1 + 0.08, y1 + 0.75
+    sy0, sy1 = y1 + 0.06, y1 + 0.66
     sign_col = lin(st.get("sign_col", (0.1, 0.12, 0.1)))
     fr.box(b, u0 - 0.3, u1 + 0.3, sy0, sy1, 0.0, 0.12, "Wood", sign_col)
     fr.box(b, u0 - 0.35, u1 + 0.35, sy1, sy1 + 0.08, 0.0, 0.18, "Wood", trim)
@@ -517,9 +580,45 @@ def shopfront(b, fr, u0, u1, y0, y1, st, rng, lights, texts):
                       "size": 0.32, "mat": "Neon", "col": (*colour, 1.0), "tube": True})
         p = fr.p((u0 + u1) / 2 + width * 0.18, y0 + 1.3, 0.3)
         lights["neon"].append({"pos": [round(p.x, 3), round(p.y, 3), round(p.z, 3)], "color": list(colour)})
+    if st.get("blade"):
+        blade_sign(b, fr, u1 + 0.18, sy1 + 0.5, st, lights, texts)
     p = fr.p((u0 + u1) / 2, y0 + 1.4, 0.6)
     if st.get("shop_open", True):
         lights["shops"].append([round(p.x, 3), round(p.y, 3), round(p.z, 3)])
+
+
+def blade_sign(b, fr, uc, y0, st, lights, texts):
+    """A tall sign standing out from the facade, neon letters down both faces."""
+    text, colour = st["blade"]
+    h = 0.44 * len(text) + 0.3
+    board = lin((0.08, 0.08, 0.09))
+    fr.box(b, uc - 0.04, uc + 0.04, y0, y0 + h, 0.2, 1.0, "MetalPaint", board)
+    fr.box(b, uc - 0.05, uc + 0.05, y0 - 0.04, y0, 0.18, 1.02, "Metal", lin((0.5, 0.5, 0.5)))
+    fr.box(b, uc - 0.05, uc + 0.05, y0 + h, y0 + h + 0.04, 0.18, 1.02, "Metal", lin((0.5, 0.5, 0.5)))
+    for yy in (y0 + 0.3, y0 + h - 0.3):
+        fr.tube(b, [(uc, yy, 0.0), (uc, yy, 0.2)], 0.025, "Iron", lin((0.1, 0.1, 0.1)), sides=4)
+    body = "\n".join(text)
+    for face, right, out, u in ((-0.045, fr.n, -fr.r, 0.6), (0.045, -fr.n, fr.r, -0.6)):
+        f = Frame(fr.p(uc + face, 0, 0), right, out)
+        texts.append({"text": body, "frame": f, "u": u, "y": y0 + h - 0.45, "w": 0.0, "size": 0.36, "mat": "Neon",
+                      "col": (*colour, 1.0), "tube": True})
+    p = fr.p(uc, y0 + h / 2, 0.6)
+    lights["neon"].append({"pos": [round(p.x, 3), round(p.y, 3), round(p.z, 3)], "color": list(colour)})
+
+
+def ghost_sign(b, x, top_low, top_high, texts):
+    """An old painted advert, faded, on the side wall a lower neighbour left
+    bare (the wall at x faces +x, back from the far facade)."""
+    f = Frame((x, 0, S.FAR_FACADE_Z), (0, 0, -1), (1, 0, 0))
+    mid = (top_low + top_high) / 2 + S.WALK_Y
+    col = lin((0.86, 0.82, 0.7))
+    texts.append({"text": "TORTELLINI'S", "frame": f, "u": 3.7, "y": mid + 0.4, "w": 0.012, "size": 0.85,
+                  "mat": "GhostPaint", "col": col, "flat": True})
+    texts.append({"text": "FRESH PASTA DAILY", "frame": f, "u": 3.7, "y": mid - 0.45, "w": 0.012, "size": 0.5,
+                  "mat": "GhostPaint", "col": col, "flat": True})
+    # A painted border round it.
+    for (a, c_, y0_, y1_) in ((0.3, 7.1, mid + 1.35, mid + 1.48), (0.3, 7.1, mid - 0.85, mid - 0.72)):
+        f.quad(b, [(a, y0_, 0.01), (c_, y0_, 0.01), (c_, y1_, 0.01), (a, y1_, 0.01)], "GhostPaint", col=col)
 
 
 # --- the rows -------------------------------------------------------------------
@@ -533,13 +632,19 @@ def _style(rng, kind):
         "door": rng.choice([(0.2, 0.12, 0.08), (0.08, 0.1, 0.09), (0.3, 0.08, 0.07), (0.12, 0.2, 0.15), (0.12, 0.15, 0.25)]),
         "door_left": rng.random() < 0.5,
     }
+    if rng.random() < 0.2:
+        st["lintel"] = "arch"
     if brick == "brownstone":
         st["stone"] = (0.5, 0.36, 0.3)
         st["stoop_col"] = (0.45, 0.32, 0.26)
-        st["lintel"] = "hood"
+        st["lintel"] = rng.choice(["hood", "arch"])
+        st["bay"] = rng.random() < 0.7
+    elif rng.random() < 0.25:
+        st["bay"] = True
     if kind == "painted":
         paint_name = rng.choice(list(PAINTS))
-        st.update(wall_mat="Stucco", wall_col=lin(PAINTS[paint_name]), ground="house", floors=rng.choice([2, 3]),
+        st.update(wall_mat=rng.choice(["Stucco", "Siding"]), wall_col=lin(PAINTS[paint_name]), ground="house",
+                  floors=rng.choice([2, 3]),
                   lintel="flat", top=rng.choice(["cornice", "parapet"]), trim=TRIMS[rng.choice(["white", "cream", "black"])])
     return st
 
@@ -547,21 +652,22 @@ def _style(rng, kind):
 # The far row, left to right: (width, overrides). Built from x = -72 up to the
 # cross street at CROSS_X0, then from CROSS_X1 on.
 FAR_LEFT = [
-    (7.0, {"kind": "brick"}), (6.2, {"kind": "painted"}), (6.5, {"kind": "brick"}),
+    (7.0, {"kind": "brick"}), (6.2, {"kind": "painted"}), (6.5, {"kind": "brick", "bay": True}),
     (9.5, {"kind": "walkup"}), (6.0, {"kind": "brick"}), (6.3, {"kind": "painted"}),
-    (6.8, {"kind": "brick"}), (7.5, {"kind": "shop", "sign": "LAUNDROMAT", "ground": "laundromat", "floors": 2,
+    (6.8, {"kind": "brick", "bay": True}), (7.5, {"kind": "shop", "sign": "LAUNDROMAT", "ground": "laundromat", "floors": 2,
                                       "awning": (0.2, 0.42, 0.62), "stripes": False, "neon": ("OPEN 24H", (0.3, 0.8, 1.0))}),
     (6.4, {"kind": "brick"}), (6.6, {"kind": "painted"}),
-    (6.0, {"kind": "brick"}), (8.4, {"kind": "shop", "sign": "RAVIOLI DELI", "awning": (0.12, 0.38, 0.22), "stripes": True,
+    (6.0, {"kind": "brick", "bay": True, "floors": 4}), (8.4, {"kind": "shop", "sign": "RAVIOLI DELI", "awning": (0.12, 0.38, 0.22), "stripes": True,
                                       "neon": ("OPEN", (1.0, 0.25, 0.3)), "floors": 4, "fire_escape": True}),
 ]
 FAR_RIGHT = [
     (8.5, {"kind": "shop", "sign": "CAFE FARFALLE", "awning": (0.6, 0.16, 0.14), "stripes": True,
            "neon": ("ESPRESSO", (1.0, 0.55, 0.2)), "floors": 3}),
-    (6.5, {"kind": "brick"}), (6.2, {"kind": "painted"}), (10.0, {"kind": "walkup", "water_tower": True}),
-    (6.4, {"kind": "brick"}), (6.8, {"kind": "painted"}), (7.4, {"kind": "shop", "sign": "NOODLE BAR", "awning": (0.9, 0.62, 0.2),
-                                                                  "stripes": False, "neon": ("NOODLES", (1.0, 0.3, 0.55)), "floors": 3}),
-    (6.2, {"kind": "brick"}), (6.6, {"kind": "brick"}), (7.0, {"kind": "painted"}),
+    (7.4, {"kind": "shop", "sign": "NOODLE BAR", "awning": (0.9, 0.62, 0.2), "stripes": False,
+           "neon": ("NOODLES", (1.0, 0.3, 0.55)), "floors": 4, "blade": ("RAMEN", (0.3, 0.85, 1.0))}),
+    (6.5, {"kind": "brick", "bay": True}), (6.2, {"kind": "painted"}), (10.0, {"kind": "walkup", "water_tower": True}),
+    (6.4, {"kind": "brick"}), (6.8, {"kind": "painted"}), (6.2, {"kind": "brick"}), (6.6, {"kind": "brick"}),
+    (7.0, {"kind": "painted"}),
 ]
 
 
@@ -593,8 +699,14 @@ def far_row(b, rng, lights, texts):
         x0 = x - width
         st = _make_style(rng, spec)
         h = building(b, fr, x0, x, st, rng, lights, texts)
-        heights.append((x0, x, h))
+        heights.append((x0, x, h, spec))
         x = x0
+    # The laundromat is low: the taller house to its left shows a bare side
+    # wall, facing us, with an old advert on it.
+    laundry = next(l for l in heights if l[3].get("ground") == "laundromat")
+    left = next((l for l in heights if abs(l[1] - laundry[0]) < 1e-6), None)
+    if left and left[2] > laundry[2] + 3.0:
+        ghost_sign(b, laundry[0], laundry[2], left[2], texts)
     # Fill on out to the end of the street with simpler houses.
     while x > S.STREET_X[0]:
         width = rng.uniform(5.8, 7.5)
@@ -606,7 +718,7 @@ def far_row(b, rng, lights, texts):
     for width, spec in FAR_RIGHT:
         st = _make_style(rng, spec)
         h = building(b, fr, x, x + width, st, rng, lights, texts)
-        heights.append((x, x + width, h))
+        heights.append((x, x + width, h, spec))
         x += width
     while x < S.STREET_X[1]:
         width = rng.uniform(5.8, 7.5)

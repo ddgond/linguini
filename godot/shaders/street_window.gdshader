@@ -127,7 +127,12 @@ void fragment() {
 		if (tt == tb.z || tt == tb.x) {
 			float row = fract(hit.y / 0.45);
 			if (hit.y < 2.4 && hit.y > 0.2) {
-				col = row < 0.12 ? vec3(0.8) : palette(s_hash(floor(vec2((hit.x + hit.z) * 7.0, hit.y / 0.45))), 1);
+				// Shelves of goods: packets and tins with gaps, each shelf's
+				// underside in shadow.
+				vec2 item = vec2((hit.x + hit.z) * 6.0, hit.y / 0.45);
+				float gap = step(0.82, fract(item.x)) + step(0.78, row);
+				vec3 goods = palette(s_hash(floor(item)), 1) * (0.45 + 0.25 * s_hash(floor(item) + 3.0));
+				col = row < 0.1 ? vec3(0.55, 0.53, 0.5) : mix(goods, vec3(0.12, 0.11, 0.1), clamp(gap, 0.0, 1.0));
 			}
 		} else if (rd.y < 0.0) {
 			vec2 tile = floor(hit.xz / 0.4);
@@ -165,7 +170,7 @@ void fragment() {
 	}
 	vec3 lamp_col = mix(vec3(1.0, 0.72, 0.42), vec3(1.0, 0.85, 0.65), fract(seed * 7.7));
 	if (shop) {
-		lamp_col = vec3(1.0, 0.92, 0.8) * 1.6;
+		lamp_col = vec3(1.0, 0.92, 0.8) * 1.2;
 	} else if (laundry) {
 		lamp_col = vec3(0.85, 0.95, 1.0) * 1.8;
 	}
@@ -219,6 +224,42 @@ void fragment() {
 		} else if (style < 0.9) {
 			// Sheers: everything behind goes soft and pale.
 			inside = mix(inside, vec3(0.9, 0.88, 0.85) * (lit ? light * 0.8 : light * 0.9), 0.6);
+		}
+	}
+
+	// Now and then something on the sill, against the glass: a potted plant,
+	// or a cat watching the street.
+	if (!shop && !laundry && !transom) {
+		float which = fract(seed * 97.3);
+		if (which > 0.86) {
+			float ct = 0.05 / rd.z;
+			vec3 c = o + rd * ct;
+			float cx = (room.x - pane.x) * 0.5 + pane.x * (0.25 + 0.5 * fract(seed * 53.7));
+			vec2 q = vec2(c.x - cx, c.y - sill);
+			bool hit_it = false;
+			if (which > 0.955) {
+				// Cat: body, head, two ears, a tail curled round.
+				float dir = fract(seed * 11.0) > 0.5 ? 1.0 : -1.0;
+				vec2 qb = q - vec2(0.0, 0.12);
+				bool body = dot(qb / vec2(0.13, 0.12), qb / vec2(0.13, 0.12)) < 1.0;
+				vec2 qh = q - vec2(0.06 * dir, 0.29);
+				bool head = length(qh) < 0.075;
+				vec2 qe = vec2(abs(qh.x) - 0.045, qh.y - 0.055);
+				bool ears = qe.y > 0.0 && qe.y < 0.06 && abs(qe.x) < 0.028 * (1.0 - qe.y / 0.06);
+				vec2 qt = q - vec2(-0.14 * dir, 0.03);
+				bool tail = abs(length(qt / vec2(1.0, 0.6)) - 0.09) < 0.018 && qt.y < 0.02;
+				hit_it = body || head || ears || tail;
+			} else {
+				// Plant: a pot and a leafy head.
+				bool pot = q.y > 0.0 && q.y < 0.13 && abs(q.x) < 0.06 + q.y * 0.15;
+				vec2 ql = q - vec2(0.0, 0.27);
+				float ang = atan(ql.y, ql.x);
+				bool leaves = length(ql) < 0.13 + 0.05 * sin(ang * 7.0 + seed * 20.0);
+				hit_it = pot || leaves;
+			}
+			if (hit_it) {
+				inside = lit ? vec3(0.015, 0.012, 0.01) : inside * 0.3;
+			}
 		}
 	}
 

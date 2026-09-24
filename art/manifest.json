@@ -65,7 +65,7 @@
   },
   "street": {
     "output": "art/street/street.glb",
-    "inputs": "c237b86143abe8c6"
+    "inputs": "dee376ba0be64535"
   },
   "tank": {
     "output": "art/tank.glb",

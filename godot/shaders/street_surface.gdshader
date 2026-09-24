@@ -22,6 +22,8 @@ const int CAR_GLASS = 9;
 const int STUCCO = 10;
 const int STONE = 11;
 const int WOOD = 12;
+const int SIDING = 13;
+const int GHOST = 14;
 
 uniform int kind = 0;
 uniform vec3 tint : source_color = vec3(1.0);
@@ -98,6 +100,21 @@ void fragment() {
 		albedo = base * (0.9 + 0.18 * s_fbm(m * 1.3)) * (0.92 + 0.08 * s_noise(m * 18.0));
 	} else if (kind == STONE) {
 		albedo = base * (0.88 + 0.2 * s_fbm(m * 3.0));
+	} else if (kind == SIDING) {
+		// Lap siding: boards 18 cm high, each shadowed along its lower edge.
+		float board = m.y / 0.18;
+		float f = fract(board);
+		float fw = fwidth(board);
+		float lip = mix(smoothstep(0.0, 0.12 + fw, f), 0.85, detail_fade(fw * 2.0) < 0.5 ? 1.0 : 0.0);
+		albedo = base * (0.9 + 0.1 * s_hash(vec2(floor(board), floor(m.x / 3.7)))) * mix(0.72, 1.0, lip);
+		albedo *= 0.92 + 0.1 * s_fbm(m * 0.8);
+	} else if (kind == GHOST) {
+		// Paint worn off an old brick wall: patchy, and faded toward the brick.
+		float wear = s_fbm(m * 3.0) * 0.7 + s_noise(m * 22.0) * 0.3;
+		if (wear < 0.42) {
+			discard;
+		}
+		albedo = base * (0.8 + 0.25 * s_fbm(m * 1.5));
 	} else if (kind == WOOD) {
 		albedo = base * (0.9 + 0.12 * s_noise(vec2(m.x * 3.0, m.y * 40.0)));
 	} else if (kind == ASPHALT) {
@@ -106,7 +123,7 @@ void fragment() {
 		albedo = base * (0.75 + 0.35 * patches) * (0.9 + 0.2 * grain);
 		// Tar-sealed cracks.
 		float crack = abs(s_fbm(local_pos.xz * 0.6) - 0.5);
-		albedo *= mix(0.55, 1.0, smoothstep(0.0, 0.02 + fwidth(local_pos.x) * 0.5, crack));
+		albedo *= mix(0.78, 1.0, smoothstep(0.0, 0.012 + fwidth(local_pos.x) * 0.5, crack));
 		// Darker where tyres run, lighter where they don't.
 		float lane = fract((local_pos.z + 16.6) / 3.2);
 		albedo *= 0.95 + 0.08 * smoothstep(0.2, 0.5, abs(lane - 0.5));

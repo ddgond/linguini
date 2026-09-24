@@ -7,6 +7,7 @@ import math
 from mathutils import Vector
 
 from builder import V, lin
+import cars
 import street_layout as S
 
 IRON = lin((0.06, 0.07, 0.07))
@@ -162,134 +163,6 @@ def leaf_texture():
 CAR_COLOURS = [(0.86, 0.86, 0.85), (0.62, 0.64, 0.66), (0.07, 0.07, 0.08), (0.28, 0.3, 0.32), (0.13, 0.2, 0.36),
                (0.55, 0.1, 0.09), (0.16, 0.27, 0.2), (0.7, 0.62, 0.5), (0.45, 0.6, 0.72), (0.9, 0.9, 0.9)]
 
-# Side profiles, (x along the car, y up) from the rear bumper forward, for the
-# lower body and the cabin; wheel positions; width; overall length.
-CAR_TYPES = {
-    "sedan": {"length": 4.7, "width": 1.82, "wheels": (0.95, 3.75), "r": 0.33,
-              "body": [(0, 0.3), (0, 0.72), (0.25, 0.86), (1.25, 0.95), (3.65, 0.93), (4.55, 0.78), (4.7, 0.62), (4.7, 0.3)],
-              "cabin": [(1.15, 0.94), (1.6, 1.4), (3.0, 1.43), (3.7, 0.93)]},
-    "hatch": {"length": 4.1, "width": 1.76, "wheels": (0.72, 3.3), "r": 0.31,
-              "body": [(0, 0.3), (0, 0.8), (0.08, 0.95), (3.2, 0.93), (3.98, 0.78), (4.1, 0.6), (4.1, 0.3)],
-              "cabin": [(0.12, 0.94), (0.32, 1.45), (2.5, 1.47), (3.25, 0.93)]},
-    "suv": {"length": 4.8, "width": 1.9, "wheels": (0.95, 3.85), "r": 0.38,
-            "body": [(0, 0.38), (0, 1.02), (0.1, 1.08), (3.7, 1.08), (4.65, 0.95), (4.8, 0.72), (4.8, 0.38)],
-            "cabin": [(0.12, 1.07), (0.25, 1.72), (3.1, 1.74), (3.8, 1.07)]},
-    "van": {"length": 5.2, "width": 1.95, "wheels": (0.9, 4.15), "r": 0.36,
-            "body": [(0, 0.38), (0, 1.1), (4.3, 1.1), (5.1, 0.95), (5.2, 0.7), (5.2, 0.38)],
-            "cabin": [(0.02, 1.09), (0.02, 2.05), (3.9, 2.05), (4.45, 1.09)]},
-}
-
-
-def car(b, kind, x, z, yaw, paint, rng, templated=False):
-    """A car at (x, z) on the road, facing `yaw` (0 = +x). Paint is an sRGB colour."""
-    t = CAR_TYPES[kind]
-    L, W, r = t["length"], t["width"], t["r"]
-    c, s = math.cos(yaw), math.sin(yaw)
-    y0 = S.ROAD_Y
-
-    def P(lx, ly, lz):
-        # local x along the car (centred), y up, z across
-        lx -= L / 2
-        return V(x + lx * c + lz * s, y0 + ly, z - lx * s + lz * c)
-
-    body = lin(paint)
-    glass = lin((0.08, 0.1, 0.12))
-    dark = lin((0.05, 0.05, 0.05))
-
-    def extrude(profile, half, mat, col, cap_mat=None, top_mat=None, glass_tops=()):
-        # Side faces.
-        for side in (-1, 1):
-            pts = [P(px, py, side * half) for px, py in profile]
-            b.face(pts if side > 0 else list(reversed(pts)), cap_mat or mat, col=col)
-        # Strips round the profile.
-        n = len(profile)
-        for i in range(n - 1):
-            (ax, ay), (bx, by) = profile[i], profile[i + 1]
-            m = mat
-            if i in glass_tops:
-                m = top_mat
-            q = [P(ax, ay, half), P(bx, by, half), P(bx, by, -half), P(ax, ay, -half)]
-            b.face(q, m, col=glass if m == "CarGlass" else col)
-        (ax, ay), (bx, by) = profile[-1], profile[0]
-        b.face([P(ax, ay, half), P(bx, by, half), P(bx, by, -half), P(ax, ay, -half)], mat, col=col)
-
-    extrude(t["body"], W / 2, "CarPaint", body)
-    # The cabin: glass sides, glass windscreen and rear window, a painted roof.
-    cab = t["cabin"]
-    extrude(cab, W / 2 - 0.1, "CarPaint", body, cap_mat="CarGlass", top_mat="CarGlass", glass_tops=(0, 2))
-    # Pillars over the glass sides (so it doesn't read as a fishbowl).
-    for side in (-1, 1):
-        zz = side * (W / 2 - 0.095)
-        (ax, ay), (bx, by), (cx, cy), (dx, dy) = cab
-        mid = (bx + cx) / 2 + 0.1
-        for (px0, py0), (px1, py1) in (((ax, ay), (bx, by)), ((cx, cy), (dx, dy))):
-            b.tube([P(px0, py0, zz), P(px1, py1, zz)], 0.045, "CarPaint", col=body, sides=4)
-        if kind != "hatch":
-            b.tube([P(mid, ay, zz), P(mid, (by + cy) / 2 - 0.02, zz)], 0.04, "CarPaint", col=body, sides=4)
-    # Wheels, with dark arches behind them.
-    for wx in t["wheels"]:
-        for side in (-1, 1):
-            zz = side * (W / 2 - 0.12)
-            base = P(wx, r, zz - side * 0.1)
-            axis = V(s, 0, c) * side
-            _wheel(b, base, axis, r, 0.22)
-            b.face([P(wx - r - 0.06, 0.2, side * (W / 2 + 0.002)), P(wx + r + 0.06, 0.2, side * (W / 2 + 0.002)),
-                    P(wx + r * 0.8, r + 0.32, side * (W / 2 + 0.002)), P(wx - r * 0.8, r + 0.32, side * (W / 2 + 0.002))]
-                   if side > 0 else
-                   [P(wx - r * 0.8, r + 0.32, -W / 2 - 0.002), P(wx + r * 0.8, r + 0.32, -W / 2 - 0.002),
-                    P(wx + r + 0.06, 0.2, -W / 2 - 0.002), P(wx - r - 0.06, 0.2, -W / 2 - 0.002)], "Rubber", col=dark)
-    # Lights and bumpers.
-    front_y = t["body"][-2][1] - 0.05
-    for side in (-1, 1):
-        zz = side * (W / 2 - 0.25)
-        _lamp(b, P(L + 0.005, front_y, zz), V(c, 0, -s), "Headlight", (1.0, 0.95, 0.85))
-        _lamp(b, P(-0.005, t["body"][1][1] - 0.08, zz), V(-c, 0, s), "Taillight", (0.8, 0.05, 0.04))
-    for bx in (0.04, L - 0.04):
-        p = P(bx, 0.36, 0)
-        b.oriented_box((p.x, p.y, p.z), (0.14, 0.14, W + 0.02), yaw, "Rubber", col=lin((0.06, 0.06, 0.06)))
-    # Plate.
-    b.face([P(-0.006, 0.45, -0.25), P(-0.006, 0.45, 0.25), P(-0.006, 0.6, 0.25), P(-0.006, 0.6, -0.25)], "Plate",
-           col=lin((0.9, 0.88, 0.8)))
-    if kind == "sedan" and paint == (0.95, 0.75, 0.1):
-        # A taxi's roof sign.
-        cy = t["cabin"][1][1]
-        b.oriented_box(P(2.3, cy + 0.12, 0), (0.7, 0.2, 0.18), yaw, "Lamp", col=lin((1.0, 0.95, 0.8)))
-
-
-def _wheel(b, base, axis, r, width):
-    """A tyre with a hubcap, as a short cylinder along `axis`."""
-    n = 12
-    axis = axis.normalized()
-    up = V(0, 1, 0)
-    fwd = up.cross(axis).normalized()
-    rim = []
-    for side in (0, 1):
-        ring = []
-        for i in range(n):
-            a = 2 * math.pi * i / n
-            ring.append(base + axis * width * side + (up * math.cos(a) + fwd * math.sin(a)) * r)
-        rim.append(ring)
-    tyre = lin((0.04, 0.04, 0.04))
-    for i in range(n):
-        j = (i + 1) % n
-        b.face([rim[0][i], rim[0][j], rim[1][j], rim[1][i]], "Rubber", col=tyre)
-    hub = lin((0.55, 0.56, 0.58))
-    b.face(list(reversed(rim[0])), "Rubber", col=tyre)
-    b.face(rim[1], "Rubber", col=tyre)
-    inner = [base + axis * (width + 0.004) + (up * math.cos(2 * math.pi * i / n) + fwd * math.sin(2 * math.pi * i / n)) * r * 0.6
-             for i in range(n)]
-    b.face(inner, "Chrome", col=hub)
-
-
-def _lamp(b, p, out, mat, colour):
-    """A small lamp lens facing `out`."""
-    out = out.normalized()
-    side = V(0, 1, 0).cross(out).normalized()
-    up = V(0, 1, 0)
-    w, h = 0.16, 0.07
-    q = [p - side * w - up * h, p + side * w - up * h, p + side * w + up * h, p - side * w + up * h]
-    b.face(q, mat, col=lin(colour))
-
 
 def parked_cars(b, rng, layout):
     """Rows of parked cars on both parking lanes, with gaps and a driveway."""
@@ -300,15 +173,17 @@ def parked_cars(b, rng, layout):
         x = S.STREET_X[0] + 5
         while x < S.STREET_X[1] - 6:
             kind = rng.choice(["sedan", "sedan", "hatch", "suv", "van", "hatch", "suv"])
-            L = CAR_TYPES[kind]["length"]
+            L = cars.TYPES[kind]["length"]
             if any(a - L < x < c for a, c in skip) or (z == near_z and -3.5 < x < 1.8):
                 x += 1.0
                 continue
             if rng.random() < 0.18:
                 x += rng.uniform(4, 7)  # an empty space
                 continue
-            paint = (0.95, 0.75, 0.1) if (kind == "sedan" and rng.random() < 0.12) else rng.choice(CAR_COLOURS)
-            car(b, kind, x + L / 2, z + rng.uniform(-0.1, 0.1), yaw + rng.uniform(-0.02, 0.02), paint, rng)
+            taxi = kind == "sedan" and rng.random() < 0.15
+            paint = (0.95, 0.72, 0.1) if taxi else rng.choice(CAR_COLOURS)
+            cars.place(b, kind, x + L / 2, z + rng.uniform(-0.1, 0.1), yaw + rng.uniform(-0.02, 0.02), paint, taxi,
+                       y=S.ROAD_Y)
             x += L + rng.uniform(0.7, 1.6)
 
 
