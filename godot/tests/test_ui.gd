@@ -62,6 +62,27 @@ func test_no_hud_but_the_room_says_when_live() -> void:
 	main.queue_free()
 
 
+func test_menu_stays_above_the_taskbar() -> void:
+	var main := await _main()
+	var menu: MonitorMenu = main.menu
+	var taskbar_top: float = (menu.get_node("Taskbar") as Control).get_global_rect().position.y
+	menu.show_home("A long error message about the host")
+	for i in 12:
+		menu._label("Filler", 26, Color.WHITE)
+	await tree.process_frame
+	await tree.process_frame
+	check(menu._window.get_global_rect().end.y <= taskbar_top, "an overfull page scrolls instead of running under the taskbar")
+	menu._app_name = "Desktop"
+	menu.show_in_stream()
+	await tree.process_frame
+	await tree.process_frame
+	var scroll := menu._page.get_parent().get_parent() as ScrollContainer
+	check(not scroll.get_v_scroll_bar().visible, "the in-stream page fits without scrolling")
+	for b: Button in menu._page.find_children("*", "Button", true, false):
+		check(b.get_global_rect().end.y <= taskbar_top, "%s is above the taskbar" % b.text)
+	main.queue_free()
+
+
 func test_editor_decor_palette() -> void:
 	var main := await _main()
 	main.open_editor()
