@@ -217,6 +217,7 @@ func show_home(message := "") -> void:
 			["Quit", func() -> void: get_tree().quit()]]:
 		_button(entry[0], entry[1], actions).size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_tracking_row()
+	_volume_row()
 	_controls_help()
 	_focus_first()
 
@@ -228,6 +229,7 @@ func show_in_stream() -> void:
 	_button("Resume", func() -> void: resume_requested.emit())
 	_button("Edit tank", func() -> void: edit_requested.emit())
 	_tracking_row()
+	_volume_row()
 	_button("Disconnect", func() -> void: client.stop_stream(false))
 	_button("Quit game and disconnect", func() -> void: client.stop_stream(true))
 	_spacer()
@@ -357,6 +359,30 @@ func _tracking_row() -> void:
 		tracking_changed.emit(toggle.button_pressed, style.selected)
 	toggle.toggled.connect(func(_on: bool) -> void: apply.call())
 	style.item_selected.connect(func(_i: int) -> void: apply.call())
+
+
+## Volume sliders: Master, Game (the stream), Room & tank, UI.
+func _volume_row() -> void:
+	var row := HBoxContainer.new()
+	row.name = "Volumes"
+	row.add_theme_constant_override("separation", 14)
+	_page.add_child(row)
+	for entry: Array in [["master", "Master"], ["game", "Game"], ["room", "Room & tank"], ["ui", "UI"]]:
+		var key: String = entry[0]
+		var box := VBoxContainer.new()
+		box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		box.add_theme_constant_override("separation", 2)
+		row.add_child(box)
+		box.add_child(_plain_label(entry[1], 18, UiStyle.MUTED, 700))
+		var slider := HSlider.new()
+		slider.name = "Volume_" + key
+		slider.min_value = 0.0
+		slider.max_value = 1.0
+		slider.step = 0.05
+		slider.value = Sound.volume(key)
+		slider.custom_minimum_size = Vector2(0, 28)
+		slider.value_changed.connect(func(v: float) -> void: Sound.set_volume(key, v))
+		box.add_child(slider)
 
 
 # --- actions ---
@@ -505,6 +531,7 @@ func _label(text: String, font_size: int, color: Color) -> Label:
 func _button(text: String, callback: Callable, parent: Control = null) -> Button:
 	var b := Button.new()
 	b.text = text
+	b.pressed.connect(func() -> void: Sound.play_ui())
 	b.pressed.connect(callback)
 	(parent if parent else _page).add_child(b)
 	return b
@@ -516,7 +543,9 @@ func _option(parent: Control, labels: Array, values: Array, key: String, default
 		opt.add_item(l)
 	var current: Variant = Settings.get_stream(key, default)
 	opt.selected = maxi(values.find(current), 0)
-	opt.item_selected.connect(func(i: int) -> void: Settings.set_stream(key, values[i]))
+	opt.item_selected.connect(func(i: int) -> void:
+		Sound.play_ui()
+		Settings.set_stream(key, values[i]))
 	parent.add_child(opt)
 
 

@@ -100,6 +100,16 @@ static func make_theme(font_size: int, mood := "") -> Theme:
 	t.set_color("font_hover_color", "PopupMenu", Color.WHITE)
 	t.set_font("font", "PopupMenu", font(600))
 	t.set_font_size("font_size", "PopupMenu", font_size)
+	# Sliders: a soft track with the accent filling it.
+	var track := box(Color(0.05, 0.06, 0.09), 6, 0)
+	track.content_margin_top = 4
+	track.content_margin_bottom = 4
+	t.set_stylebox("slider", "HSlider", track)
+	var filled := box(a.darkened(0.1), 6, 0)
+	filled.content_margin_top = 4
+	filled.content_margin_bottom = 4
+	t.set_stylebox("grabber_area", "HSlider", filled)
+	t.set_stylebox("grabber_area_highlight", "HSlider", box(a, 6, 0))
 	var tip := box(Color(0.05, 0.05, 0.08, 0.95), 8, 8)
 	t.set_stylebox("panel", "TooltipPanel", tip)
 	t.set_color("font_color", "TooltipLabel", TEXT)

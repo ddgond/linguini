@@ -12,12 +12,13 @@ You play from inside a fish tank in a streamer's bedroom. The game stream plays 
 - Flash cards cover the whole controller, plus the stick diagonals. Cards can hold several inputs at once (combos) or play a timed macro (sequences).
 - A tank editor (F2) places, rebinds, duplicates and deletes cards, and saves named presets.
 - A **tank cam** window (F4) shows the room camera's view with a fake ML fish-tracking overlay, ready for OBS to capture.
-- Game audio plays from the speakers next to the monitor, and it's muffled while the camera is underwater.
+- Game audio plays from the speakers next to the monitor. While you pilot the fish you hear from the fish, lightly muffled by the water. Cards tap, the tank bubbles and hums, the fish swishes, and the room has its own tone in each mood.
 - **Art, so far:** a fancy fantail goldfish that swims by vertex shader, a modelled tank and stand, glass with a hint of algae, a rippling water surface, and caustic light. The tank has editable decor: plants, rocks, driftwood, an air stone, a filter and ornaments. The tank sits under the window of a cosy streamer's bedroom, with lighting baked in Blender for three moods. Every model comes from a Blender script.
-- **Look and feel:** matte laminated flash cards with printed button art in Xbox, PlayStation or Nintendo style, a cosy "streamer desktop" on the monitor, and no HUD. Held buttons show on the cards, and the camera's red tally light shows when you're live. The fonts are Nunito and JetBrains Mono.
+- **Feel:** a punch of FOV when the fish darts, a pulse of a card's edge light as it presses, and motes and shafts of lamp light in the water.
+- **Look:** matte laminated flash cards with printed button art in Xbox, PlayStation or Nintendo style, a cosy "streamer desktop" on the monitor, and no HUD. Held buttons show on the cards, and the camera's red tally light shows when you're live. The fonts are Nunito and JetBrains Mono.
 - **Quality presets:** Low, Medium and High, auto-picked for your GPU.
 
-Still to come in milestone 3: 3d, feel and sound. `tools/tracker/` shows progress live.
+`tools/tracker/` shows progress live.
 
 ## Controls
 
@@ -105,9 +106,25 @@ The fish is always labelled plainly, as "goldfish 0.97".
 - **Minimal:** corner brackets around the fish, its label and the held inputs.
 - **Over-the-top:** everything in Earnest, plus a model banner and a predicted trajectory. It also has fake layer activations, an "INTENT" guess, a scrolling log, scanlines and the odd "RECALIBRATING…" flicker.
 
-## Game audio
+## Sound
 
-The host's audio plays from the two speakers next to the monitor, placed in 3D: the left channel on the left speaker and the right on the right. When the camera is underwater, a low-pass filter muffles everything through the water and glass. It clears when the camera leaves the water, such as in the editor. To hear it without the room, set **Room speakers / Stereo** on the monitor's stream settings to Stereo.
+The host's audio plays from the two speakers next to the monitor, placed in 3D: the left channel on the left speaker and the right on the right. To hear it without the room, set **Room speakers / Stereo** on the monitor's stream settings to Stereo.
+
+- **Where you hear from:** while you pilot the fish, sound is heard from the fish. It's always underwater, so everything is lightly muffled: a gentle low-pass at 3.5 kHz and a little reverb, clear enough to follow the game. In the menu and editor you hear from the camera; the menu's view is in the tank, so it's muffled too. Stereo mode skips the water altogether.
+- **The tank:** the air stone bubbles, the filter trickles and the lamp hums, each from where it is.
+- **The fish:** a swish on each tail beat, harder when it swims harder. It also whooshes when it darts and knocks when it bumps the glass or solid decor.
+- **The cards:** a soft tap as a card presses, a lighter one on release, and a tick for each step of a sequence.
+- **The room:** each mood has its own tone. Night has the PC fan and the distant city, the rainy evening has rain on the window, and golden hour has birds and a breeze. The monitor's buttons click.
+- **Volume:** **Master**, **Game** (the stream), **Room & tank** and **UI** sliders on the monitor's home page. They're remembered.
+
+The sounds are built by `audio/build.py` into `godot/audio/`:
+
+```sh
+nix develop .#audio -c python3 audio/build.py          # everything
+nix develop .#audio -c python3 audio/build.py bubbles  # just these
+```
+
+Most are synthesized by the script. The rain and the birds are CC0 recordings from OpenGameArt, kept in `audio/sources/`; `godot/audio/CREDITS.txt` lists them, and the release packages include it.
 
 ## Building
 
@@ -137,11 +154,12 @@ The tests cover:
 - Card timing and geometry, combos and sequences, layouts and presets, and the controller state sent to the host.
 - The tank editor: entering and leaving it, card edits, and saving and loading presets.
 - The tank cam's detector: tracking, occlusion and what it reports.
-- Game audio: channel routing and the underwater filter.
+- Game audio: channel routing, the light underwater muffle, and Stereo skipping it.
 - Decor: placement by anchor, solid versus soft, saving with presets, the editor, and the default arrangement staying clear of card zones.
 - Art: that the tank and fish models match the game's dimensions, and that the quality presets switch their effects.
 - The bedroom: that it lands around the tank, uses its lightmaps, and switches lightmap, view and rain with the mood picker.
 - The look: button glyph sets and their detection, the card slab's orientation, the idle monitor and tally lights, the editor's decor palette and the tank cam's keypoints.
+- Feel and sound: the mixer buses and volumes, hearing from the fish while piloting, card taps, tank and room sounds, the dart kick, and motes and shafts by quality.
 - The decode path, from an H.264 test stream to the Y/UV planes.
 - Host requests.
 - The fish staying inside the tank under physics.
@@ -279,7 +297,14 @@ The committed lightmaps are drafts; `layout.json` records which quality they wer
 python3 tools/tracker/server.py    # http://localhost:57197, and on your LAN
 ```
 
-A live page with the roadmap and a render of every model, grouped by milestone. It refreshes itself every few seconds, picking up edits to `tools/tracker/roadmap.json` and new renders from `art/build.sh`. Renders are written to `art/renders/`, which isn't committed.
+A live page with the roadmap, in-game snapshots of the whole scene, and a render of every model, grouped by milestone. It refreshes itself every few seconds, picking up edits to `tools/tracker/roadmap.json`, new renders from `art/build.sh` and new snapshots. Renders and snapshots are written to `art/renders/`, which isn't committed.
+
+```sh
+nix develop -c python3 tools/tracker/capture.py                 # every shot in shots.json, for the current milestone
+nix develop -c python3 tools/tracker/capture.py --only menu editor
+```
+
+A snapshot runs the game once per shot in `tools/tracker/shots.json`, headless under `xvfb-run`, and saves the screenshots with the milestone, time and commit. The page shows the newest snapshot large, a timeline of every snapshot, and each milestone's newest snapshot in its roadmap entry.
 
 ## Layout
 

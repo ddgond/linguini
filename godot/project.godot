@@ -16,6 +16,7 @@ Settings="*res://scripts/settings.gd"
 Quality="*res://scripts/quality.gd"
 Mood="*res://scripts/mood.gd"
 Glyphs="*res://scripts/glyphs.gd"
+Sound="*res://scripts/sound.gd"
 
 [display]
 

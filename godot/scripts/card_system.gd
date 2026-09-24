@@ -231,23 +231,35 @@ func update(fish_pos: Vector3, delta: float) -> void:
 		var card := cards[i]
 		var sequence := card.binding.kind == CardBinding.Kind.SEQUENCE
 		if _play_ms[i] >= 0.0:
+			var before := _play_ms[i]
 			_play_ms[i] += delta * 1000.0
+			for step: Dictionary in card.binding.steps:
+				if step.at > before and step.at <= _play_ms[i]:
+					_sound(card, "seq_tick", -8.0)
 			if _play_ms[i] >= card.binding.duration_ms():
 				_play_ms[i] = -1.0
 		var zone := _zones[i].grow(HYSTERESIS) if card.active else _zones[i]
 		if zone.has_point(fish_pos):
-			if not card.active and sequence:
-				_play_ms[i] = 0.0
+			if not card.active:
+				if sequence:
+					_play_ms[i] = 0.0
+				_sound(card, "card_press", -4.0)
 			card.active = true
 			_release_timers[i] = RELEASE_DELAY
 		elif card.active:
 			_release_timers[i] -= delta
 			if _release_timers[i] <= 0.0:
 				card.active = false
+				_sound(card, "card_release", -9.0)
 		card.playing = _play_ms[i] >= 0.0
 		if sequence:
 			card.progress = _play_ms[i] / maxf(card.binding.duration_ms(), 1.0) if card.playing else -1.0
 	_publish()
+
+
+func _sound(card: FlashCard, sound_name: String, volume_db: float) -> void:
+	if card.is_inside_tree():
+		Sound.play_at(sound_name, card.global_position, volume_db, 0.05, 0.6)
 
 
 ## Resends the current state, e.g. when a stream (re)starts.

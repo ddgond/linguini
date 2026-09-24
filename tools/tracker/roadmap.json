@@ -185,9 +185,46 @@
     {
       "id": "3d",
       "title": "Feel and sound",
-      "status": "planned",
-      "summary": "Bubbles, filter, card presses, camera polish, room tone. Q&A first.",
-      "items": []
+      "status": "done",
+      "summary": "Sound heard from the fish while piloting (lightly muffled underwater), card, tank, fish and room sounds, a dart kick, card edge pulses, water motes and light shafts, and volume sliders.",
+      "items": [
+        {
+          "text": "Listener on the fish while piloting, camera otherwise; a light underwater muffle and watery reverb",
+          "status": "done"
+        },
+        {
+          "text": "Sound pipeline: synthesized sounds (audio/ script) plus CC0 recordings with credits",
+          "status": "done"
+        },
+        {
+          "text": "Card sounds: press tap, release, sequence ticks",
+          "status": "done"
+        },
+        {
+          "text": "Tank ambience: filter trickle, air-stone bubbles, tank hum, from their pieces",
+          "status": "done"
+        },
+        {
+          "text": "Fish sounds: tail swishes, dart whoosh, bumps",
+          "status": "done"
+        },
+        {
+          "text": "Room tone per mood (fan and city, rain, birds and breeze) and monitor UI clicks",
+          "status": "done"
+        },
+        {
+          "text": "Feel: dart FOV kick, card edge-light pulse on press",
+          "status": "done"
+        },
+        {
+          "text": "Water motes and light shafts, scaled by quality",
+          "status": "done"
+        },
+        {
+          "text": "Volume sliders on the monitor: Master, Game, Room & tank, UI",
+          "status": "done"
+        }
+      ]
     }
   ]
 }

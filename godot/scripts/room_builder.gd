@@ -244,6 +244,14 @@ func _tank() -> void:
 	tank_light.shadow_enabled = true
 	tank.add_child(tank_light)
 	moods.tank_light = tank_light
+	var atmosphere := TankAtmosphere.new()
+	atmosphere.name = "Atmosphere"
+	atmosphere.water = AABB(Vector3(-w / 2, GRAVEL_TOP, -d / 2), Vector3(w, WATER_LEVEL - GRAVEL_TOP, d))
+	tank.add_child(atmosphere)
+	result.atmosphere = atmosphere
+
+	# The lamp's ballast and the pump, humming softly.
+	Sound.loop_on(tank, "tank_hum", -10.0, 1.0)
 
 
 ## The monitor's picture (the room model has the monitor itself), its glow
@@ -291,6 +299,10 @@ func _desk() -> void:
 	tally.visible = false
 	root.add_child(tally)
 	moods.webcam_tally = tally
+
+	var w: Array = layout.window
+	moods.window_point = Vector3(w[0], (w[1] + w[2]) / 2.0, layout.room_min[2] - 0.3) + offset
+	moods.desk_point = Vector3(layout.screen_center[0], 0.3, layout.screen_center[2] + 0.5) + offset
 
 	var speakers: Array[Vector3] = []
 	for p: Array in layout.speakers:

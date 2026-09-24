@@ -17,6 +17,7 @@ const MOODS := {
 		"ambient": [Color(0.42, 0.45, 0.7), 0.22],
 		"window": [Color(0.55, 0.65, 1.0), 0.12, Vector3(0.0, -0.5, 1.0)],
 		"lamps": 0.9, "fairy": 0.35, "accent": 0.9, "tank": 1.7, "screen": 0.6,
+		"tone": {"fan": -8.0, "city": -2.0},
 	},
 	"rainy": {
 		"exposure": 1.0, "view": 0.9, "rain": 1.0,
@@ -26,6 +27,7 @@ const MOODS := {
 		"ambient": [Color(0.6, 0.66, 0.78), 0.35],
 		"window": [Color(0.7, 0.78, 0.92), 0.35, Vector3(0.0, -0.4, 1.0)],
 		"lamps": 0.9, "fairy": 0.35, "accent": 0.35, "tank": 1.4, "screen": 0.45,
+		"tone": {"fan": -12.0, "rain": 2.0},
 	},
 	"golden": {
 		"exposure": 1.25, "view": 1.0, "rain": 0.0,
@@ -35,6 +37,7 @@ const MOODS := {
 		"ambient": [Color(1.0, 0.82, 0.66), 0.35],
 		"window": [Color(1.0, 0.72, 0.45), 1.6, Vector3(-0.3, -0.75, 1.0)],
 		"lamps": 0.0, "fairy": 0.1, "accent": 0.15, "tank": 0.9, "screen": 0.35,
+		"tone": {"fan": -14.0, "birds": 0.0, "breeze": -4.0},
 	},
 }
 
@@ -58,6 +61,10 @@ var lamps: Array[OmniLight3D] = []
 var fairy_light: OmniLight3D
 var accent_light: OmniLight3D
 
+## Where room tone comes from: the window (rain, city, birds, breeze) and
+## the PC under the desk (its fan).
+var window_point := Vector3.ZERO
+var desk_point := Vector3.ZERO
 ## The webcam's tally LED (lit while streaming).
 var webcam_tally: MeshInstance3D
 ## Whether a stream is running: the room camera's and the webcam's tally
@@ -66,6 +73,7 @@ var live := false:
 	set = set_live
 
 var mood := ""
+var _tone := {}
 var _lightmaps := {}
 var _views := {}
 
@@ -91,6 +99,7 @@ func apply(mood_name: String) -> void:
 			mat.set_shader_parameter("emission_color", GLOW_COLORS.get(mat_name, Color.WHITE))
 		mat.set_shader_parameter("emission_energy", m.glow[mat_name])
 	_tally()
+	_room_tone(m.tone)
 	if materials.has("GlowRGB"):
 		materials.GlowRGB.set_shader_parameter("emission_color", m.rgb)
 		materials.GlowRGB.set_shader_parameter("albedo", m.rgb)
@@ -122,6 +131,26 @@ func apply(mood_name: String) -> void:
 	if screen_light:
 		screen_light.light_energy = m.screen
 	_shadows()
+
+
+## Fades each room-tone loop to its level in this mood (silent if absent).
+func _room_tone(levels: Dictionary) -> void:
+	if not is_inside_tree():
+		return
+	for sound_name: String in ["fan", "city", "rain", "birds", "breeze"]:
+		var player: AudioStreamPlayer3D = _tone.get(sound_name)
+		if player == null:
+			if not levels.has(sound_name):
+				continue
+			var holder := Node3D.new()
+			holder.name = "Tone_" + sound_name
+			add_child(holder)
+			holder.global_position = desk_point if sound_name == "fan" else window_point
+			player = Sound.loop_on(holder, sound_name, -60.0, 1.2 if sound_name == "fan" else 2.5)
+			_tone[sound_name] = player
+		var target: float = levels.get(sound_name, -60.0)
+		var tween := create_tween()
+		tween.tween_property(player, "volume_db", target, 1.2)
 
 
 func set_live(value: bool) -> void:

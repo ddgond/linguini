@@ -14,6 +14,10 @@
         art = pkgs.mkShell {
           packages = with pkgs; [ blender python3 ];
         };
+        # Synthesizing and encoding the sounds in audio/ (audio/build.py).
+        audio = pkgs.mkShell {
+          packages = [ (pkgs.python3.withPackages (p: [ p.numpy ])) pkgs.ffmpeg ];
+        };
         default = pkgs.mkShell {
           packages = with pkgs; [
             godot_4

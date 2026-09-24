@@ -20,6 +20,7 @@ extends Node3D
 ##                          (x,y,z each, in the room model's coordinates)
 ##   --mood=NAME            night, rainy or golden, just for this run
 ##   --glyphs=SET           xbox, playstation or nintendo button art, just for this run
+##   --quality=LEVEL        low, medium or high graphics, just for this run
 ##   --edit                 open the tank editor
 ##   --tracking=STYLE       open the tank cam window (minimal, earnest, over-the-top)
 ##   --tracking-shot=PATH   with --screenshot, also save the tank cam window
@@ -45,6 +46,8 @@ var mode := Mode.MENU
 var _mode_before_edit := Mode.MENU
 
 var audio: RoomAudio
+## The fish's ears: the listener while piloting (the camera's otherwise).
+var ears: AudioListener3D
 var _water := AABB()
 var _has_swum := false
 var _args := {}
@@ -80,6 +83,12 @@ func _ready() -> void:
 	tank.add_child(fish)
 	fish.position = Vector3(0.3, 0.3, 0.1)
 	fish.yaw = PI / 2
+	ears = AudioListener3D.new()
+	ears.name = "Ears"
+	fish.add_child(ears)
+	var fish_sounds := FishSounds.new()
+	fish_sounds.name = "FishSounds"
+	fish.add_child(fish_sounds)
 
 	camera = FishCamera.new()
 	camera.fish = fish
@@ -157,6 +166,11 @@ func set_mode(new_mode: Mode) -> void:
 	# The fish holds still while its cards are rearranged around it.
 	fish.set_physics_process(not editing)
 	camera.menu_view = not swimming
+	# Sound is heard from the fish while piloting it, from the camera otherwise.
+	if swimming:
+		ears.make_current()
+	else:
+		ears.clear_current()
 	monitor.menu_visible = not swimming
 	cards.enabled = swimming
 	if editing and not editor.is_open():
@@ -227,9 +241,9 @@ func _process(_delta: float) -> void:
 	var view := get_viewport().get_camera_3d()
 	var underwater := view != null and _water.has_point(view.global_position)
 	room.environment.fog_enabled = underwater
+	Sound.underwater = underwater or (mode == Mode.SWIM)
 	# No HUD: the camera's tally light and the monitor say whether we're live.
 	room.moods.live = client != null and client.is_streaming()
-	audio.underwater = underwater
 	_pump_audio()
 
 
@@ -315,6 +329,8 @@ func _apply_args() -> void:
 		cards.toggle_zones()
 	if _args.has("mood"):
 		Mood.set_mood(String(_args.mood), false)
+	if _args.has("quality"):
+		Quality.set_setting(String(_args.quality), false)
 	if _args.has("glyphs"):
 		Glyphs.set_setting(String(_args.glyphs), false)
 	if _args.has("room-camera"):

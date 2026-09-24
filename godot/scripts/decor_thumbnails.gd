@@ -42,6 +42,7 @@ static func _render(id: String, host: Node) -> void:
 	sun.light_energy = 1.4
 	vp.add_child(sun)
 	var piece := DecorPiece.new(id)
+	piece.quiet = true
 	vp.add_child(piece)
 	var cam := Camera3D.new()
 	cam.fov = 30.0

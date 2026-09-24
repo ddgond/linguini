@@ -33,6 +33,7 @@ var progress := -1.0:
 var _face_mat: ShaderMaterial
 var _face: Node3D
 var _selected := false
+var _pulse := 0.0
 var _zone_debug: MeshInstance3D
 
 
@@ -71,6 +72,7 @@ func _ready() -> void:
 	Quality.add_caustics(_face_mat)
 	Quality.add_caustics(back)
 	_update_highlight()
+	set_process(false)
 	_request_face()
 	Glyphs.changed.connect(func(_set: String) -> void: _request_face())
 
@@ -97,6 +99,17 @@ func set_active(value: bool) -> void:
 	active = value
 	if _face != null:
 		_update_highlight()
+		if value:
+			# A soft pulse of the edge light as it presses.
+			_pulse = 1.0
+			set_process(true)
+
+
+func _process(delta: float) -> void:
+	_pulse = maxf(_pulse - delta / 0.35, 0.0)
+	_update_highlight()
+	if _pulse <= 0.0:
+		set_process(false)
 
 
 func set_playing(value: bool) -> void:
@@ -116,7 +129,8 @@ func set_progress(value: float) -> void:
 func _update_highlight() -> void:
 	var lit := active or playing
 	_face_mat.set_shader_parameter("edge_color", SELECTED_COLOR if _selected else card_color())
-	_face_mat.set_shader_parameter("glow", 1.0 if lit else (0.6 if _selected else 0.0))
+	var glow := 1.0 if lit else (0.6 if _selected else 0.0)
+	_face_mat.set_shader_parameter("glow", glow + 1.2 * _pulse * _pulse)
 
 
 ## Selection outline for the tank editor.
