@@ -27,6 +27,8 @@ extends Node3D
 ##   --tracking-shot=PATH   with --screenshot, also save the tank cam window
 ##   --select=N             select card N in the editor
 ##   --screenshot=PATH      save a screenshot after --delay seconds (default 2) and quit
+##   --frames=N             with --screenshot, save N frames --frame-step seconds apart
+##                          (default 0.1), as PATH, PATH_01, PATH_02...
 ##   --tool=NAME [ARGS...]  run res://tools/NAME.gd instead of the room (headless
 ##                          helpers such as pair and stream_check; this also works
 ##                          in exported builds, which ignore `-s`)
@@ -366,6 +368,14 @@ func _apply_args() -> void:
 		var img := get_viewport().get_texture().get_image()
 		img.save_png(_args.screenshot)
 		print("Saved screenshot to ", _args.screenshot)
+		# A sequence, for looking at motion: PATH_01.png, PATH_02.png, ...
+		var frames := int(_args.get("frames", "1"))
+		for i in range(1, frames):
+			await get_tree().create_timer(float(_args.get("frame-step", "0.1"))).timeout
+			await RenderingServer.frame_post_draw
+			var path := String(_args.screenshot).get_basename() + "_%02d.png" % i
+			get_viewport().get_texture().get_image().save_png(path)
+			print("Saved screenshot to ", path)
 		if _args.has("tracking-shot") and tracking.visible:
 			tracking.get_texture().get_image().save_png(_args["tracking-shot"])
 			print("Saved tank cam screenshot to ", _args["tracking-shot"])

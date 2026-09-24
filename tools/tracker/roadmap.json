@@ -1,6 +1,6 @@
 {
   "project": "Linguini",
-  "now": "4e",
+  "now": "4f",
   "milestones": [
     {
       "id": "1",
@@ -357,31 +357,35 @@
     {
       "id": "4e",
       "title": "Rain on the glass",
-      "status": "in-progress",
+      "status": "done",
       "summary": "Drops that run down, not up, and behave like water.",
       "items": [
         {
-          "text": "Fix: running drops move downward",
-          "status": "planned"
+          "text": "Fix: running drops move downward (the pattern scrolled the wrong way for the pane's UVs)",
+          "status": "done"
         },
         {
-          "text": "Beads that refract the (upside-down) street behind them",
-          "status": "planned"
+          "text": "Beads are tiny lenses: each shows the street behind it shrunken and upside down, with a dark rim and a glint",
+          "status": "done"
         },
         {
-          "text": "Drops that stall, jerk and gather, leaving wet trails",
-          "status": "planned"
+          "text": "Beads come and go; runners stall and lurch, wander a little, wipe the beads in their way and leave a wet, beaded trail that dries",
+          "status": "done"
         },
         {
-          "text": "Fine mist and drop sizes at a believable scale",
-          "status": "planned"
+          "text": "Fine mist over the glass; drop sizes in real millimetres, fading out below a pixel instead of sparkling",
+          "status": "done"
+        },
+        {
+          "text": "--frames and --frame-step for screenshot sequences",
+          "status": "done"
         }
       ]
     },
     {
       "id": "4f",
       "title": "Fish polish",
-      "status": "planned",
+      "status": "in-progress",
       "summary": "A friendlier face and a more natural swim.",
       "items": [
         {
