@@ -1,6 +1,6 @@
 {
   "project": "Linguini",
-  "now": "4c",
+  "now": "4d",
   "milestones": [
     {
       "id": "1",
@@ -297,31 +297,39 @@
     {
       "id": "4c",
       "title": "Outside: street life",
-      "status": "in-progress",
+      "status": "done",
       "summary": "The things that fill a street: trees, lamps, parked cars, wires, clutter, and traffic that passes by.",
       "items": [
         {
-          "text": "Street trees (one right by our window), swaying",
-          "status": "planned"
+          "text": "Street trees with leaf sprays that shade as round crowns; the one by our window low enough to look over",
+          "status": "done"
         },
         {
-          "text": "Street lamps, traffic light, signs, hydrant, bins, bike rack, mailbox",
-          "status": "planned"
+          "text": "Street lamps, traffic signals that take turns, street signs, hydrants, bins, a mailbox, bike racks, caf\u00e9 tables and an A-frame",
+          "status": "done"
         },
         {
-          "text": "Parked cars; cars that drive past with headlights at night",
-          "status": "planned"
+          "text": "Parked cars; cars that drive past, stop at red and light the road ahead at night",
+          "status": "done"
         },
         {
-          "text": "Telephone poles and wires across the street",
-          "status": "planned"
+          "text": "Telephone poles and wires, with drops across the street to our building",
+          "status": "done"
+        },
+        {
+          "text": "People walking the sidewalks, dressed at random, with umbrellas in the rain (far sidewalk widened to fit them)",
+          "status": "done"
+        },
+        {
+          "text": "A flock of pigeons now and then at golden hour",
+          "status": "done"
         }
       ]
     },
     {
       "id": "4d",
       "title": "Outside: moods",
-      "status": "planned",
+      "status": "in-progress",
       "summary": "Each mood lights the street its own way.",
       "items": [
         {

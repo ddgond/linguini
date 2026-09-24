@@ -22,6 +22,8 @@ const LEAVES := preload("res://shaders/street_leaves.gdshader")
 const SKYLINE := preload("res://shaders/street_skyline.gdshader")
 const SKY := preload("res://shaders/street_sky.gdshader")
 const RAILING := preload("res://shaders/street_railing.gdshader")
+const WALKER := preload("res://shaders/street_walker.gdshader")
+const BIRD := preload("res://shaders/street_bird.gdshader")
 
 ## The street's render layer (layer 3). Its lights light only this layer.
 const LAYER := 4
@@ -42,6 +44,8 @@ const SURFACES := {
 }
 ## Glowing materials, by mood-set group.
 const GLOWS := ["Lamp", "Neon", "Headlight", "Taillight", "Signal"]
+## Materials with shaders of their own.
+const SPECIAL := ["Window", "Skyline", "LeafCards", "Railing", "Walker", "Umbrella", "Bird"]
 
 ## Each mood's sky, light and life. Colours are linear-ish; energies are Godot's.
 const MOODS := {
@@ -51,7 +55,7 @@ const MOODS := {
 		"sun_dir": Vector3(0.0, 0.5, -1.0), "sun_color": Color(0.55, 0.65, 0.95), "sun_energy": 0.12, "sun_shadow": false,
 		"clouds": 0.3, "cloud_color": Color(0.05, 0.05, 0.075), "stars": 1.0, "moon": 1.0,
 		"wet": 0.0, "night": 1.0, "windows_lit": 0.45, "interior": 1.0,
-		"lamp": 3.0, "lamp_glow": 5.0, "neon": 4.0, "shop": 1.2, "head": 5.0, "wind": 0.6,
+		"lamp": 3.0, "lamp_glow": 5.0, "neon": 4.0, "shop": 1.2, "head": 5.0, "wind": 0.6, "people": 7, "birds": false,
 	},
 	"rainy": {
 		"zenith": Color(0.12, 0.14, 0.18), "horizon": Color(0.22, 0.23, 0.27), "haze": Color(0.19, 0.2, 0.24),
@@ -59,7 +63,7 @@ const MOODS := {
 		"sun_dir": Vector3(0.1, 0.6, -1.0), "sun_color": Color(0.7, 0.75, 0.85), "sun_energy": 0.0, "sun_shadow": false,
 		"clouds": 1.0, "cloud_color": Color(0.2, 0.21, 0.25), "stars": 0.0, "moon": 0.0,
 		"wet": 1.0, "night": 0.65, "windows_lit": 0.62, "interior": 0.9,
-		"lamp": 2.2, "lamp_glow": 4.0, "neon": 3.5, "shop": 1.0, "head": 4.0, "wind": 1.0,
+		"lamp": 2.2, "lamp_glow": 4.0, "neon": 3.5, "shop": 1.0, "head": 4.0, "wind": 1.0, "people": 6, "birds": false,
 	},
 	"golden": {
 		"zenith": Color(0.3, 0.45, 0.72), "horizon": Color(1.0, 0.7, 0.45), "haze": Color(0.85, 0.66, 0.5),
@@ -67,7 +71,7 @@ const MOODS := {
 		"sun_dir": Vector3(0.3, 0.75, -1.0), "sun_color": Color(1.0, 0.72, 0.45), "sun_energy": 2.6, "sun_shadow": true,
 		"clouds": 0.4, "cloud_color": Color(1.0, 0.82, 0.68), "stars": 0.0, "moon": 0.0,
 		"wet": 0.0, "night": 0.0, "windows_lit": 0.07, "interior": 0.6,
-		"lamp": 0.0, "lamp_glow": 0.0, "neon": 1.2, "shop": 0.3, "head": 0.0, "wind": 0.8,
+		"lamp": 0.0, "lamp_glow": 0.0, "neon": 1.2, "shop": 0.3, "head": 0.0, "wind": 0.8, "people": 14, "birds": true,
 	},
 }
 
@@ -89,6 +93,13 @@ var _shop_lights: Array[OmniLight3D] = []
 var _neon_lights: Array[OmniLight3D] = []
 var _templates: Array[MeshInstance3D] = []
 var _cars: Array[Dictionary] = []
+var _walker_templates: Array[MeshInstance3D] = []
+var _umbrella: MeshInstance3D
+var _walkers: Array[Dictionary] = []
+var _bird: MeshInstance3D
+var _flock: Node3D
+var _flock_t := 0.0
+var _next_flock := 2.0
 var _next_car := [2.0, 5.0]
 var _time := 0.0
 var _rng := RandomNumberGenerator.new()
@@ -118,6 +129,15 @@ func _model() -> void:
 		if moving:
 			mi.visible = false
 			_templates.append(mi)
+		elif mi.name.begins_with("Walker_"):
+			mi.visible = false
+			_walker_templates.append(mi)
+		elif mi.name == "Umbrella":
+			mi.visible = false
+			_umbrella = mi
+		elif mi.name == "Bird":
+			mi.visible = false
+			_bird = mi
 		# The leaf cards are thin: no shadows from their back faces' angle games.
 		if mi.name == "Skyline" or mi.name == "Ground":
 			mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -142,6 +162,16 @@ func _material(mat_name: String, imported: Material, moving: bool) -> Material:
 		m.shader = SKYLINE
 	elif mat_name == "Railing":
 		m.shader = RAILING
+	elif mat_name == "Walker":
+		m.shader = WALKER
+	elif mat_name == "Bird":
+		m.shader = BIRD
+	elif mat_name == "Umbrella":
+		m.shader = SURFACE
+		m.set_shader_parameter("kind", 8)
+		m.set_shader_parameter("roughness", 0.3)
+		m.set_shader_parameter("gloss", 0.5)
+		m.set_shader_parameter("two_sided", true)
 	elif mat_name == "LeafCards":
 		m.shader = LEAVES
 		if imported is BaseMaterial3D:
@@ -257,6 +287,7 @@ func apply_mood(mood_name: String) -> void:
 		_leaves.set_shader_parameter("wind", m.wind)
 	for car in _cars:
 		(car.light as SpotLight3D).visible = m.head > 0.0 and Quality.level >= Quality.Level.MEDIUM
+	_populate(m.people, m.wet > 0.5)
 	_apply_quality(Quality.level)
 
 
@@ -279,6 +310,8 @@ func _process(delta: float) -> void:
 	RenderingServer.global_shader_parameter_set("street_signal_main", float(main_state))
 	RenderingServer.global_shader_parameter_set("street_signal_cross", float(_signal_state(1)))
 	_traffic(delta, main_state)
+	_walk(delta)
+	_birds(delta)
 
 
 ## 0 red, 1 amber, 2 green for the main street (road 0) or the cross street.
@@ -378,3 +411,130 @@ func _spawn(lane_index: int) -> void:
 	add_child(holder)
 	_cars.append({"node": holder, "light": beam, "lane": lane_index, "x": x, "speed": 9.0,
 		"cruise": _rng.randf_range(8.0, 12.0), "length": float(info.get("length", 4.5))})
+
+
+# --- people --------------------------------------------------------------------
+
+const SKINS := [Color(0.95, 0.78, 0.65), Color(0.85, 0.64, 0.5), Color(0.7, 0.5, 0.36), Color(0.52, 0.36, 0.25),
+	Color(0.36, 0.24, 0.17), Color(0.92, 0.72, 0.55)]
+const TOPS := [Color(0.12, 0.16, 0.3), Color(0.62, 0.45, 0.28), Color(0.07, 0.07, 0.08), Color(0.3, 0.33, 0.2),
+	Color(0.42, 0.1, 0.12), Color(0.45, 0.45, 0.47), Color(0.8, 0.6, 0.2), Color(0.15, 0.4, 0.42), Color(0.8, 0.78, 0.72),
+	Color(0.6, 0.2, 0.35)]
+const BOTTOMS := [Color(0.16, 0.22, 0.35), Color(0.06, 0.06, 0.07), Color(0.3, 0.3, 0.32), Color(0.55, 0.47, 0.35),
+	Color(0.2, 0.28, 0.45)]
+const HAIRS := [Color(0.05, 0.04, 0.03), Color(0.2, 0.12, 0.07), Color(0.55, 0.4, 0.2), Color(0.6, 0.6, 0.6),
+	Color(0.4, 0.15, 0.06), Color(0.85, 0.72, 0.45)]
+const UMBRELLAS := [Color(0.08, 0.08, 0.09), Color(0.6, 0.08, 0.08), Color(0.1, 0.2, 0.5), Color(0.9, 0.75, 0.15),
+	Color(0.2, 0.45, 0.3), Color(0.85, 0.85, 0.85)]
+
+
+## Fills the sidewalks with `count` people (umbrellas up in the rain).
+func _populate(count: int, rain: bool) -> void:
+	for w in _walkers:
+		(w.node as Node).queue_free()
+	_walkers.clear()
+	if _walker_templates.is_empty():
+		return
+	var lines: Array = layout.walk
+	for i in count:
+		# Two thirds on the far side, where they're easier to see.
+		var line := 1 if i % 3 != 0 else 0
+		var xr: Array = lines[line].x
+		_spawn_walker(line, _rng.randf_range(float(xr[0]), float(xr[1])), rain)
+
+
+func _spawn_walker(line: int, x: float, rain: bool) -> void:
+	var lane: Dictionary = layout.walk[line]
+	var dir := 1.0 if _rng.randf() < 0.5 else -1.0
+	var holder := Node3D.new()
+	holder.name = "Walker"
+	var body := _walker_templates[_rng.randi() % _walker_templates.size()].duplicate() as MeshInstance3D
+	body.visible = true
+	holder.add_child(body)
+	var speed := _rng.randf_range(1.05, 1.55)
+	if body.name.ends_with("kid"):
+		speed *= 1.1
+	body.set_instance_shader_parameter("skin", SKINS[_rng.randi() % SKINS.size()])
+	body.set_instance_shader_parameter("top", TOPS[_rng.randi() % TOPS.size()])
+	body.set_instance_shader_parameter("bottom", BOTTOMS[_rng.randi() % BOTTOMS.size()])
+	body.set_instance_shader_parameter("shoes", Color(0.9, 0.9, 0.88) if _rng.randf() < 0.3 else Color(0.06, 0.05, 0.05))
+	body.set_instance_shader_parameter("hair", HAIRS[_rng.randi() % HAIRS.size()])
+	# A full stride cycle (two steps) covers about 1.4 m.
+	body.set_instance_shader_parameter("step_rate", TAU * speed / 1.4)
+	body.set_instance_shader_parameter("phase", _rng.randf() * TAU)
+	if rain and _umbrella:
+		var umbrella := _umbrella.duplicate() as MeshInstance3D
+		umbrella.visible = true
+		umbrella.position = Vector3(0.1, 1.2, -0.1)
+		umbrella.rotation.x = 0.12
+		umbrella.set_instance_shader_parameter("paint", UMBRELLAS[_rng.randi() % UMBRELLAS.size()])
+		holder.add_child(umbrella)
+	holder.position = Vector3(x, float(layout.walk_y), float(lane.z) + _rng.randf_range(-0.25, 0.25))
+	holder.rotation.y = 0.0 if dir > 0.0 else PI
+	add_child(holder)
+	_walkers.append({"node": holder, "dir": dir, "speed": speed, "line": line, "x": x})
+
+
+func _walk(delta: float) -> void:
+	for w in _walkers:
+		w.x += w.dir * w.speed * delta
+		var node: Node3D = w.node
+		node.position.x = w.x
+		var xr: Array = layout.walk[w.line].x
+		# Off one end: come back on at the other, as someone new.
+		if w.x < float(xr[0]) - 2.0 or w.x > float(xr[1]) + 2.0:
+			var rain: bool = mood != "" and MOODS[mood].wet > 0.5
+			node.queue_free()
+			_walkers.erase(w)
+			_spawn_walker(w.line, float(xr[0]) if w.dir > 0.0 else float(xr[1]), rain)
+			return
+
+
+# --- birds ---------------------------------------------------------------------
+
+## Now and then (golden hour) a flock of pigeons wheels across the sky over
+## the rooftops, left to right or back, each bird weaving round the flock.
+func _birds(delta: float) -> void:
+	if _bird == null or mood == "":
+		return
+	if _flock == null:
+		if not MOODS[mood].birds:
+			return
+		_next_flock -= delta
+		if _next_flock > 0.0:
+			return
+		_next_flock = _rng.randf_range(25.0, 50.0)
+		_flock = Node3D.new()
+		_flock.name = "Flock"
+		add_child(_flock)
+		_flock_t = 0.0
+		var dir := 1.0 if _rng.randf() < 0.5 else -1.0
+		_flock.set_meta("dir", dir)
+		_flock.set_meta("z", _rng.randf_range(-24.0, -45.0))
+		_flock.set_meta("y", _rng.randf_range(4.0, 11.0))
+		for i in _rng.randi_range(9, 16):
+			var b := _bird.duplicate() as MeshInstance3D
+			b.visible = true
+			b.set_instance_shader_parameter("flap_phase", _rng.randf() * TAU)
+			b.set_instance_shader_parameter("flap_rate", _rng.randf_range(12.0, 16.0))
+			b.set_meta("offset", Vector3(_rng.randf_range(-4.0, 4.0), _rng.randf_range(-1.5, 1.5), _rng.randf_range(-3.0, 3.0)))
+			b.set_meta("wobble", _rng.randf() * TAU)
+			_flock.add_child(b)
+		return
+	_flock_t += delta
+	var dir: float = _flock.get_meta("dir")
+	# Across ~140 m in ~12 s, rising and dipping in a long curve.
+	var x := dir * (-70.0 + _flock_t * 11.0)
+	var y: float = _flock.get_meta("y") + sin(_flock_t * 0.6) * 2.0
+	var z: float = _flock.get_meta("z") + sin(_flock_t * 0.35) * 6.0
+	var centre := Vector3(x, y, z)
+	var heading := Vector3(dir * 11.0, cos(_flock_t * 0.6) * 1.2, cos(_flock_t * 0.35) * 2.1).normalized()
+	for b: MeshInstance3D in _flock.get_children():
+		var o: Vector3 = b.get_meta("offset")
+		var w: float = b.get_meta("wobble")
+		var wobble := Vector3(sin(_flock_t * 1.3 + w) * 1.2, sin(_flock_t * 1.7 + w * 2.0) * 0.6, cos(_flock_t * 1.1 + w) * 1.0)
+		b.position = centre + o + wobble
+		b.basis = Basis.looking_at(heading, Vector3.UP) * Basis(Vector3.UP, PI / 2)  # the model faces +x
+	if absf(x) > 75.0:
+		_flock.queue_free()
+		_flock = null

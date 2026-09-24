@@ -40,8 +40,7 @@ func test_every_street_material_has_a_shader() -> void:
 		for i in mi.mesh.get_surface_count():
 			var imported := mi.mesh.surface_get_material(i)
 			var mat_name: String = imported.resource_name if imported else ""
-			var known: bool = Street.SURFACES.has(mat_name) or mat_name in Street.GLOWS \
-				or mat_name in ["Window", "Skyline", "LeafCards", "Railing"]
+			var known: bool = Street.SURFACES.has(mat_name) or mat_name in Street.GLOWS or mat_name in Street.SPECIAL
 			if not known:
 				unknown.append(mat_name)
 			check(mi.get_surface_override_material(i) is ShaderMaterial, "%s/%s has a street shader" % [mi.name, mat_name])

@@ -29,6 +29,9 @@ void fragment() {
 	vec4 tex = texture(atlas, UV);
 	ALPHA = tex.a;
 	ALPHA_SCISSOR_THRESHOLD = 0.5;
+	// Alpha to coverage with MSAA: soft leaf edges instead of stair steps.
+	ALPHA_ANTIALIASING_EDGE = 0.3;
+	ALPHA_TEXTURE_COORDINATE = UV * vec2(textureSize(atlas, 0));
 	vec3 albedo = tex.rgb * COLOR.rgb * 1.15;
 	// Inner leaves sit in the crown's shade.
 	float shade = mix(0.55, 1.0, smoothstep(0.3, 0.9, weight));
@@ -36,12 +39,14 @@ void fragment() {
 	ALBEDO = albedo;
 	ROUGHNESS = mix(0.7, 0.35, street_wet);
 	BACKLIGHT = albedo * 0.6;
-	vec3 n = normalize((INV_VIEW_MATRIX * vec4(NORMAL, 0.0)).xyz);
+	// The normals point out from the crown's centre (art/models/street), so
+	// both faces of a card shade alike and the tree reads as one round mass.
+	// Godot flips back faces' normals; undo it, as they already point out.
 	if (!FRONT_FACING) {
 		NORMAL = -NORMAL;
-		n = -n;
 	}
-	EMISSION = albedo * street_ambient(vec3(0.0, 0.6, 0.0) + n * 0.4, shade);
+	vec3 n = normalize((INV_VIEW_MATRIX * vec4(NORMAL, 0.0)).xyz);
+	EMISSION = albedo * street_ambient(n, shade);
 	float dist = length(CAMERA_POSITION_WORLD - world_pos);
 	FOG = vec4(street_haze.rgb, street_haze_amount(dist, world_pos.y));
 }

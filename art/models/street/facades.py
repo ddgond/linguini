@@ -443,7 +443,7 @@ def building(b, fr, u0, u1, st, rng, lights, texts):
 
     if ground == "stoop":
         c = door_bay
-        stoop(b, fr, u0 + c - 0.75, u0 + c + 0.75, base + 1.3, 3.2, st)
+        stoop(b, fr, u0 + c - 0.75, u0 + c + 0.75, base + 1.3, S.STOOP_OUT, st)
         fence_u = (u0 + 0.15, u0 + c - 1.0) if st.get("door_left", True) is False else (u0 + c + 1.0, u1 - 0.15)
         if fence_u[1] - fence_u[0] > 0.8:
             areaway_fence(b, fr, fence_u[0], fence_u[1], 1.3, st, start=0.85 if bay else 0.02)

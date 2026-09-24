@@ -49,6 +49,7 @@ class Builder:
         self.uvs = []
         self.uv2s = []
         self.cols = []
+        self.normals = []
         self.mat_names = []
 
     # --- basics ---------------------------------------------------------------
@@ -58,8 +59,9 @@ class Builder:
             self.mat_names.append(name)
         return self.mat_names.index(name)
 
-    def face(self, pts, mat, col=(1, 1, 1, 1), uv=None, uv2=None, uv_scale=1.0, uv_offset=(0.0, 0.0)):
-        """A polygon (points counter-clockwise seen from its front)."""
+    def face(self, pts, mat, col=(1, 1, 1, 1), uv=None, uv2=None, uv_scale=1.0, uv_offset=(0.0, 0.0), normals=None):
+        """A polygon (points counter-clockwise seen from its front). `normals`
+        (one per corner) override the flat shading normal."""
         pts = [p if isinstance(p, Vector) else V(*p) for p in pts]
         base = len(self.verts)
         self.verts.extend(pts)
@@ -75,6 +77,7 @@ class Builder:
         self.uv2s.append(list(uv2) if uv2 is not None else [(0.0, 0.0)] * len(pts))
         cols = col if isinstance(col, list) else [col] * len(pts)
         self.cols.append(cols)
+        self.normals.append(normals)
 
     def quad(self, a, b, c, d, mat, **kw):
         self.face([a, b, c, d], mat, **kw)
@@ -192,6 +195,8 @@ class Builder:
             self.uvs.append(uv)
             self.uv2s.append(uv2)
             self.cols.append(cols)
+        for nm in other.normals:
+            self.normals.append(nm)
 
     # --- output ---------------------------------------------------------------
 
@@ -232,9 +237,24 @@ class Builder:
         for m in self.mat_names:
             args = materials.get(m, {})
             obj.data.materials.append(material(m, **args))
+        if any(n is not None for n in self.normals):
+            # Custom normals (leaf cards shade as round crowns); None: the
+            # face's own. Godot (x, y, z) -> Blender (x, -z, y).
+            me.update()
+            flat_normals = []
+            for poly, nm in zip(me.polygons, self.normals):
+                if nm is None:
+                    flat_normals.extend([tuple(poly.normal)] * poly.loop_total)
+                else:
+                    flat_normals.extend((n.x, -n.z, n.y) for n in nm)
+            me.normals_split_custom_set(flat_normals)
+            for p in me.polygons:
+                p.use_smooth = True
         me.validate()
         # Weld corners that share a position; the exporter keeps faces apart
         # where their normals, UVs or colours differ.
+        if any(n is not None for n in self.normals):
+            return obj
         import bmesh
         bm = bmesh.new()
         bm.from_mesh(me)

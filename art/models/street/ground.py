@@ -108,14 +108,15 @@ def build(b, rng, layout):
     # Tree pits in our sidewalk and the far one (trees themselves are props).
     soil = lin((0.18, 0.13, 0.1))
     for (x, z) in layout["trees"]:
-        b.box((x - 0.8, S.WALK_Y - 0.08, z - 0.8), (x + 0.8, S.WALK_Y + 0.004, z + 0.8), "Soil", col=soil,
+        b.box((x - 0.7, S.WALK_Y - 0.08, z - 0.6), (x + 0.7, S.WALK_Y + 0.004, z + 0.6), "Soil", col=soil,
               skip=("bottom",))
         # A little fence around it.
         iron2 = lin((0.07, 0.07, 0.08))
-        for (ax, az, bx, bz) in ((x - 0.85, z - 0.85, x + 0.85, z - 0.85), (x + 0.85, z - 0.85, x + 0.85, z + 0.85),
-                                 (x + 0.85, z + 0.85, x - 0.85, z + 0.85), (x - 0.85, z + 0.85, x - 0.85, z - 0.85)):
+        hx, hz = 0.74, 0.64
+        for (ax, az, bx, bz) in ((x - hx, z - hz, x + hx, z - hz), (x + hx, z - hz, x + hx, z + hz),
+                                 (x + hx, z + hz, x - hx, z + hz), (x - hx, z + hz, x - hx, z - hz)):
             b.tube([V(ax, S.WALK_Y + 0.42, az), V(bx, S.WALK_Y + 0.42, bz)], 0.012, "Iron", col=iron2, sides=4)
-        for (px, pz) in ((x - 0.85, z - 0.85), (x + 0.85, z - 0.85), (x + 0.85, z + 0.85), (x - 0.85, z + 0.85)):
+        for (px, pz) in ((x - hx, z - hz), (x + hx, z - hz), (x + hx, z + hz), (x - hx, z + hz)):
             b.box((px - 0.015, S.WALK_Y, pz - 0.015), (px + 0.015, S.WALK_Y + 0.45, pz + 0.015), "Iron", col=iron2)
 
     # Outside our window: the stone sill and the brick around the opening.

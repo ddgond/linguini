@@ -23,6 +23,7 @@ import bpy
 from builder import Builder
 import cars
 import facades
+import people
 import ground
 import props
 import skyline
@@ -68,6 +69,9 @@ MATERIALS = {
     "Headlight": {"vertex_color": True, "roughness": 0.1},
     "Taillight": {"vertex_color": True, "roughness": 0.1},
     "Plate": {"vertex_color": True, "roughness": 0.5},
+    "Walker": {"vertex_color": True, "roughness": 0.8},
+    "Umbrella": {"vertex_color": True, "roughness": 0.4},
+    "Bird": {"color": (0.35, 0.36, 0.4), "roughness": 0.8},
 }
 
 
@@ -102,11 +106,11 @@ def add_text(b, t):
 def build():
     rng = random.Random(11)
     layout = {"lamps": [], "porch": [], "neon": [], "shops": [], "signals": [], "beacons": [], "trees": [],
-              "lanes": [], "cars": []}
+              "lanes": [], "cars": [], "walkers": []}
 
     # Where the trees go (their pits are part of the ground).
     layout["trees"] = [[5.6, -5.0], [-16.0, -5.0], [22.5, -5.0], [-34.0, -5.0],
-                       [-23.5, -17.4], [-8.5, -17.4], [31.0, -17.4], [45.0, -17.4], [-45.0, -17.4],
+                       [-23.5, -17.3], [-8.5, -17.3], [31.0, -17.3], [45.0, -17.3], [-45.0, -17.3],
                        [9.3, -42.0], [9.3, -74.0], [18.7, -56.0], [18.7, -95.0]]
 
     gb = Builder()
@@ -149,7 +153,7 @@ def build():
     props.bike_rack(pb, 33.5, S.FAR_CURB_Z - 0.6, rng, with_bike=False)
     cafe = facades.Frame((0, 0, S.FAR_FACADE_Z), (1, 0, 0), (0, 0, 1))
     props.cafe_tables(pb, cafe, S.CROSS_X1, S.CROSS_X1 + 8.5, rng)
-    props.aframe_sign(pb, S.CROSS_X1 + 9.2, S.FAR_CURB_Z - 0.9, texts, "COFFEE")
+    props.aframe_sign(pb, S.CROSS_X1 + 9.2, S.FAR_FACADE_Z + 2.2, texts, "COFFEE")
     for x in (-0.6, 2.2):
         props.planter(pb, x, S.FAR_FACADE_Z + 0.5, rng)
     props.parked_cars(pb, rng, layout)
@@ -179,6 +183,15 @@ def build():
             o = cb.build("CarTemplate_" + kind + ("_taxi" if taxi else ""), MATERIALS)
             objects.append(o)
             layout["cars"].append({"name": o.name, "length": cars.TYPES[kind]["length"], "taxi": taxi})
+    # People, and an umbrella, for the game to walk along the sidewalks.
+    for kind in people.FIGURES:
+        o = people.figure(kind).build("Walker_" + kind, MATERIALS)
+        objects.append(o)
+        layout["walkers"].append(o.name)
+    objects.append(people.umbrella().build("Umbrella", MATERIALS))
+    objects.append(people.bird().build("Bird", MATERIALS))
+    layout["walk"] = [{"z": S.WALK_NEAR_Z, "x": [-60.0, 60.0]}, {"z": S.WALK_FAR_Z, "x": [-60.0, 70.0]}]
+    layout["walk_y"] = S.WALK_Y
     layout["lanes"] = [
         {"z": S.NEAR_CURB_Z - S.PARKING - 1.6, "dir": 1, "x": list(S.STREET_X)},
         {"z": S.FAR_CURB_Z + S.PARKING + 1.6, "dir": -1, "x": list(S.STREET_X)},
@@ -204,7 +217,7 @@ def render(objects, renders_dir, model_id):
 
     scene = bpy.context.scene
     for o in objects:
-        if o.name.startswith("CarTemplate_"):
+        if o.name.startswith(("CarTemplate_", "Walker_", "Umbrella", "Bird")):
             o.hide_render = True
     world = bpy.data.worlds.new("World")
     scene.world = world

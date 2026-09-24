@@ -90,15 +90,18 @@ def tree(b, leaves, x, z, rng, height=9.5, spread=3.0, tint=(1.0, 1.0, 1.0)):
     for _ in range(8):
         clusters.append(centre + V(rng.uniform(-1, 1) * spread * 0.6, rng.uniform(-0.6, 1.0) * spread * 0.45,
                                    rng.uniform(-1, 1) * spread * 0.6))
+    crown = sum(clusters, V(0, 0, 0)) / len(clusters)
+    crown.y += 0.4
     for c in clusters:
-        leaf_cluster(leaves, c, rng, (c.y - y0) / height, tint)
+        leaf_cluster(leaves, c, rng, (c.y - y0) / height, tint, crown)
 
 
-def leaf_cluster(b, centre, rng, weight, tint, cards=7, size=0.9):
+def leaf_cluster(b, centre, rng, weight, tint, crown, cards=9, size=0.75):
     """Leaf cards scattered around a point, facing every which way. The texture
-    holds a spray of leaves; alpha cuts them out."""
+    holds a spray of leaves; alpha cuts them out. Normals point out from the
+    crown's centre, so the tree shades as one soft, round mass."""
     for _ in range(cards):
-        off = V(rng.uniform(-1, 1), rng.uniform(-0.6, 0.8), rng.uniform(-1, 1)) * 0.7
+        off = V(rng.uniform(-1, 1), rng.uniform(-0.6, 0.8), rng.uniform(-1, 1)) * 0.65
         c = centre + off
         # A random orientation.
         n = V(rng.uniform(-1, 1), rng.uniform(-0.4, 1), rng.uniform(-1, 1)).normalized()
@@ -114,44 +117,59 @@ def leaf_cluster(b, centre, rng, weight, tint, cards=7, size=0.9):
         qu, qv = rng.randint(0, 1) * 0.5, rng.randint(0, 1) * 0.5
         uv = [(qu, qv), (qu + 0.5, qv), (qu + 0.5, qv + 0.5), (qu, qv + 0.5)]
         phase = rng.random()
-        b.face(pts, "LeafCards", col=col, uv=uv, uv2=[(weight, phase)] * 4)
+        normals = [((p - crown).normalized() * 0.8 + n * 0.2).normalized() for p in pts]
+        b.face(pts, "LeafCards", col=col, uv=uv, uv2=[(weight, phase)] * 4, normals=normals)
 
 
 def leaf_texture():
-    """A 2x2 atlas of leaf sprays (RGBA, alpha = leaf), drawn with numpy."""
+    """A 2x2 atlas of leafy sprays (RGBA, alpha = leaf), drawn with numpy:
+    twigs fanning from the middle, leaves alternating along them, each with a
+    midrib, shaded darker at the stem."""
     import numpy as np
 
     size = 512
     img = np.zeros((size, size, 4), np.float32)
     rng = np.random.default_rng(7)
     yy, xx = np.mgrid[0:size, 0:size].astype(np.float32)
+
+    def leaf(cx, cy, ang, ln, wd, colour):
+        dx, dy = xx - cx, yy - cy
+        u = dx * math.cos(ang) + dy * math.sin(ang)
+        v = -dx * math.sin(ang) + dy * math.cos(ang)
+        t = np.clip(u / ln, 0, 1)
+        # Widest a third of the way out, pointed at the tip.
+        half = wd * np.sin(np.pi * t ** 0.8) * (1 - 0.2 * t)
+        inside = (u > 0) & (u < ln) & (np.abs(v) < half)
+        shade = (0.65 + 0.45 * t) * (0.9 + 0.2 * (v > 0))
+        rib = 1 + 0.3 * np.exp(-(v / 1.1) ** 2)
+        c = np.asarray(colour)[None, None, :] * (shade * rib)[..., None]
+        img[..., :3] = np.where(inside[..., None], c, img[..., :3])
+        img[..., 3] = np.where(inside, 1.0, img[..., 3])
+
+    def line(x0, y0, x1, y1, width, colour):
+        d = np.abs((y1 - y0) * xx - (x1 - x0) * yy + x1 * y0 - y1 * x0) / max(1e-3, math.hypot(x1 - x0, y1 - y0))
+        t = ((xx - x0) * (x1 - x0) + (yy - y0) * (y1 - y0)) / max(1e-3, (x1 - x0) ** 2 + (y1 - y0) ** 2)
+        on = (d < width) & (t >= 0) & (t <= 1)
+        img[on] = (*colour, 1.0)
+
+    greens = [(0.2, 0.4, 0.12), (0.25, 0.45, 0.14), (0.17, 0.34, 0.12), (0.3, 0.46, 0.13), (0.22, 0.38, 0.16)]
     for q in range(4):
-        ox, oy = (q % 2) * 256, (q // 2) * 256
-        for _ in range(26):
-            cx, cy = ox + rng.uniform(40, 216), oy + rng.uniform(40, 216)
-            ang = rng.uniform(0, math.pi * 2)
-            ln, wd = rng.uniform(30, 48), rng.uniform(13, 20)
-            dx, dy = xx - cx, yy - cy
-            u = dx * math.cos(ang) + dy * math.sin(ang)
-            v = -dx * math.sin(ang) + dy * math.cos(ang)
-            # A pointed leaf: an ellipse pinched toward its tip.
-            t = np.clip(u / ln, -1, 1)
-            half = wd * np.sqrt(np.clip(1 - t * t, 0, 1)) * (1 - 0.35 * np.clip(t, 0, 1))
-            inside = (np.abs(u) < ln) & (np.abs(v) < half)
-            vein = np.exp(-(v / 1.3) ** 2) * (np.abs(u) < ln * 0.9)
-            g = rng.uniform(0.75, 1.0)
-            base = np.array([0.22, 0.42, 0.14]) * g
-            light = 0.8 + 0.3 * (v / (wd + 1e-3))
-            colour = base[None, None, :] * light[..., None] * (1 + 0.35 * vein[..., None])
-            img[..., :3] = np.where(inside[..., None], colour, img[..., :3])
-            img[..., 3] = np.where(inside, 1.0, img[..., 3])
-        # A few twigs.
-        for _ in range(3):
-            x0, y0 = ox + rng.uniform(60, 196), oy + rng.uniform(60, 196)
-            x1, y1 = ox + 128, oy + 128
-            d = np.abs((y1 - y0) * xx - (x1 - x0) * yy + x1 * y0 - y1 * x0) / math.hypot(x1 - x0, y1 - y0)
-            on = (d < 1.6) & (xx >= min(x0, x1)) & (xx <= max(x0, x1)) & (yy >= min(y0, y1) - 1) & (yy <= max(y0, y1) + 1)
-            img[on] = (0.25, 0.2, 0.15, 1.0)
+        ox, oy = (q % 2) * 256 + 128, (q // 2) * 256 + 128
+        twigs = rng.integers(4, 7)
+        for k in range(twigs):
+            a = 2 * math.pi * k / twigs + rng.uniform(-0.3, 0.3)
+            ln = rng.uniform(70, 110)
+            x1, y1 = ox + math.cos(a) * ln, oy + math.sin(a) * ln
+            line(ox, oy, x1, y1, 1.3, (0.22, 0.17, 0.12))
+            n = rng.integers(5, 8)
+            for j in range(n):
+                t = 0.2 + 0.8 * j / n
+                px, py = ox + (x1 - ox) * t, oy + (y1 - oy) * t
+                side = 1 if j % 2 else -1
+                g = np.array(greens[rng.integers(0, len(greens))]) * rng.uniform(0.85, 1.15)
+                leaf(px, py, a + side * rng.uniform(0.5, 0.9), rng.uniform(20, 32), rng.uniform(7, 11), g)
+            # One at the tip.
+            leaf(x1, y1, a + rng.uniform(-0.2, 0.2), rng.uniform(22, 30), rng.uniform(7, 10), np.array(greens[0]))
     # Bleed colour into the transparent parts, so mipmaps don't go dark at the edges.
     avg = img[..., :3][img[..., 3] > 0.5].mean(axis=0)
     img[..., :3] = np.where(img[..., 3:4] > 0.5, img[..., :3], avg)
