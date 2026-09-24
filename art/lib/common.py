@@ -102,9 +102,10 @@ def shade_smooth(obj, angle_deg=None):
     for p in obj.data.polygons:
         p.use_smooth = True
     if angle_deg is not None:
-        # Auto-smooth by angle, via the modifier Blender 4.1+ uses.
-        with bpy.context.temp_override(object=obj, active_object=obj, selected_objects=[obj]):
-            bpy.ops.object.shade_smooth_by_angle(angle=math.radians(angle_deg))
+        # Edges sharper than the angle stay sharp. (The shade_smooth_by_angle
+        # operator silently did nothing in background mode, which left boxes
+        # with corner-averaged normals: triangles of false light and shadow.)
+        obj.data.set_sharp_from_angle(angle=math.radians(angle_deg))
 
 
 def add_modifier(obj, kind, **settings):

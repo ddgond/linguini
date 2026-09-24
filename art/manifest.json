@@ -1,70 +1,70 @@
 {
   "airstone": {
     "output": "art/decor/airstone.glb",
-    "inputs": "63b216bbab8894fd"
+    "inputs": "6b06dc64d4b7eb4f"
   },
   "bonfire": {
     "output": "art/decor/bonfire.glb",
-    "inputs": "8467ac22656b596f"
+    "inputs": "b1c7211e372b2cd7"
   },
   "castle": {
     "output": "art/decor/castle.glb",
-    "inputs": "4aa1f726e5ad00fa"
+    "inputs": "08a0476e9f385322"
   },
   "chest": {
     "output": "art/decor/chest.glb",
-    "inputs": "493d5b6c44acdfac"
+    "inputs": "08b57e9dd1e6975d"
   },
   "driftwood": {
     "output": "art/decor/driftwood.glb",
-    "inputs": "3f71396bcfe6fd1b"
+    "inputs": "66e0130b3b961538"
   },
   "filter": {
     "output": "art/decor/filter.glb",
-    "inputs": "e3a2341175fc961a"
+    "inputs": "ce5ad3e9528cfa07"
   },
   "fish": {
     "output": "art/fish.glb",
-    "inputs": "3dfb55bcc369001e"
+    "inputs": "0c22d051e04f7b44"
   },
   "lily_pad": {
     "output": "art/decor/lily_pad.glb",
-    "inputs": "24b4dc16939ca311"
+    "inputs": "d12888e1bba61bcb"
   },
   "moss_ball": {
     "output": "art/decor/moss_ball.glb",
-    "inputs": "3af9b18f7135d436"
+    "inputs": "c220e4523812671d"
   },
   "plant_broadleaf": {
     "output": "art/decor/plant_broadleaf.glb",
-    "inputs": "104959f0a8541d81"
+    "inputs": "1df16630645a8a77"
   },
   "plant_grass": {
     "output": "art/decor/plant_grass.glb",
-    "inputs": "e227ec9482579f63"
+    "inputs": "b9f3d9128f811830"
   },
   "rock_flat": {
     "output": "art/decor/rock_flat.glb",
-    "inputs": "06d7d44fbf8ae87b"
+    "inputs": "19a0c799739646c6"
   },
   "rock_round": {
     "output": "art/decor/rock_round.glb",
-    "inputs": "e078839fd9c7e60a"
+    "inputs": "4e0c32c72245453e"
   },
   "rock_tall": {
     "output": "art/decor/rock_tall.glb",
-    "inputs": "a9b810b808fc5243"
+    "inputs": "9a812a48b7b6205d"
   },
   "room": {
     "output": "art/room/room.glb",
-    "inputs": "7f007f648a2f5c59"
+    "inputs": "6a04ff87d48065e9"
   },
   "sign": {
     "output": "art/decor/sign.glb",
-    "inputs": "4b6ea50d0bcbd13a"
+    "inputs": "48e3a7b8b9853b52"
   },
   "tank": {
     "output": "art/tank.glb",
-    "inputs": "86f56cbbbc164a0a"
+    "inputs": "290deeedd62c06ab"
   }
 }

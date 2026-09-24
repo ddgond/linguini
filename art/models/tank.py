@@ -152,13 +152,14 @@ def _stand():
     parts.append(bevelled_box("StandTop", (w + 0.03, d + 0.03, 0.04), 0.008, 3, wood, (0, 0, -0.02 - G)))
     parts.append(bevelled_box("StandBody", (w, d, STAND_H - 0.11), 0.006, 2, wood, (0, 0, -(STAND_H - 0.11) / 2 - 0.04 - G)))
     parts.append(bevelled_box("Plinth", (w - 0.04, d - 0.04, 0.07), 0.004, 2, dark, (0, 0, -STAND_H + 0.035)))
-    # Two doors with a recessed panel each, and brass knobs.
+    # Two doors with a raised panel each (4 mm proud: level with the door's
+    # face, the two z-fought), and brass knobs.
     door_w, door_h = w / 2 - 0.035, STAND_H - 0.2
     for sx in (-1, 1):
         cx = sx * (w / 4 - 0.004)
         cz = -STAND_H / 2 - 0.01
         parts.append(bevelled_box("Door", (door_w, 0.02, door_h), 0.004, 2, wood, (cx, -d / 2 - 0.008, cz)))
-        parts.append(bevelled_box("Panel", (door_w - 0.08, 0.012, door_h - 0.1), 0.01, 3, dark, (cx, -d / 2 - 0.012, cz)))
+        parts.append(bevelled_box("Panel", (door_w - 0.08, 0.012, door_h - 0.1), 0.004, 2, dark, (cx, -d / 2 - 0.016, cz)))
         parts.append(bevelled_box("Knob", (0.034, 0.036, 0.034), 0.016, 3, brass, (cx - sx * (door_w / 2 - 0.045), -d / 2 - 0.028, cz + 0.05)))
     for p in parts:
         if p.data.materials and p.data.materials[0].name.startswith("Wood"):
