@@ -69,26 +69,39 @@ jobs:
           name: linguini-macos
           path: godot/bin/
 
-  # Skipped until the Windows build works: it fails every run for now. To turn
-  # it back on, set the repository variable WINDOWS_CI to "true"
-  # (Settings > Secrets and variables > Actions > Variables).
   windows:
-    if: ${{ vars.WINDOWS_CI == 'true' }}
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: Install dependencies
-        run: |
-          pip install scons
-          vcpkg install ffmpeg[avcodec] opus openssl curl expat --triplet x64-windows
+      - name: Install SCons
+        run: pip install scons
+      # vcpkg's binary cache: FFmpeg and friends take a while to build and
+      # change only with the manifest or the script that pins vcpkg.
+      - uses: actions/cache@v4
+        with:
+          path: dist/windows/vcpkg-cache
+          key: windows-deps-${{ hashFiles('packaging/windows/vcpkg.json', 'packaging/windows/build-deps.ps1') }}
+      - name: Build dependencies
+        run: packaging/windows/build-deps.ps1
       - name: Build extension
-        shell: pwsh
         run: |
-          $env:LINGUINI_DEPS_PREFIX = "$env:VCPKG_INSTALLATION_ROOT/installed/x64-windows"
+          $env:LINGUINI_DEPS_PREFIX = "$pwd/dist/windows/deps/x64-windows-static-release"
           scons -j4
+      - name: Run tests
+        run: |
+          curl.exe -sSL -o godot.zip "https://github.com/godotengine/godot/releases/download/${env:GODOT_VERSION}-stable/Godot_v${env:GODOT_VERSION}-stable_win64.exe.zip"
+          Expand-Archive godot.zip -DestinationPath .
+          $godot = "./Godot_v${env:GODOT_VERSION}-stable_win64_console.exe"
+          # Register the extension up front. On a fresh checkout Godot otherwise
+          # finds it mid-scan, and that first import crashes on exit.
+          New-Item -ItemType Directory -Force godot/.godot | Out-Null
+          Set-Content -NoNewline godot/.godot/extension_list.cfg "res://linguini.gdextension`n"
+          & $godot --headless --path godot --import
+          & $godot --headless --path godot -s res://tests/run_tests.gd
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@v4
         with:
           name: linguini-windows
-          path: godot/bin/
+          path: godot/bin/*.dll

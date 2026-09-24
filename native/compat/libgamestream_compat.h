@@ -8,13 +8,45 @@
 #include <stdint.h>
 
 #ifdef _WIN32
-#include <direct.h>
+#include <stdio.h>
 #include <winsock2.h>
-#define mkdir(path, mode) _mkdir(path)
+#include <windows.h>
 typedef uint32_t u_int32_t;
 #ifndef PATH_MAX
 #define PATH_MAX 260
 #endif
+
+// Paths come from Godot as UTF-8, but the C runtime's narrow file functions
+// read them in the ANSI code page, so a user folder with non-ASCII characters
+// in it wouldn't open. Convert to UTF-16 and use the wide functions instead.
+static inline int linguini_widen(const char* path, wchar_t* out, int len) {
+  return MultiByteToWideChar(CP_UTF8, 0, path, -1, out, len) > 0;
+}
+
+static inline FILE* linguini_fopen(const char* path, const char* mode) {
+  wchar_t wpath[PATH_MAX], wmode[8];
+  if (!linguini_widen(path, wpath, PATH_MAX) || !linguini_widen(mode, wmode, 8))
+    return NULL;
+  return _wfopen(wpath, wmode);
+}
+#define fopen linguini_fopen
+
+// mkdirtree() walks the path from the start, so it also tries to make "C:",
+// which fails with something other than EEXIST and would stop it early.
+// Report anything that already exists as a directory as EEXIST.
+static inline int linguini_mkdir(const char* path) {
+  wchar_t wpath[PATH_MAX];
+  if (!linguini_widen(path, wpath, PATH_MAX)) {
+    errno = ENOENT;
+    return -1;
+  }
+  if (CreateDirectoryW(wpath, NULL))
+    return 0;
+  DWORD attrs = GetFileAttributesW(wpath);
+  errno = (attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY)) ? EEXIST : ENOENT;
+  return -1;
+}
+#define mkdir(path, mode) linguini_mkdir(path)
 #endif
 
 #ifdef __APPLE__

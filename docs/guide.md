@@ -139,7 +139,7 @@ scons                          # builds godot/bin/liblinguini.*
 godot --path godot             # run it (or open godot/ in the editor)
 ```
 
-On Nix, `nix develop` provides everything, Godot included. On Linux and macOS, the libraries are found with `pkg-config` (see [macOS](#macos) for Homebrew). On Windows, set `LINGUINI_DEPS_PREFIX` to a prefix with `include/` and `lib/`, such as a vcpkg `installed/x64-windows` tree.
+On Nix, `nix develop` provides everything, Godot included. On Linux and macOS, the libraries are found with `pkg-config` (see [macOS](#macos) for Homebrew). On Windows, build them once with `packaging\windows\build-deps.ps1` (see [Windows](#windows)).
 
 ### Tests
 
@@ -218,6 +218,30 @@ scons arch=arm64               # or x86_64; builds godot/bin/liblinguini.macos.t
 
 The app is ad-hoc signed but not notarized. Gatekeeper blocks it on first launch until the user allows it under **System Settings › Privacy & Security** (see `packaging/macos/README.txt`). Notarizing needs an Apple Developer ID.
 
+### Windows
+
+```powershell
+packaging\windows\package.ps1   # -> dist\builds\linguini-windows-x86_64.zip
+```
+
+The Windows build is made natively with MSVC, for 64-bit Windows 10 and 11.
+- **Static dependencies:** `packaging/windows/build-deps.ps1` builds FFmpeg, Opus, OpenSSL, curl (over OpenSSL) and expat with [vcpkg](https://vcpkg.io), from `packaging/windows/vcpkg.json`. They're static and use the static C runtime (`/MT`), as godot-cpp does, with vcpkg's `x64-windows-static-release` triplet. FFmpeg decodes with D3D11VA or DXVA2, falling back to software. The script pins vcpkg to one commit and fetches it into `dist/windows/vcpkg`; set `VCPKG_ROOT` to use your own checkout. The first run builds FFmpeg from source and takes a while. Later runs reuse vcpkg's binary cache in `dist/windows/vcpkg-cache`.
+- **The extension:** `liblinguini.windows.template_release.x86_64.dll`. The script fails if it links anything outside `System32`, or anything from the Visual C++ redistributable.
+- **Export:** the `Windows` preset in `godot/export_presets.cfg` embeds the game data in `Linguini.exe` and adds `Linguini.console.exe`, the same program with a console for the headless tools. The zip holds both, the extension, a README and the licences, including each vcpkg library's.
+
+It needs git, Python with SCons, Visual Studio 2022 or its Build Tools with the **Desktop development with C++** workload, and a Godot editor with the matching export templates. Set `GODOT` (use the `_console.exe` build, so its output reaches the terminal) and `GODOT_TEMPLATES`, or let it use `godot` and Godot's own export templates directory. Godot's own settings aren't touched: the script gives Godot a private `APPDATA` while it exports.
+
+For development builds, build the dependencies once and point `scons` at them:
+
+```powershell
+pip install scons
+packaging\windows\build-deps.ps1
+$env:LINGUINI_DEPS_PREFIX = "$pwd\dist\windows\deps\x64-windows-static-release"
+scons                          # builds godot\bin\liblinguini.windows.template_debug.x86_64.dll
+```
+
+SCons finds Visual Studio itself, so a plain PowerShell works; you don't need a developer prompt. The build isn't signed, so SmartScreen warns on first launch (see `packaging/windows/README.txt`).
+
 ## Releases
 
 Releases are made by GitHub Actions (`.github/workflows/release.yml`) when a version tag is pushed:
@@ -229,7 +253,7 @@ git tag v0.0.1 && git push origin v0.0.1
 Until 0.1.0, releases are numbered 0.0.x.
 
 That tag push does three things:
-- **Package:** builds `linguini-linux-x86_64.tar.gz` with `packaging/linux/package.sh` and `linguini-macos-universal.zip` with `packaging/macos/package.sh` (on a `macos-14` runner, with the static dependencies cached).
+- **Package:** builds `linguini-linux-x86_64.tar.gz` with `packaging/linux/package.sh`, `linguini-macos-universal.zip` with `packaging/macos/package.sh` (on a `macos-14` runner) and `linguini-windows-x86_64.zip` with `packaging/windows/package.ps1` (on a `windows-2022` runner). The macOS and Windows static dependencies are cached.
 - **Release:** publishes them as a GitHub Release for the tag, with `SHA256SUMS` and generated release notes. A tag with a hyphen, such as `v0.2.0-beta.1`, is marked as a pre-release.
 - **Landing page:** runs `.github/workflows/pages.yml` for the tag, which rebuilds the page with download links pointing at the new release and deploys it to GitHub Pages.
 
@@ -239,7 +263,7 @@ One-time setup, in the repository's settings:
 
 The landing page doesn't need a release to update. `pages.yml` also runs on every push to `main` that changes `site/`, linking the latest release, and it can be run by hand from the Actions tab.
 
-Ordinary pushes and pull requests run `.github/workflows/build.yml`, which builds the extension and runs the tests on Linux and macOS.
+Ordinary pushes and pull requests run `.github/workflows/build.yml`, which builds the extension and runs the tests on Linux, macOS and Windows.
 
 ## Landing page
 
@@ -325,10 +349,9 @@ third_party/           submodules
 
 ## Known limitations
 
-- Linux and macOS have been built and tested. The Windows paths in `SConstruct` and the shims are written but don't build yet. The Windows CI job is skipped until they do; set the repository variable `WINDOWS_CI` to `true` to run it.
 - Hosts are added by IP or hostname. There's no mDNS discovery yet.
 - Frames are decoded on the GPU where possible and copied back to system memory for upload. Zero-copy rendering is future work.
-- Linux and macOS have packaged release builds. Windows needs its own packaging.
+- The Windows build isn't code-signed, so SmartScreen warns on first launch.
 - The macOS build isn't notarized, so first launch needs a trip to System Settings.
 - The macOS build has been tested with the test stream (VideoToolbox decoding, both architectures) but hasn't streamed from a real host yet, so the local network permission prompt is also untested.
 - libgamestream requests can't be cancelled. "Back" during pairing stops waiting, but the host keeps the PIN prompt open until it's entered or times out.

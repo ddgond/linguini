@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <openssl/rand.h>
 
+// <windows.h> (through <rpc.h>) defines uuid_t as its own UUID struct.
+#undef uuid_t
 typedef unsigned char uuid_t[16];
 
 static inline void uuid_generate_random(uuid_t out) {

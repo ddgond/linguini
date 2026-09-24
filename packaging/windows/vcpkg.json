@@ -1,0 +1,12 @@
+{
+  "name": "linguini-deps",
+  "version-string": "0",
+  "description": "Static libraries the Windows extension links: FFmpeg's H.264/HEVC/AV1 decoding, Opus, OpenSSL, curl over OpenSSL, expat.",
+  "dependencies": [
+    { "name": "ffmpeg", "default-features": false, "features": ["avcodec"] },
+    "opus",
+    "openssl",
+    { "name": "curl", "default-features": false, "features": ["openssl"] },
+    "expat"
+  ]
+}
