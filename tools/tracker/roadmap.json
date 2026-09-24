@@ -1,6 +1,6 @@
 {
   "project": "Linguini",
-  "now": "3d",
+  "now": "4b",
   "milestones": [
     {
       "id": "1",
@@ -223,6 +223,178 @@
         {
           "text": "Volume sliders on the monitor: Master, Game, Room & tank, UI",
           "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "4a",
+      "title": "Outside: a real street",
+      "status": "done",
+      "summary": "Replace the painted backdrop with a 3D neighbourhood street seen from a third-floor window: a Blender-built street, its own sky and haze, lit on its own layer so parallax sells the space.",
+      "items": [
+        {
+          "text": "Street pipeline: art/models/street (Blender) to godot/art/street/street.glb",
+          "status": "done"
+        },
+        {
+          "text": "Blockout: our facade, sidewalks, curbs, road with parking lanes, a cross street, the far row of buildings, rooftops behind, a distant skyline",
+          "status": "done"
+        },
+        {
+          "text": "Sky dome per mood (gradient, stars, moon, sun, clouds) and distance haze",
+          "status": "done"
+        },
+        {
+          "text": "In game: street on its own render layer with its own sun/moon and ambient; painted view retired",
+          "status": "done"
+        },
+        {
+          "text": "Shots from several angles, including the fish's view through the tank",
+          "status": "done"
+        },
+        {
+          "text": "Fixes along the way: closed the room's wall corners, sharp-edged boxes in every model (false light in the corner), the stand's z-fighting door panels",
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "4b",
+      "title": "Outside: buildings",
+      "status": "in-progress",
+      "summary": "Facades that read as a real neighbourhood: brick rowhouses and a corner shop, with rooms behind the windows.",
+      "items": [
+        {
+          "text": "Facade kit: brick and stucco, cornices, lintels and sills, stoops, bay windows, fire escapes",
+          "status": "planned"
+        },
+        {
+          "text": "Window rooms: interior-mapped rooms behind the glass, some lit, curtains and blinds, sky reflections",
+          "status": "planned"
+        },
+        {
+          "text": "Ground floor shops: awnings, signs, neon, shop windows",
+          "status": "planned"
+        },
+        {
+          "text": "Rooftops: water tower, chimneys, AC units, parapets",
+          "status": "planned"
+        }
+      ]
+    },
+    {
+      "id": "4c",
+      "title": "Outside: street life",
+      "status": "planned",
+      "summary": "The things that fill a street: trees, lamps, parked cars, wires, clutter, and traffic that passes by.",
+      "items": [
+        {
+          "text": "Street trees (one right by our window), swaying",
+          "status": "planned"
+        },
+        {
+          "text": "Street lamps, traffic light, signs, hydrant, bins, bike rack, mailbox",
+          "status": "planned"
+        },
+        {
+          "text": "Parked cars; cars that drive past with headlights at night",
+          "status": "planned"
+        },
+        {
+          "text": "Telephone poles and wires across the street",
+          "status": "planned"
+        }
+      ]
+    },
+    {
+      "id": "4d",
+      "title": "Outside: moods",
+      "status": "planned",
+      "summary": "Each mood lights the street its own way.",
+      "items": [
+        {
+          "text": "Night: moon, lamp pools, lit windows, neon",
+          "status": "planned"
+        },
+        {
+          "text": "Rainy evening: wet road and puddles reflecting lights, falling rain and mist outside",
+          "status": "planned"
+        },
+        {
+          "text": "Golden hour: low sun, long shadows, warm glow on the facades",
+          "status": "planned"
+        },
+        {
+          "text": "Quality levels: what the street drops on Low and Medium",
+          "status": "planned"
+        }
+      ]
+    },
+    {
+      "id": "4e",
+      "title": "Rain on the glass",
+      "status": "planned",
+      "summary": "Drops that run down, not up, and behave like water.",
+      "items": [
+        {
+          "text": "Fix: running drops move downward",
+          "status": "planned"
+        },
+        {
+          "text": "Beads that refract the (upside-down) street behind them",
+          "status": "planned"
+        },
+        {
+          "text": "Drops that stall, jerk and gather, leaving wet trails",
+          "status": "planned"
+        },
+        {
+          "text": "Fine mist and drop sizes at a believable scale",
+          "status": "planned"
+        }
+      ]
+    },
+    {
+      "id": "4f",
+      "title": "Fish polish",
+      "status": "planned",
+      "summary": "A friendlier face and a more natural swim.",
+      "items": [
+        {
+          "text": "Mouth: lips and a proper mouth instead of the puckered point",
+          "status": "planned"
+        },
+        {
+          "text": "Body shape: softer peduncle, less conical",
+          "status": "planned"
+        },
+        {
+          "text": "Swimming: spine bending with rotated cross-sections and corrected normals (no bulging)",
+          "status": "planned"
+        },
+        {
+          "text": "Frame strips of the swim cycle for review",
+          "status": "planned"
+        }
+      ]
+    },
+    {
+      "id": "4g",
+      "title": "Polish pass",
+      "status": "planned",
+      "summary": "Look at everything together, from every angle and mood; performance on each quality level.",
+      "items": [
+        {
+          "text": "Review pass across moods and camera angles",
+          "status": "planned"
+        },
+        {
+          "text": "Performance check on Low / Medium / High",
+          "status": "planned"
+        },
+        {
+          "text": "Retire the painted views in the room build; docs and screenshots",
+          "status": "planned"
         }
       ]
     }

@@ -1,7 +1,7 @@
 class_name RoomMoods
 extends Node
 ## Puts the bedroom in a mood (the Mood autoload picks which): the baked
-## lightmap, the view out of the window, rain on the glass, how brightly the
+## lightmap, the street outside (its own sky and lights), rain on the glass, how brightly the
 ## lamps, LEDs and screens glow, and the live lights that light the fish, the
 ## tank and its decor (which aren't in the bake).
 ##
@@ -10,7 +10,7 @@ extends Node
 
 const MOODS := {
 	"night": {
-		"exposure": 1.0, "view": 1.0, "rain": 0.0,
+		"exposure": 1.0, "rain": 0.0,
 		"glow": {"GlowWarm": 3.0, "GlowRGB": 4.0, "GlowFairy": 3.0, "GlowTally": 3.0, "GlowChat": 1.1,
 			"GlowRing": 0.0, "GlowCeiling": 0.0},
 		"rgb": Color(0.62, 0.3, 1.0),
@@ -20,7 +20,7 @@ const MOODS := {
 		"tone": {"fan": -13.0, "city": -20.5},
 	},
 	"rainy": {
-		"exposure": 1.0, "view": 0.9, "rain": 1.0,
+		"exposure": 1.0, "rain": 1.0,
 		"glow": {"GlowWarm": 2.6, "GlowRGB": 1.4, "GlowFairy": 3.0, "GlowTally": 3.0, "GlowChat": 0.9,
 			"GlowRing": 0.0, "GlowCeiling": 0.0},
 		"rgb": Color(0.3, 0.7, 1.0),
@@ -30,7 +30,7 @@ const MOODS := {
 		"tone": {"fan": -17.0, "rain": -27.0},
 	},
 	"golden": {
-		"exposure": 1.25, "view": 1.0, "rain": 0.0,
+		"exposure": 1.25, "rain": 0.0,
 		"glow": {"GlowWarm": 0.0, "GlowRGB": 0.4, "GlowFairy": 0.6, "GlowTally": 3.0, "GlowChat": 0.6,
 			"GlowRing": 0.0, "GlowCeiling": 0.0},
 		"rgb": Color(1.0, 0.5, 0.3),
@@ -52,7 +52,8 @@ const GLOW_COLORS := {
 var environment: Environment
 ## Every converted room material, by its Blender name.
 var materials := {}
-var view_material: ShaderMaterial
+## The street outside, which has its own light for each mood.
+var street: Street
 var glass_material: ShaderMaterial
 var tank_light: Light3D
 var screen_light: Light3D
@@ -75,7 +76,6 @@ var live := false:
 var mood := ""
 var _tone := {}
 var _lightmaps := {}
-var _views := {}
 
 
 func _ready() -> void:
@@ -104,9 +104,8 @@ func apply(mood_name: String) -> void:
 		materials.GlowRGB.set_shader_parameter("emission_color", m.rgb)
 		materials.GlowRGB.set_shader_parameter("albedo", m.rgb)
 
-	if view_material:
-		view_material.set_shader_parameter("view", _view(mood_name))
-		view_material.set_shader_parameter("energy", m.view)
+	if street:
+		street.apply_mood(mood_name)
 	if glass_material:
 		glass_material.set_shader_parameter("rain", m.rain)
 
@@ -187,8 +186,3 @@ func _lightmap(mood_name: String) -> Texture2D:
 			_lightmaps[mood_name] = ImageTexture.create_from_image(img)
 	return _lightmaps[mood_name]
 
-
-func _view(mood_name: String) -> Texture2D:
-	if not _views.has(mood_name):
-		_views[mood_name] = load("res://art/room/view_%s.png" % mood_name)
-	return _views[mood_name]

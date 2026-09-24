@@ -31,7 +31,6 @@ const ACCENT_MASK := 1
 const LAYOUT_PATH := "res://art/room/layout.json"
 const ROOM_MODEL := preload("res://art/room/room.glb")
 const ROOM_SHADER := preload("res://shaders/room.gdshader")
-const VIEW_SHADER := preload("res://shaders/window_view.gdshader")
 const WINDOW_SHADER := preload("res://shaders/window_glass.gdshader")
 const TANK_MODEL := preload("res://art/tank.glb")
 const GLASS_SHADER := preload("res://shaders/tank_glass.gdshader")
@@ -55,6 +54,7 @@ static func build(p_root: Node3D) -> Dictionary:
 	b.moods.name = "RoomMoods"
 	b._environment()
 	b._room()
+	b._street()
 	b._tank()
 	b._desk()
 	b._accents()
@@ -111,10 +111,8 @@ func _room() -> void:
 		mi.layers = ROOM_LAYER
 		match mi.name:
 			"WindowView":
-				moods.view_material = ShaderMaterial.new()
-				moods.view_material.shader = VIEW_SHADER
-				mi.material_override = moods.view_material
-				mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+				# The old painted backdrop: the street (Street) is out there now.
+				mi.visible = false
 			"WindowGlass":
 				moods.glass_material = ShaderMaterial.new()
 				moods.glass_material.shader = WINDOW_SHADER
@@ -126,6 +124,16 @@ func _room() -> void:
 				for i in mi.mesh.get_surface_count():
 					mi.set_surface_override_material(i, _room_material(mi.mesh.surface_get_material(i)))
 	result.room_model = model
+
+
+## The neighbourhood outside the window, placed like the room model.
+func _street() -> void:
+	var street := Street.new()
+	street.name = "Street"
+	street.position = offset
+	root.add_child(street)
+	moods.street = street
+	result.street = street
 
 
 ## The imported material, redone with the lightmapped room shader (one per

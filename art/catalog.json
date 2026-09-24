@@ -155,6 +155,22 @@
       "output": "art/room/room.glb",
       "status": "done",
       "note": "Draft lightmaps; final bakes pending on the main PC (ART_BAKE=final)"
+    },
+    {
+      "id": "street",
+      "name": "The street outside",
+      "milestone": "4a",
+      "script": "models/street/street.py",
+      "deps": [
+        "models/street/builder.py",
+        "models/street/street_layout.py",
+        "models/street/facades.py",
+        "models/street/ground.py",
+        "models/street/props.py",
+        "models/street/skyline.py"
+      ],
+      "output": "art/street/street.glb",
+      "status": "in-progress"
     }
   ]
 }

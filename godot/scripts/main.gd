@@ -18,6 +18,7 @@ extends Node3D
 ##   --room-camera          view through the room camera
 ##   --overview[=EYE;AT]    view the room from the doorway, or from EYE toward AT
 ##                          (x,y,z each, in the room model's coordinates)
+##   --fov=DEGREES          with --overview, the camera's field of view (default 75)
 ##   --mood=NAME            night, rainy or golden, just for this run
 ##   --glyphs=SET           xbox, playstation or nintendo button art, just for this run
 ##   --quality=LEVEL        low, medium or high graphics, just for this run
@@ -337,7 +338,7 @@ func _apply_args() -> void:
 		(room.room_camera as Camera3D).make_current()
 	if _args.has("overview"):
 		var eye := Camera3D.new()
-		eye.fov = 75.0
+		eye.fov = float(_args.get("fov", "75"))
 		add_child(eye)
 		var shift: Vector3 = room.room_model.position
 		var from := Vector3(-1.25, 1.55, 1.55)

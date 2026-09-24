@@ -1,6 +1,6 @@
 extends "res://tests/test_case.gd"
 ## The bedroom: the room model lands around the tank, is lit by its baked
-## lightmaps, and the moods switch its lighting, view and rain.
+## lightmaps, and the moods switch its lighting, the street outside and rain.
 
 
 func _main() -> Node3D:
@@ -89,7 +89,7 @@ func test_moods_switch_the_room() -> void:
 	Mood.set_mood("rainy", false)
 	check(wall.get_shader_parameter("lightmap") != night_map, "rain has its own lightmap")
 	check(float(moods.glass_material.get_shader_parameter("rain")) > 0.5, "rain on the glass when it's rainy")
-	check((moods.view_material.get_shader_parameter("view") as Texture2D).resource_path.contains("rainy"), "the rainy view outside")
+	check(moods.street.mood == "rainy", "the street outside turns rainy too")
 
 	Mood.set_mood("golden", false)
 	check(moods.lamps.all(func(l: Light3D) -> bool: return not l.visible), "lamps off at golden hour")

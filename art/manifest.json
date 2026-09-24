@@ -63,6 +63,10 @@
     "output": "art/decor/sign.glb",
     "inputs": "48e3a7b8b9853b52"
   },
+  "street": {
+    "output": "art/street/street.glb",
+    "inputs": "c237b86143abe8c6"
+  },
   "tank": {
     "output": "art/tank.glb",
     "inputs": "290deeedd62c06ab"

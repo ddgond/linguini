@@ -54,3 +54,83 @@ fish_position={
 "type": "vec3",
 "value": Vector3(0, 0, 0)
 }
+street_sky_zenith={
+"type": "color",
+"value": Color(0.1, 0.14, 0.3, 1)
+}
+street_sky_horizon={
+"type": "color",
+"value": Color(0.2, 0.2, 0.35, 1)
+}
+street_haze={
+"type": "color",
+"value": Color(0.2, 0.2, 0.3, 1)
+}
+street_haze_density={
+"type": "float",
+"value": 0.004
+}
+street_ambient_sky={
+"type": "color",
+"value": Color(0.1, 0.12, 0.2, 1)
+}
+street_ambient_ground={
+"type": "color",
+"value": Color(0.05, 0.05, 0.06, 1)
+}
+street_sun_dir={
+"type": "vec3",
+"value": Vector3(0, 0.5, -1)
+}
+street_sun_color={
+"type": "color",
+"value": Color(1, 0.8, 0.6, 1)
+}
+street_wet={
+"type": "float",
+"value": 0.0
+}
+street_night={
+"type": "float",
+"value": 1.0
+}
+street_time={
+"type": "float",
+"value": 0.0
+}
+street_windows_lit={
+"type": "float",
+"value": 0.45
+}
+street_interior_light={
+"type": "float",
+"value": 1.0
+}
+street_signal_main={
+"type": "float",
+"value": 2.0
+}
+street_signal_cross={
+"type": "float",
+"value": 0.0
+}
+street_clouds={
+"type": "float",
+"value": 0.2
+}
+street_cloud_color={
+"type": "color",
+"value": Color(0.2, 0.2, 0.3, 1)
+}
+street_stars={
+"type": "float",
+"value": 1.0
+}
+street_moon_dir={
+"type": "vec3",
+"value": Vector3(-0.3, 0.45, -1)
+}
+street_moon={
+"type": "float",
+"value": 1.0
+}
