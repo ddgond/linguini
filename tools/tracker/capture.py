@@ -16,7 +16,9 @@ as "the latest look" and every snapshot on a timeline.
 import argparse
 import datetime
 import json
+import os
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -52,10 +54,13 @@ def capture(shot: dict, out: Path, godot: str, project: Path) -> dict | None:
         args.append("--delay=6")
         cmd = ["xvfb-run", "-a", "-s", "-screen 0 2000x1200x24", godot, "--path", str(project),
                "--resolution", "1280x720", "--", *args]
+        # Its own process group, so a timeout takes Godot down with xvfb-run.
+        proc = subprocess.Popen(cmd, cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
         try:
-            subprocess.run(cmd, cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=480)
+            proc.wait(timeout=480)
         except subprocess.TimeoutExpired:
-            pass
+            os.killpg(proc.pid, signal.SIGKILL)
+            proc.wait()
     if not target.is_file():
         print(f"  failed: {shot['id']}", file=sys.stderr)
         return None
