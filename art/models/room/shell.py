@@ -46,8 +46,10 @@ def _wall_with_window(mat):
     low = L.WINDOW_SILL - 0.0175
     top = L.WINDOW_TOP + 0.03
     parts = [
-        gbox("BackWallL", (wl - x0, h, t), ((x0 + wl) / 2, h / 2, wz), mat, 0.0),
-        gbox("BackWallR", (x1 - wr, h, t), ((wr + x1) / 2, h / 2, wz), mat, 0.0),
+        # The ends run on past the side walls' thickness, closing the corners
+        # (an open corner column let the sun and sky leak into the bake).
+        gbox("BackWallL", (wl - x0 + t, h, t), ((x0 - t + wl) / 2, h / 2, wz), mat, 0.0),
+        gbox("BackWallR", (x1 + t - wr, h, t), ((wr + x1 + t) / 2, h / 2, wz), mat, 0.0),
         gbox("BackWallLow", (wr - wl, low, t), (L.WINDOW_CENTER_X, low / 2, wz), mat, 0.0),
         gbox("BackWallHigh", (wr - wl, h - top, t), (L.WINDOW_CENTER_X, (h + top) / 2, wz), mat, 0.0),
     ]
@@ -62,8 +64,8 @@ def _front_wall_with_door(mat):
     dl = L.DOOR_CENTER_X - L.DOOR_WIDTH / 2
     dr = L.DOOR_CENTER_X + L.DOOR_WIDTH / 2
     return [
-        gbox("FrontWallL", (dl - x0, h, t), ((x0 + dl) / 2, h / 2, wz), mat, 0.0),
-        gbox("FrontWallR", (x1 - dr, h, t), ((dr + x1) / 2, h / 2, wz), mat, 0.0),
+        gbox("FrontWallL", (dl - x0 + t, h, t), ((x0 - t + dl) / 2, h / 2, wz), mat, 0.0),
+        gbox("FrontWallR", (x1 + t - dr, h, t), ((dr + x1 + t) / 2, h / 2, wz), mat, 0.0),
         gbox("FrontWallHigh", (dr - dl, h - L.DOOR_HEIGHT, t), (L.DOOR_CENTER_X, (h + L.DOOR_HEIGHT) / 2, wz), mat, 0.0),
     ]
 
