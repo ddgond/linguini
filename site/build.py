@@ -9,9 +9,9 @@ Build artifacts are matched to platforms by file name (see PLATFORMS), e.g.
 linguini-linux-x86_64.zip, linguini-windows-x86_64.zip, linguini-macos.zip.
 By default they are copied into <out>/downloads/. With --base-url the page
 links to that location instead and nothing is copied. Either way the page
-lists each file's size and SHA-256, and writes SHA256SUMS.
+lists each file's size and links a SHA256SUMS it writes. Platforms without an
+artifact are left off the page.
 
-Platforms without an artifact still get a card, marked as not available yet.
 Uses only the Python standard library.
 """
 
@@ -19,7 +19,6 @@ import argparse
 import datetime
 import hashlib
 import html
-import json
 import re
 import shutil
 import subprocess
@@ -101,29 +100,14 @@ def find_artifacts(builds: Path) -> dict:
     return found
 
 
-def download_card(platform: dict, artifact: dict | None) -> str:
+def download_row(platform: dict, artifact: dict) -> str:
     e = html.escape
-    icon = f'<svg class="os-icon" aria-hidden="true"><use href="#os-{platform["id"]}"/></svg>'
-    head = f"""
-        {icon}
-        <h3>{e(platform["name"])}</h3>
-        <p class="arch">{e(platform["arch"])}</p>"""
-    if artifact is None:
-        return f"""
-      <li class="download unavailable" data-os="{platform["id"]}">{head}
-        <p class="status">Not built yet</p>
-        <p class="note">{e(platform["note"])}</p>
-      </li>"""
     return f"""
-      <li class="download" data-os="{platform["id"]}">{head}
-        <a class="button" href="{e(artifact["href"])}" download>Download <span class="size">{e(artifact["size"])}</span></a>
-        <p class="file">{e(artifact["name"])}</p>
-        <p class="note">{e(platform["note"])}</p>
-        <details class="checksum">
-          <summary>SHA-256</summary>
-          <code>{e(artifact["sha256"])}</code>
-        </details>
-      </li>"""
+        <li>
+          <h3>{e(platform["name"])} <span class="arch">{e(platform["arch"])}</span></h3>
+          <p><a href="{e(artifact["href"])}" download>{e(artifact["name"])}</a> <span class="size">{e(artifact["size"])}</span></p>
+          <p class="note">{e(platform["note"])}</p>
+        </li>"""
 
 
 def main() -> int:
@@ -156,35 +140,26 @@ def main() -> int:
             (out / "downloads").mkdir(exist_ok=True)
             shutil.copy2(path, out / "downloads" / path.name)
             href = "downloads/" + path.name
-        artifacts[pid] = {"name": path.name, "href": href, "size": human_size(path.stat().st_size), "sha256": digest}
+        artifacts[pid] = {"name": path.name, "href": href, "size": human_size(path.stat().st_size)}
         sums.append(f"{digest}  {path.name}\n")
     if sums:
         target = out / ("SHA256SUMS" if args.base_url else "downloads/SHA256SUMS")
         target.write_text("".join(sums))
 
-    cards = "".join(download_card(p, artifacts.get(p["id"])) for p in PLATFORMS)
-    available = [p["id"] for p in PLATFORMS if p["id"] in artifacts]
-    sums_href = ("SHA256SUMS" if args.base_url else "downloads/SHA256SUMS") if sums else ""
-    repo_link = (
-        f'<a href="{html.escape(args.repo_url)}">Source code</a> · ' if args.repo_url else ""
-    )
+    e = html.escape
+    if artifacts:
+        sums_href = "SHA256SUMS" if args.base_url else "downloads/SHA256SUMS"
+        rows = "".join(download_row(p, artifacts[p["id"]]) for p in PLATFORMS if p["id"] in artifacts)
+        downloads = f"""<ul class="downloads">{rows}
+      </ul>
+      <p class="small">Version {e(version)}, built {datetime.date.today().isoformat()}. <a href="{sums_href}">SHA256SUMS</a></p>"""
+    else:
+        source = f'<a href="{e(args.repo_url)}">Build from source</a>' if args.repo_url else "Build from source"
+        downloads = f"<p>No builds yet. {source} in the meantime.</p>"
+    repo_link = f'<a href="{e(args.repo_url)}">Source code</a>. ' if args.repo_url else ""
 
     page = (SITE / "template.html").read_text()
-    replacements = {
-        "version": html.escape(version),
-        "platforms": ", ".join(p["name"] for p in PLATFORMS if p["id"] in artifacts) or "Build from source",
-        "built": datetime.date.today().isoformat(),
-        "download_cards": cards,
-        "available_json": html.escape(json.dumps(available)),
-        "checksums_link": f'<a href="{sums_href}">SHA256SUMS</a>' if sums_href else "",
-        "repo_link": repo_link,
-        "downloads_summary": (
-            f"{len(available)} of {len(PLATFORMS)} platforms available"
-            if available else "No builds published yet. "
-            + (f'<a href="{html.escape(args.repo_url)}">Build from source</a> in the meantime.'
-               if args.repo_url else "Build from source in the meantime.")
-        ),
-    }
+    replacements = {"downloads": downloads, "repo_link": repo_link}
     for key, value in replacements.items():
         page = page.replace("{{" + key + "}}", value)
     leftover = re.findall(r"\{\{\w+\}\}", page)
