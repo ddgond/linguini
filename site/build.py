@@ -117,6 +117,7 @@ def main() -> int:
     parser.add_argument("--base-url", help="link downloads here instead of copying them into the site")
     parser.add_argument("--version", default=None, help="version label (default: git describe)")
     parser.add_argument("--repo-url", default="", help="source repository link for the footer")
+    parser.add_argument("--date", default=None, help="when the builds were made, YYYY-MM-DD (default: today)")
     args = parser.parse_args()
 
     version = args.version or git_version()
@@ -152,7 +153,7 @@ def main() -> int:
         rows = "".join(download_row(p, artifacts[p["id"]]) for p in PLATFORMS if p["id"] in artifacts)
         downloads = f"""<ul class="downloads">{rows}
       </ul>
-      <p class="small">Version {e(version)}, built {datetime.date.today().isoformat()}. <a href="{sums_href}">SHA256SUMS</a></p>"""
+      <p class="small">Version {e(version)}, built {e(args.date or datetime.date.today().isoformat())}. <a href="{sums_href}">SHA256SUMS</a></p>"""
     else:
         source = f'<a href="{e(args.repo_url)}">Build from source</a>' if args.repo_url else "Build from source"
         downloads = f"<p>No builds yet. {source} in the meantime.</p>"

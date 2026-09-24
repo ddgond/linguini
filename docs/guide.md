@@ -230,11 +230,13 @@ Until 0.1.0, releases are numbered 0.0.x.
 That tag push does three things:
 - **Package:** builds `linguini-linux-x86_64.tar.gz` with `packaging/linux/package.sh` and `linguini-macos-universal.zip` with `packaging/macos/package.sh` (on a `macos-14` runner, with the static dependencies cached).
 - **Release:** publishes them as a GitHub Release for the tag, with `SHA256SUMS` and generated release notes. A tag with a hyphen, such as `v0.2.0-beta.1`, is marked as a pre-release.
-- **Landing page:** rebuilds it with that version and download links pointing at the release, then deploys it to GitHub Pages.
+- **Landing page:** runs `.github/workflows/pages.yml` for the tag, which rebuilds the page with download links pointing at the new release and deploys it to GitHub Pages.
 
 One-time setup, in the repository's settings:
 - **Pages:** set **Source** to **GitHub Actions**.
 - **Environments › github-pages › Deployment branches and tags:** add a tag rule for `v*`. Otherwise only `main` may deploy, and the tag's deploy is rejected.
+
+The landing page doesn't need a release to update. `pages.yml` also runs on every push to `main` that changes `site/`, linking the latest release, and it can be run by hand from the Actions tab.
 
 Ordinary pushes and pull requests run `.github/workflows/build.yml`, which builds the extension and runs the tests on Linux and macOS.
 
@@ -246,6 +248,7 @@ Ordinary pushes and pull requests run `.github/workflows/build.yml`, which build
 python3 site/build.py                                    # dist/builds/* -> dist/site/
 python3 site/build.py --builds DIR --out DIR --repo-url https://…
 python3 site/build.py --base-url https://…/releases/v0.1.0/   # link to hosted files instead of copying
+python3 site/build.py --version v0.1.0 --date 2026-10-01      # label the builds (defaults: git describe, today)
 ```
 
 Put the packaged builds in `dist/builds/`. Each file is matched to a platform by its name:
