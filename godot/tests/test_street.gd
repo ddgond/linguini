@@ -26,7 +26,7 @@ func test_street_sits_outside_on_its_own_layer() -> void:
 	for light: Light3D in main.room.moods.lamps + [main.room.moods.window_light]:
 		check(light.light_cull_mask & Street.LAYER == 0, "%s leaves the street alone" % light.name)
 	var backdrop: Array = main.room.room_model.find_children("WindowView", "MeshInstance3D", true, false)
-	check(backdrop.is_empty() or not (backdrop[0] as MeshInstance3D).visible, "the old painted view is hidden")
+	check(backdrop.is_empty(), "no painted backdrop in the room model")
 	main.queue_free()
 
 

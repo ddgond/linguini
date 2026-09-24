@@ -11,7 +11,7 @@ Playing, building and working on Linguini. The original vision is in [core.md](c
 - A tank editor (F2) places, rebinds, duplicates and deletes cards, and saves named presets.
 - A **tank cam** window (F4) shows the room camera's view with a fake ML fish-tracking overlay, ready for OBS to capture.
 - Game audio plays from the speakers next to the monitor. While you pilot the fish you hear from the fish, lightly muffled by the water. Cards tap, the tank bubbles and hums, the fish swishes, and the room has its own tone in each mood.
-- **Art, so far:** a fancy fantail goldfish that swims by vertex shader, a modelled tank and stand, glass with a hint of algae, a rippling water surface, and caustic light. The tank has editable decor: plants, rocks, driftwood, an air stone, a filter and ornaments. The tank sits under the window of a cosy streamer's bedroom, with lighting baked in Blender for three moods. Every model comes from a Blender script.
+- **Art, so far:** a fancy fantail goldfish that swims by vertex shader, a modelled tank and stand, glass with a hint of algae, a rippling water surface, and caustic light. The tank has editable decor: plants, rocks, driftwood, an air stone, a filter and ornaments. The tank sits under the window of a cosy streamer's bedroom, with lighting baked in Blender for three moods, and outside the window is a neighbourhood street with traffic and people. Every model comes from a Blender script.
 - **Feel:** a punch of FOV when the fish darts, a pulse of a card's edge light as it presses, and motes and shafts of lamp light in the water.
 - **Look:** matte laminated flash cards with printed button art in Xbox, PlayStation or Nintendo style, a cosy "streamer desktop" on the monitor, and no HUD. Held buttons show on the cards, and the camera's red tally light shows when you're live. The fonts are Nunito and JetBrains Mono.
 - **Quality presets:** Low, Medium and High, auto-picked for your GPU.
@@ -74,11 +74,13 @@ Esc or **Done** leaves the editor. Changes stay in the tank until you quit, even
 
 **Mood** on the monitor's home page sets the bedroom's lighting. The choice is remembered.
 
-- **Night gamer den** (the default): city lights and stars outside, lamps on, the LED strip in purple.
-- **Rainy evening:** a grey, hazy city, with rain running down the window.
-- **Golden hour:** low sun through the window, lamps off.
+- **Night gamer den** (the default): street lamps, lit windows and neon across the street, stars and a low moon, lamps on, the LED strip in purple.
+- **Rainy evening:** rain falling outside and running down the window, a wet street reflecting the lights, umbrellas.
+- **Golden hour:** the low sun behind the houses opposite and through the window, long shadows, lamps off, pigeons now and then.
 
-Each mood has its own baked lightmap and window view. Live lights add the monitor's glow and light the fish, the tank and its decor.
+Each mood has its own baked lightmap for the room. Live lights add the monitor's glow and light the fish, the tank and its decor.
+
+Outside the window is a real street, seen from the third floor: brick rowhouses with stoops and fire escapes, a deli, a café, a noodle bar and a laundromat on the corner of a cross street, taller blocks behind and downtown in the distance. Every window has a room behind it, some lit. Cars drive past and stop at the lights, and people walk the sidewalks. The street has its own render layer and lights, so it doesn't disturb the room's baked lighting.
 
 ## Graphics quality
 
@@ -93,6 +95,8 @@ Each mood has its own baked lightmap and window view. Live lights add the monito
 | Anti-aliasing | off | 2× MSAA | 4× MSAA |
 | Render scale | 0.8 | 1.0 | 1.0 |
 | Shadow atlas | 1024 | 2048 | 4096 |
+| Street: sun shadows, shop, neon and headlight lights | off | on | on |
+| Street: people | half | all | all |
 | Bubbles | 40% | 75% | 100% |
 
 ## Tank cam

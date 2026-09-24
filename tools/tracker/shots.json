@@ -11,6 +11,11 @@
     {"id": "editor", "title": "Tank editor", "args": ["--edit", "--select=3"]},
     {"id": "cards-playstation", "title": "Cards with PlayStation glyphs", "args": ["--swim", "--fish=0.35,0.2,0.1,-40", "--glyphs=playstation"]},
     {"id": "desk", "title": "The streamer's desk", "args": ["--overview=0.6,1.3,0.4;1.8,1.0,-0.8"]},
-    {"id": "bed", "title": "The bed side", "args": ["--overview=-0.6,1.3,0.6;-1.6,0.6,-0.3"]}
+    {"id": "bed", "title": "The bed side", "args": ["--overview=-0.6,1.3,0.6;-1.6,0.6,-0.3"]},
+    {"id": "window-golden", "title": "Out of the window at golden hour", "args": ["--overview=-0.15,1.45,0.3;-0.15,1.5,-1.8", "--mood=golden"]},
+    {"id": "street-down", "title": "At the window, looking down at the street", "args": ["--overview=-0.15,2.2,-1.72;-0.15,-3.5,-8.0", "--mood=golden", "--fov=80"]},
+    {"id": "rain-glass", "title": "Rain on the glass, up close", "args": ["--overview=-0.4,1.9,-1.55;-0.4,1.85,-1.9", "--mood=rainy", "--fov=40"]},
+    {"id": "street-level", "title": "Down on the street at night", "args": ["--overview=6.0,-4.6,-8.0;14.0,-3.5,-20.0", "--mood=night", "--fov=70"]},
+    {"id": "fish-face", "title": "The fish, three-quarter front", "args": ["--swim", "--fish=0,0.3,0.1,140", "--fish-pose=0.05", "--overview=-0.05,1.13,-1.1;-0.15,1.1,-1.34", "--fov=24"]}
   ]
 }

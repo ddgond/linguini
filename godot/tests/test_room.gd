@@ -14,7 +14,7 @@ func _room_surfaces(main: Node3D) -> Array:
 	var out := []
 	var model: Node3D = main.room.room_model
 	for mi: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
-		if mi.name in ["WindowView", "WindowGlass"]:
+		if mi.name == "WindowGlass":
 			continue
 		for i in mi.mesh.get_surface_count():
 			out.append([mi, i])

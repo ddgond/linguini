@@ -1,6 +1,6 @@
 {
   "project": "Linguini",
-  "now": "4g",
+  "now": "4h",
   "milestones": [
     {
       "id": "1",
@@ -413,19 +413,51 @@
     {
       "id": "4g",
       "title": "Polish pass",
-      "status": "in-progress",
+      "status": "done",
       "summary": "Look at everything together, from every angle and mood; performance on each quality level.",
       "items": [
         {
-          "text": "Review pass across moods and camera angles",
+          "text": "Review pass across moods and cameras: room, fish, room camera, tank cam, street level",
+          "status": "done"
+        },
+        {
+          "text": "Performance: about 2 ms a frame on High and 1.1 ms on Low at 1600x900 (discrete GPU)",
+          "status": "done"
+        },
+        {
+          "text": "Retired the painted views and the backdrop in the room build (lightmap UVs verified unchanged, bakes kept)",
+          "status": "done"
+        },
+        {
+          "text": "Guide updated for the street; tracker shots.json covers the street, the rain and the fish",
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "4h",
+      "title": "Look like Tortellini",
+      "status": "in-progress",
+      "summary": "Model the fish on the real Tortellini (art/reference/tortellini.jpg): a longer fantail with a red cap, silvery cheeks and belly, small realistic eyes and long, flowing, translucent fins.",
+      "items": [
+        {
+          "text": "Body: longer and deeper than the cartoon egg, a gently humped back, a slightly bumpy red head cap",
           "status": "planned"
         },
         {
-          "text": "Performance check on Low / Medium / High",
+          "text": "Colour: red-orange head, deep orange body, silvery-white cheeks, gill cover and belly patch, a few pale scales",
           "status": "planned"
         },
         {
-          "text": "Retire the painted views in the room build; docs and screenshots",
+          "text": "Eyes: small, gold-ringed and realistic",
+          "status": "planned"
+        },
+        {
+          "text": "Fins: tall sail dorsal; a long double tail with pointed lobes that droop and flow; long trailing pelvic and anal fins; translucent orange fading paler at the edges",
+          "status": "planned"
+        },
+        {
+          "text": "Swimming tuned for the longer fins (they trail and drape more); side-by-side with the photo",
           "status": "planned"
         }
       ]

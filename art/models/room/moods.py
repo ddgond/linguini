@@ -1,5 +1,5 @@
-"""The three moods: their lighting (for baking and preview renders), the
-lightmap bake itself, and the painted views outside the window.
+"""The three moods: their lighting (for baking and preview renders) and the
+lightmap bake itself.
 
 Glow* materials are emissive; each mood sets how strongly. Godot mirrors
 these settings with live lights and emissive materials for the things that
@@ -136,25 +136,6 @@ def window_glass():
         for loop, (u, v) in zip(face.loops, ((0, 0), (1, 0), (1, 1), (0, 1))):
             loop[uv].uv = (u, v)
     return mesh_object("WindowGlass", bm, [material("WindowGlass", (0.85, 0.92, 0.95), roughness=0.05, alpha=0.1)])
-
-
-def window_view():
-    """A big backdrop outside the window, showing the mood's view."""
-    z = L.ROOM_MIN[2] - 2.2
-    cx = L.WINDOW_CENTER_X
-    w, y0, y1 = 7.0, -0.8, 3.9
-    bm = bmesh.new()
-    vs = [bm.verts.new(G(cx - w / 2, y0, z)), bm.verts.new(G(cx + w / 2, y0, z)),
-          bm.verts.new(G(cx + w / 2, y1, z)), bm.verts.new(G(cx - w / 2, y1, z))]
-    bm.faces.new(vs)
-    uv = bm.loops.layers.uv.new("UVMap")
-    for face in bm.faces:
-        for loop, (u, v) in zip(face.loops, ((0, 0), (1, 0), (1, 1), (0, 1))):
-            loop[uv].uv = (u, v)
-    mat = material("WindowView", (1, 1, 1), roughness=1.0)
-    obj = mesh_object("WindowView", bm, [mat])
-    obj.visible_shadow = False  # the sun shines past it, through the window
-    return obj
 
 
 # --- mood setup ----------------------------------------------------------------
@@ -343,85 +324,12 @@ def bake_all(room, hidden, out_dir, quality):
         obj.hide_render = False
 
 
-# --- window views --------------------------------------------------------------
-
-def _skyline(w, h, rng, base, height, count, np):
-    """Building silhouettes: a height per column, and a mask of lit windows."""
-    heights = np.zeros(w)
-    x = 0
-    while x < w:
-        bw = int(rng.integers(w // 40, w // 14))
-        bh = base + rng.uniform(0.2, 1.0) * height
-        heights[x:x + bw] = np.maximum(heights[x:x + bw], bh)
-        x += bw + int(rng.integers(0, w // 60))
-    ys = np.arange(h)[:, None] / h
-    building = (1.0 - ys) < heights[None, :]
-    cols = (np.arange(w)[None, :] // 7) % 2 == 0
-    rows = (np.arange(h)[:, None] // 9) % 2 == 0
-    lit = building & cols & rows & (rng.random((h, w)) < 0.02).repeat(1, 0)
-    # Make lit windows blocky: sample the randomness per 7x9 cell.
-    cell = rng.random((h // 9 + 1, w // 7 + 1))
-    cell_lit = cell[(np.arange(h) // 9)[:, None], (np.arange(w) // 7)[None, :]] < count
-    return building, building & cols & rows & cell_lit
-
-
-def paint_views(out_dir):
-    import numpy as np
-
-    w, h = 1024, 640
-    ys = np.linspace(0, 1, h)[:, None, None]  # 0 = top
-    xs = np.linspace(0, 1, w)[None, :, None]
-    for mood in MOOD_NAMES:
-        rng = np.random.default_rng({"night": 1, "rainy": 2, "golden": 3}[mood])
-        if mood == "night":
-            sky = (1 - ys) * np.array([0.07, 0.1, 0.22]) + ys * np.array([0.14, 0.12, 0.3])
-            img = np.broadcast_to(sky, (h, w, 3)).copy()
-            stars = (rng.random((h, w)) < 0.0012) & (ys[..., 0] < 0.55)
-            img[stars] = [0.9, 0.9, 1.0]
-            moon = ((xs[..., 0] - 0.78) ** 2 * (w / h) ** 2 + (ys[..., 0] - 0.22) ** 2) < 0.0022
-            img[moon] = [0.95, 0.93, 0.85]
-            far, far_lit = _skyline(w, h, rng, 0.3, 0.2, 0.25, np)
-            img[far] = [0.09, 0.09, 0.17]
-            img[far_lit] = [0.95, 0.75, 0.45]
-            near, near_lit = _skyline(w, h, rng, 0.18, 0.2, 0.35, np)
-            img[near] = [0.04, 0.04, 0.08]
-            img[near_lit] = [1.0, 0.82, 0.5]
-        elif mood == "rainy":
-            sky = (1 - ys) * np.array([0.34, 0.4, 0.5]) + ys * np.array([0.45, 0.48, 0.55])
-            img = np.broadcast_to(sky, (h, w, 3)).copy()
-            far, far_lit = _skyline(w, h, rng, 0.3, 0.22, 0.2, np)
-            img[far] = img[far] * 0.75 + np.array([0.3, 0.33, 0.4]) * 0.25
-            img[far_lit] = [0.85, 0.72, 0.5]
-            near, near_lit = _skyline(w, h, rng, 0.16, 0.2, 0.3, np)
-            img[near] = [0.2, 0.22, 0.28]
-            img[near_lit] = [0.95, 0.78, 0.5]
-            # Haze: blur a little and lift toward grey.
-            img = _denoise(img, 3) * 0.8 + np.array([0.4, 0.43, 0.5]) * 0.2
-        else:
-            sky = (1 - ys) * np.array([1.0, 0.62, 0.35]) ** 1.0 + ys * np.array([0.45, 0.62, 0.85])
-            sky = ys ** 1.4 * np.array([0.5, 0.66, 0.88]) + (1 - ys ** 1.4) * np.array([1.0, 0.7, 0.42])
-            img = np.broadcast_to(sky, (h, w, 3)).copy()
-            d = np.sqrt((xs[..., 0] - 0.7) ** 2 * (w / h) ** 2 + (ys[..., 0] - 0.62) ** 2)
-            img += (np.exp(-d * 9)[..., None] * np.array([1.0, 0.8, 0.5]) * 0.9)
-            img[d < 0.045] = [1.0, 0.95, 0.82]
-            far, _ = _skyline(w, h, rng, 0.28, 0.2, 0.0, np)
-            img[far] = img[far] * 0.55 + np.array([0.55, 0.36, 0.3]) * 0.45
-            near, _ = _skyline(w, h, rng, 0.15, 0.2, 0.0, np)
-            img[near] = [0.3, 0.2, 0.18]
-        img = np.clip(img, 0, 1)
-        im = bpy.data.images.new(f"View_{mood}", w, h, alpha=False)
-        im.pixels.foreach_set(np.concatenate([img[::-1], np.ones((h, w, 1))], axis=2).astype(np.float32).reshape(-1))
-        im.filepath_raw = str(out_dir / f"view_{mood}.png")
-        im.file_format = "PNG"
-        im.save()
-
-
 # --- tracker renders -----------------------------------------------------------
 
 def render_moods(objects, renders_dir, model_id):
     """One preview per mood, from the doorway, with the mood's real lights."""
     scene = bpy.context.scene
-    room, window, view = objects
+    room, window = objects
     window.hide_render = True
     stand_ins = _stand_ins(tank=False)
     before = set(bpy.data.objects)
@@ -430,7 +338,6 @@ def render_moods(objects, renders_dir, model_id):
     for o in tank_parts:
         if o.parent is None:
             o.location += G(*L.TANK_ORIGIN)
-    view_mat = view.data.materials[0]
     shots = [(mood, (-1.25, 1.55, 1.55), (0.35, 1.0, -1.4)) for mood in MOOD_NAMES]
     shots.append(("night", (1.55, 1.45, 0.9), (-1.6, 1.0, -0.6)))  # the bed side
     for i, (mood, eye, look) in enumerate(shots):
@@ -443,14 +350,6 @@ def render_moods(objects, renders_dir, model_id):
         scene.collection.objects.link(lamp_obj)
         lamp_obj.location = G(L.TANK_ORIGIN[0], L.TANK_ORIGIN[1] + 0.62, L.TANK_ORIGIN[2])
         lights.append(lamp_obj)
-        # The view as an emissive picture.
-        nodes = view_mat.node_tree.nodes
-        tex = nodes.new("ShaderNodeTexImage")
-        tex.image = bpy.data.images.load(str(Path(__file__).resolve().parents[3] / "godot" / "art" / "room" / f"view_{mood}.png"))
-        bsdf = nodes["Principled BSDF"]
-        view_mat.node_tree.links.new(tex.outputs["Color"], bsdf.inputs["Emission Color"])
-        bsdf.inputs["Emission Strength"].default_value = 1.0
-        bsdf.inputs["Base Color"].default_value = (0, 0, 0, 1)
         use_cycles(int(os.environ.get("ART_RENDER_SAMPLES", "24")))
         scene.cycles.use_denoising = True
         scene.render.resolution_x, scene.render.resolution_y = 640, 360
@@ -470,7 +369,6 @@ def render_moods(objects, renders_dir, model_id):
         scene.render.filepath = str(renders_dir / f"{model_id}{suffix}.png")
         bpy.ops.render.render(write_still=True)
         bpy.data.objects.remove(cam, do_unlink=True)
-        nodes.remove(tex)
         for light in lights:
             bpy.data.objects.remove(light, do_unlink=True)
     for obj in stand_ins + tank_parts:

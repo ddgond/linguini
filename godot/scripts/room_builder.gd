@@ -110,9 +110,6 @@ func _room() -> void:
 	for mi: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
 		mi.layers = ROOM_LAYER
 		match mi.name:
-			"WindowView":
-				# The old painted backdrop: the street (Street) is out there now.
-				mi.visible = false
 			"WindowGlass":
 				moods.glass_material = ShaderMaterial.new()
 				moods.glass_material.shader = WINDOW_SHADER

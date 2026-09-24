@@ -1,6 +1,6 @@
 extends Node
-## The room's mood (autoload "Mood"): which baked lighting, window view and
-## accent lights the bedroom uses. Picked on the monitor, remembered in settings.
+## The room's mood (autoload "Mood"): which baked lighting and accent lights
+## the bedroom uses, and how the street outside looks. Picked on the monitor, remembered in settings.
 
 signal changed(mood: String)
 

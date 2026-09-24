@@ -2,11 +2,12 @@
 with a lightmap UV map, baked once per mood.
 
 Outputs (godot/art/room/):
-  room.glb                the room (UV2 is the lightmap layout), the window
-                          glass and the view backdrop
+  room.glb                the room (UV2 is the lightmap layout) and the
+                          window glass
   layout.json             where things are: the tank, screen, speakers, lights
   lightmap_<mood>.exr     baked light (no albedo), one per mood
-  view_<mood>.png         what's outside the window, one per mood
+
+What's outside the window is its own model (art/models/street).
 
 Bake quality comes from ART_BAKE: "none" (skip baking), "draft" (the default:
 small and quick, fine on a laptop CPU) or "final" (full size, many samples;
@@ -64,15 +65,13 @@ def build():
     room = join(parts, "Room")
     moods.lightmap_uvs(room)
     window = moods.window_glass()
-    view = moods.window_view()
 
     OUT.mkdir(parents=True, exist_ok=True)
     quality = os.environ.get("ART_BAKE", "draft")
     _write_layout(OUT / "layout.json", quality)
     if quality != "none":
-        moods.bake_all(room, [window, view], OUT, quality)
-    moods.paint_views(OUT)
-    return [room, window, view]
+        moods.bake_all(room, [window], OUT, quality)
+    return [room, window]
 
 
 def render(objects, renders_dir, model_id):
