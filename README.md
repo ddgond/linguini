@@ -216,7 +216,9 @@ That tag push does three things:
 - **Release:** publishes them as a GitHub Release for the tag, with `SHA256SUMS` and generated release notes. A tag with a hyphen, such as `v0.2.0-beta.1`, is marked as a pre-release.
 - **Landing page:** rebuilds it with that version and download links pointing at the release, then deploys it to GitHub Pages.
 
-For one-time setup, go to the repository's **Settings › Pages** and set **Source** to **GitHub Actions**.
+One-time setup, in the repository's settings:
+- **Pages:** set **Source** to **GitHub Actions**.
+- **Environments › github-pages › Deployment branches and tags:** add a tag rule for `v*`. Otherwise only `main` may deploy, and the tag's deploy is rejected.
 
 Ordinary pushes and pull requests run `.github/workflows/build.yml`, which builds the extension and runs the tests on Linux and macOS.
 
