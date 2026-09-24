@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Linguini progress tracker: the roadmap and model renders, live.
+"""Linguini progress tracker: the roadmap, model renders and scene snapshots, live.
 
     python3 tools/tracker/server.py            # http://0.0.0.0:57197
     python3 tools/tracker/server.py --port N
@@ -8,6 +8,9 @@ Serves the page in this directory plus:
   /data.json          roadmap (tools/tracker/roadmap.json) + models
                       (art/catalog.json) + render timestamps, rebuilt per request
   /renders/<file>     images from art/renders/
+  /scenes/<snapshot>/<file>
+                      in-game screenshots from art/renders/scenes/ (taken by
+                      capture.py), so the page shows how the scene looks as a whole
 
 The page polls /data.json and redraws when anything changes, so editing the
 roadmap or re-rendering a model shows up within a few seconds.
@@ -29,6 +32,7 @@ ROOT = HERE.parent.parent
 ROADMAP = HERE / "roadmap.json"
 CATALOG = ROOT / "art" / "catalog.json"
 RENDERS = ROOT / "art" / "renders"
+SCENES = RENDERS / "scenes"
 PAGE_FILES = {"/": "index.html", "/index.html": "index.html", "/app.js": "app.js", "/style.css": "style.css"}
 
 
@@ -56,12 +60,32 @@ def build_data() -> dict:
         output = ROOT / "godot" / m.get("output", "")
         model["built"] = output.is_file()
         models.append(model)
-    data = {"roadmap": roadmap, "models": models}
+    data = {"roadmap": roadmap, "models": models, "scenes": scene_snapshots()}
     if "error" in catalog:
         data["catalog_error"] = catalog["error"]
     body = json.dumps(data, sort_keys=True)
     data["version"] = hashlib.sha1(body.encode()).hexdigest()[:12]
     return data
+
+
+def scene_snapshots() -> list:
+    """Every snapshot capture.py has taken, oldest first."""
+    snaps = []
+    if not SCENES.is_dir():
+        return snaps
+    for d in sorted(SCENES.iterdir()):
+        meta = read_json(d / "meta.json", {}) if d.is_dir() else {}
+        if not meta or "error" in meta:
+            continue
+        shots = []
+        for shot in meta.get("shots", []):
+            f = d / shot["file"]
+            if f.is_file():
+                shots.append({**shot, "url": f"/scenes/{d.name}/{f.name}?v={int(f.stat().st_mtime)}"})
+        snaps.append({"name": d.name, "milestone": meta.get("milestone", ""), "time": meta.get("time", ""),
+                      "commit": meta.get("commit", ""), "note": meta.get("note", ""), "shots": shots})
+    snaps.sort(key=lambda s: s["time"])
+    return snaps
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -89,6 +113,13 @@ class Handler(SimpleHTTPRequestHandler):
             if f.suffix.lower() in (".png", ".jpg", ".webp") and f.is_file():
                 # Versioned by ?v=mtime, so these can be cached.
                 self._send(f.read_bytes(), mimetypes.guess_type(f.name)[0], cache=True)
+            else:
+                self.send_error(404)
+        elif path.startswith("/scenes/"):
+            parts = Path(path).parts  # ("/", "scenes", snapshot, file)
+            f = SCENES / parts[2] / parts[3] if len(parts) == 4 else None
+            if f and f.suffix.lower() == ".png" and f.is_file() and f.resolve().is_relative_to(SCENES.resolve()):
+                self._send(f.read_bytes(), "image/png", cache=True)
             else:
                 self.send_error(404)
         else:

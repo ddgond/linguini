@@ -1,0 +1,74 @@
+name: Pages
+
+# Deploys the landing page to GitHub Pages, with download links pointing at a
+# release. It runs when the site changes on main (linking the latest release),
+# when release.yml publishes a tag (linking that release), or by hand from the
+# Actions tab.
+#
+# One-time setup: Settings > Pages > Build and deployment > Source: GitHub Actions.
+on:
+  push:
+    branches: [main]
+    paths: ["site/**", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      tag:
+        description: The release to link to
+        type: string
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download the release's builds
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          # With no tag given, the latest release. With none published yet,
+          # the page says so and links to the source.
+          tag="${TAG:-$(gh release view --json tagName --jq .tagName || true)}"
+          mkdir -p dist/builds
+          if [ -n "$tag" ]; then
+            gh release download "$tag" --pattern "linguini-*" --dir dist/builds
+            echo "TAG=$tag" >> "$GITHUB_ENV"
+            echo "DATE=$(gh release view "$tag" --json publishedAt --jq '.publishedAt[:10]')" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build the landing page
+        env:
+          REPO: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          if [ -n "$TAG" ]; then
+            python3 site/build.py --version "$TAG" --date "$DATE" --repo-url "$REPO" \
+              --base-url "$REPO/releases/download/$TAG/"
+          else
+            python3 site/build.py --repo-url "$REPO"
+          fi
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

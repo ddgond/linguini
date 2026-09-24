@@ -1,6 +1,6 @@
 {
   "project": "Linguini",
-  "now": "3b",
+  "now": "3d",
   "milestones": [
     {
       "id": "1",
@@ -105,23 +105,126 @@
     {
       "id": "3b",
       "title": "Bedroom and lighting",
-      "status": "planned",
-      "summary": "Modelled furniture, the streamer setup, clutter and lighting mood. Next up: its Q&A.",
-      "items": []
+      "status": "done",
+      "summary": "The tank under a wide window, the streamer's desk opposite, three baked moods (night, rainy evening, golden hour), cosy dressing and fish fandom.",
+      "items": [
+        {
+          "text": "New layout: tank under the window, desk on the right wall, bed and shelf on the left",
+          "status": "done"
+        },
+        {
+          "text": "Room shell and furniture modelled (walls, window, door, desk, chair, bed, shelf, beanbag, rug)",
+          "status": "done"
+        },
+        {
+          "text": "Lightmap baking in the art pipeline (Cycles, one set per mood); draft bakes in, final bakes pending on the main PC",
+          "status": "in-progress"
+        },
+        {
+          "text": "Moods: Night den, Rainy evening, Golden hour, picked on the monitor",
+          "status": "done"
+        },
+        {
+          "text": "Window views per mood, rain on the glass",
+          "status": "done"
+        },
+        {
+          "text": "Live accents: monitor glow, tank lamp, RGB strips, fairy lights",
+          "status": "done"
+        },
+        {
+          "text": "Streamer gear: mic arm, ring light, webcam, stream deck, headphones, chat monitor",
+          "status": "done"
+        },
+        {
+          "text": "Cosy touches and tidy gamer bits: plants, books, blanket, beanbag, controller, hoodie",
+          "status": "done"
+        },
+        {
+          "text": "Fish fandom: Tortellini posters, goldfish plush, food tub, mug, trophy",
+          "status": "done"
+        }
+      ]
     },
     {
       "id": "3c",
       "title": "Cards, UI, tank cam",
-      "status": "planned",
-      "summary": "Card faces and fonts, menu theme, editor panel look, a more convincing overlay. Q&A first.",
-      "items": []
+      "status": "done",
+      "summary": "Matte classroom flash cards, selectable button glyphs, Nunito + JetBrains Mono, a cosy streamer-OS menu, a matching editor, a more convincing tank cam, and no HUD.",
+      "items": [
+        {
+          "text": "Fonts: Nunito for the game, JetBrains Mono for the tank cam (bundled, OFL)",
+          "status": "done"
+        },
+        {
+          "text": "Button glyph sets (Xbox, PlayStation, Nintendo): auto from the controller, with a picker",
+          "status": "done"
+        },
+        {
+          "text": "Matte flash cards: paper face, printed glyphs, corner label, edge light when held, sequence progress",
+          "status": "done"
+        },
+        {
+          "text": "Monitor menu as a cosy streamer OS: logo, mood accent, host and app cards, taskbar",
+          "status": "done"
+        },
+        {
+          "text": "Tank editor panels to match, with thumbnails",
+          "status": "done"
+        },
+        {
+          "text": "Tank cam overlay polish: brackets, keypoints, readouts, logs, jitter",
+          "status": "done"
+        },
+        {
+          "text": "No HUD: held buttons on the cards, live state on the webcam tally and monitor",
+          "status": "done"
+        }
+      ]
     },
     {
       "id": "3d",
       "title": "Feel and sound",
-      "status": "planned",
-      "summary": "Bubbles, filter, card presses, camera polish, room tone. Q&A first.",
-      "items": []
+      "status": "done",
+      "summary": "Sound heard from the fish while piloting (lightly muffled underwater), card, tank, fish and room sounds, a dart kick, card edge pulses, water motes and light shafts, and volume sliders.",
+      "items": [
+        {
+          "text": "Listener on the fish while piloting, camera otherwise; a light underwater muffle and watery reverb",
+          "status": "done"
+        },
+        {
+          "text": "Sound pipeline: synthesized sounds (audio/ script) plus CC0 recordings with credits",
+          "status": "done"
+        },
+        {
+          "text": "Card sounds: press tap, release, sequence ticks",
+          "status": "done"
+        },
+        {
+          "text": "Tank ambience: filter trickle, air-stone bubbles, tank hum, from their pieces",
+          "status": "done"
+        },
+        {
+          "text": "Fish sounds: tail swishes, dart whoosh, bumps",
+          "status": "done"
+        },
+        {
+          "text": "Room tone per mood (fan and city, rain, birds and breeze) and monitor UI clicks",
+          "status": "done"
+        },
+        {
+          "text": "Feel: dart FOV kick, card edge-light pulse on press",
+          "status": "done"
+        },
+        {
+          "text": "Water motes and light shafts, scaled by quality",
+          "status": "done"
+        },
+        {
+          "text": "Volume sliders on the monitor: Master, Game, Room & tank, UI",
+          "status": "done"
+        }
+      ]
     }
   ]
 }

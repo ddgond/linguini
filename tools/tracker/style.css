@@ -185,11 +185,46 @@ h2 { font-size: 1.35rem; margin: 40px 0 14px; letter-spacing: -0.01em; }
 .empty, .error { color: var(--muted); }
 .error { color: var(--accent-text); }
 
+/* Scene snapshots */
+.lede { color: var(--muted); margin: -4px 0 14px; max-width: 70ch; }
+.snapmeta { margin: 0 0 10px; color: var(--muted); font-size: 0.9rem; }
+.snapmeta strong { color: var(--ink); font-weight: 650; }
+.snapmeta code {
+  margin-left: 8px; padding: 1px 6px; border-radius: 6px;
+  background: var(--thumb-bg); font-size: 0.8rem;
+}
+.scene-hero { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.scene-hero .hero { grid-column: span 2; grid-row: span 2; }
+.scene-hero figure, .strip figure { margin: 0; }
+.scene-hero .thumb, .strip .thumb { aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; box-shadow: var(--shadow); }
+.scene-hero figcaption, .strip figcaption { font-size: 0.8rem; color: var(--muted); margin-top: 4px; line-height: 1.3; }
+.hero figcaption { font-size: 0.9rem; }
+.timeline { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.snap {
+  min-width: 0;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 12px 14px; box-shadow: var(--shadow);
+}
+.strip {
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(180px, 220px);
+  gap: 10px; overflow-x: auto; padding-bottom: 6px;
+}
+.strip.small { grid-auto-columns: minmax(140px, 170px); margin-bottom: 12px; }
+@media (max-width: 720px) {
+  .scene-hero { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 dialog {
   border: 0; padding: 0;
   border-radius: var(--radius);
   background: var(--surface); color: var(--ink);
-  max-width: min(92vw, 1000px);
+  max-width: min(94vw, 1300px);
+}
+.viewer-bar { display: flex; align-items: center; gap: 8px; padding: 0 10px; }
+.viewer-bar p { flex: 1; }
+.viewer-bar button {
+  width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); font-size: 1.3rem; cursor: pointer;
 }
 dialog::backdrop { background: rgb(0 0 0 / 0.6); }
 dialog img { display: block; max-width: 100%; max-height: 80vh; }

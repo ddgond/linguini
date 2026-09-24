@@ -1,10 +1,8 @@
 name: Release
 
 # Pushing a version tag (v0.1.0, v1.2.3-beta.1, ...) packages the Linux and
-# macOS builds, publishes them as a GitHub Release, and deploys the landing
-# page to GitHub Pages with download links pointing at that release.
-#
-# One-time setup: Settings > Pages > Build and deployment > Source: GitHub Actions.
+# macOS builds, publishes them as a GitHub Release, and then has pages.yml
+# deploy the landing page with download links pointing at that release.
 on:
   push:
     tags: ["v*"]
@@ -100,27 +98,12 @@ jobs:
           [[ "$TAG" == *-* ]] && prerelease="--prerelease"
           gh release create "$TAG" dist/builds/* --title "Linguini $TAG" --generate-notes --verify-tag $prerelease
 
-      - name: Build the landing page
-        env:
-          TAG: ${{ github.ref_name }}
-          REPO: ${{ github.server_url }}/${{ github.repository }}
-        run: |
-          python3 site/build.py --version "$TAG" --repo-url "$REPO" \
-            --base-url "$REPO/releases/download/$TAG/"
-
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist/site
-
   pages:
     needs: release
-    runs-on: ubuntu-24.04
     permissions:
+      contents: read
       pages: write
       id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
-    steps:
-      - id: deploy
-        uses: actions/deploy-pages@v4
+    uses: ./.github/workflows/pages.yml
+    with:
+      tag: ${{ github.ref_name }}

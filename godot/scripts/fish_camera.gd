@@ -24,6 +24,7 @@ const MAX_PITCH := 0.9
 @export var recenter_rate := 1.6
 @export var gaze_time := 0.35 ## s to swing into / out of gaze
 @export var glass_leeway := 0.35 ## m the follow camera may back out through the glass walls
+@export var dart_kick := 7.0 ## degrees of FOV punched out when the fish darts
 
 var fish: Fish
 var screen: Node3D
@@ -38,6 +39,8 @@ var gaze := 0.0 ## 0 = follow, 1 = gaze at monitor
 var _menu := 0.0
 var _manual_timer := 0.0
 var _pivot := Vector3.ZERO
+## 1 right after a dart, easing back to 0.
+var kick := 0.0
 
 
 func _ready() -> void:
@@ -46,6 +49,7 @@ func _ready() -> void:
 	if fish:
 		orbit_yaw = fish.yaw
 		_pivot = fish.global_position
+		fish.darted.connect(func() -> void: kick = 1.0)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -93,7 +97,10 @@ func _process(delta: float) -> void:
 		xf = xf.interpolate_with(menu[0], smoothstep(0.0, 1.0, _menu))
 		f = lerpf(f, menu[1], smoothstep(0.0, 1.0, _menu))
 	global_transform = xf
-	fov = f
+	# The dart's punch: a quick widening that eases back, only while following.
+	kick = maxf(kick - delta / 0.4, 0.0)
+	var follow_weight := (1.0 - smoothstep(0.0, 1.0, gaze)) * (1.0 - smoothstep(0.0, 1.0, _menu))
+	fov = f + dart_kick * kick * kick * follow_weight
 
 
 func is_underwater() -> bool:

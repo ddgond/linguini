@@ -50,6 +50,8 @@ if [[ -n "$unexpected" ]]; then
 fi
 glibc=$(docker run --rm -v "$WORK/src:/work" "$IMAGE" bash -c "objdump -T godot/bin/$LIB | grep -o 'GLIBC_[0-9.]*' | sort -Vu | tail -1")
 echo "    requires $glibc"
+# godot/bin/ is ignored by git, so a fresh checkout (as in CI) doesn't have it.
+mkdir -p "$ROOT/godot/bin"
 cp "$WORK/src/godot/bin/$LIB" "$ROOT/godot/bin/$LIB"
 
 step "Exporting the Godot project"
@@ -100,6 +102,9 @@ cp "$ROOT/third_party/moonlight-embedded/LICENSE" "$stage/licenses/moonlight-emb
 cp "$ROOT/third_party/moonlight-common-c/enet/LICENSE" "$stage/licenses/enet.txt"
 cp "$ROOT/third_party/moonlight-common-c/nanors/LICENSE" "$stage/licenses/nanors.txt"
 cp "$ROOT/third_party/godot-cpp/LICENSE.md" "$stage/licenses/godot-cpp.md"
+cp "$ROOT/godot/fonts/Nunito-OFL.txt" "$stage/licenses/font-nunito.txt"
+cp "$ROOT/godot/fonts/JetBrainsMono-OFL.txt" "$stage/licenses/font-jetbrains-mono.txt"
+cp "$ROOT/godot/audio/CREDITS.txt" "$stage/licenses/sounds.txt"
 "$GODOT" --headless --path "$ROOT/godot" -- --tool=write_licenses "$stage/licenses/godot.txt" >/dev/null
 docker run --rm -v "$stage/licenses:/out" -u "$(id -u):$(id -g)" "$IMAGE" cp -r /deps/licenses/. /out/
 mkdir -p "$DIST/builds"

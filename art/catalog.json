@@ -139,6 +139,22 @@
       "script": "models/decor/bonfire.py",
       "output": "art/decor/bonfire.glb",
       "status": "done"
+    },
+    {
+      "id": "room",
+      "name": "Bedroom (night, rainy, golden)",
+      "milestone": "3b",
+      "script": "models/room/room.py",
+      "deps": [
+        "models/room/layout.py",
+        "models/room/shell.py",
+        "models/room/furniture.py",
+        "models/room/dressing.py",
+        "models/room/moods.py"
+      ],
+      "output": "art/room/room.glb",
+      "status": "done",
+      "note": "Draft lightmaps; final bakes pending on the main PC (ART_BAKE=final)"
     }
   ]
 }

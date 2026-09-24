@@ -1,0 +1,11 @@
+Linguini's sounds
+
+Synthesized by audio/build.py (part of Linguini, GPLv3): card taps, UI clicks,
+bubbles, the filter's trickle, the tank's hum, fish swishes and bumps, the PC
+fan, the distant city and the breeze.
+
+CC0 recordings (public domain), made mono, levelled and looped:
+- rain.ogg: "Rain (loopable)" by Ylmir, CC0.
+  https://opengameart.org/content/rain-loopable (file 3.ogg)
+- birds.ogg: "Ambient Bird Sounds" by isaiah658, CC0.
+  https://opengameart.org/content/ambient-bird-sounds

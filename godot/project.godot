@@ -14,6 +14,9 @@ config/features=PackedStringArray("4.5", "Forward Plus")
 InputSetup="*res://scripts/input_setup.gd"
 Settings="*res://scripts/settings.gd"
 Quality="*res://scripts/quality.gd"
+Mood="*res://scripts/mood.gd"
+Glyphs="*res://scripts/glyphs.gd"
+Sound="*res://scripts/sound.gd"
 
 [display]
 
@@ -23,6 +26,10 @@ window/size/viewport_height=900
 [physics]
 
 common/physics_ticks_per_second=120
+
+[gui]
+
+theme/custom_font="res://fonts/Nunito.ttf"
 
 [rendering]
 

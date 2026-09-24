@@ -46,11 +46,14 @@ func setup(p_screen: MeshInstance3D, p_size: Vector2, p_client: Object, p_menu: 
 
 
 func _process(delta: float) -> void:
-	_menu_fade = move_toward(_menu_fade, 1.0 if menu_visible else 0.0, delta / 0.25)
+	var video: bool = show_video and client != null and client.has_video()
+	# With no stream to show, the monitor idles on its desktop instead of going dark.
+	if menu.has_method("set_idle"):
+		menu.set_idle(not menu_visible and not video)
+	_menu_fade = move_toward(_menu_fade, 1.0 if (menu_visible or not video) else 0.0, delta / 0.25)
 	_material.set_shader_parameter("menu_opacity", _menu_fade)
 	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS if _menu_fade > 0.0 else SubViewport.UPDATE_DISABLED
 	if client:
-		var video: bool = show_video and client.has_video()
 		_material.set_shader_parameter("has_video", video)
 		if video:
 			_material.set_shader_parameter("video_size", Vector2(client.get_video_size()))

@@ -97,8 +97,9 @@ var _state := PackedInt32Array([0, 0, 0, 0, 0, 0, 0])
 var _show_zones := false
 
 
+## An input's short printed name, in the current button glyph set.
 static func short_name(id: String) -> String:
-	return SHORT_NAMES.get(id, INPUTS[id].get("label", id))
+	return SHORT_NAMES.get(id, Glyphs.label(id))
 
 
 func load_layout(path: String) -> bool:
@@ -240,7 +241,11 @@ func update(fish_pos: Vector3, delta: float) -> void:
 		var card := cards[i]
 		var kind := card.binding.kind
 		if _play_ms[i] >= 0.0:
+			var before := _play_ms[i]
 			_play_ms[i] += delta * 1000.0
+			for step: Dictionary in card.binding.steps:
+				if step.at > before and step.at <= _play_ms[i]:
+					_sound(card, "seq_tick", -8.0)
 			if _play_ms[i] >= card.binding.duration_ms():
 				_play_ms[i] = -1.0
 		var zone := _zones[i].grow(HYSTERESIS) if card.active else _zones[i]
@@ -250,15 +255,24 @@ func update(fish_pos: Vector3, delta: float) -> void:
 					_play_ms[i] = 0.0
 				elif kind == CardBinding.Kind.TOGGLE:
 					_latched[i] = not _latched[i]
+				_sound(card, "card_press", -4.0)
 			card.active = true
 			_release_timers[i] = RELEASE_DELAY
 		elif card.active:
 			_release_timers[i] -= delta
 			if _release_timers[i] <= 0.0:
 				card.active = false
+				_sound(card, "card_release", -9.0)
 		card.playing = _play_ms[i] >= 0.0
 		card.latched = _latched[i]
+		if kind == CardBinding.Kind.SEQUENCE:
+			card.progress = _play_ms[i] / maxf(card.binding.duration_ms(), 1.0) if card.playing else -1.0
 	_publish()
+
+
+func _sound(card: FlashCard, sound_name: String, volume_db: float) -> void:
+	if card.is_inside_tree():
+		Sound.play_at(sound_name, card.global_position, volume_db, 0.05, 0.6)
 
 
 ## Resends the current state, e.g. when a stream (re)starts.

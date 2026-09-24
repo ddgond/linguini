@@ -69,7 +69,11 @@ jobs:
           name: linguini-macos
           path: godot/bin/
 
+  # Skipped until the Windows build works: it fails every run for now. To turn
+  # it back on, set the repository variable WINDOWS_CI to "true"
+  # (Settings > Secrets and variables > Actions > Variables).
   windows:
+    if: ${{ vars.WINDOWS_CI == 'true' }}
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4

@@ -16,6 +16,11 @@ extends Node3D
 ##   --gaze                 hold the gaze button
 ##   --zones                show card trigger zones
 ##   --room-camera          view through the room camera
+##   --overview[=EYE;AT]    view the room from the doorway, or from EYE toward AT
+##                          (x,y,z each, in the room model's coordinates)
+##   --mood=NAME            night, rainy or golden, just for this run
+##   --glyphs=SET           xbox, playstation or nintendo button art, just for this run
+##   --quality=LEVEL        low, medium or high graphics, just for this run
 ##   --edit                 open the tank editor
 ##   --tracking=STYLE       open the tank cam window (minimal, earnest, over-the-top)
 ##   --tracking-shot=PATH   with --screenshot, also save the tank cam window
@@ -34,7 +39,6 @@ var camera: FishCamera
 var cards: CardSystem
 var monitor: Monitor
 var menu: MonitorMenu
-var hud: Hud
 var editor: TankEditor
 var decor: TankDecor
 var tracking: TrackingCam
@@ -42,6 +46,8 @@ var mode := Mode.MENU
 var _mode_before_edit := Mode.MENU
 
 var audio: RoomAudio
+## The fish's ears: the listener while piloting (the camera's otherwise).
+var ears: AudioListener3D
 var _water := AABB()
 var _has_swum := false
 var _args := {}
@@ -77,6 +83,12 @@ func _ready() -> void:
 	tank.add_child(fish)
 	fish.position = Vector3(0.3, 0.3, 0.1)
 	fish.yaw = PI / 2
+	ears = AudioListener3D.new()
+	ears.name = "Ears"
+	fish.add_child(ears)
+	var fish_sounds := FishSounds.new()
+	fish_sounds.name = "FishSounds"
+	fish.add_child(fish_sounds)
 
 	camera = FishCamera.new()
 	camera.fish = fish
@@ -118,10 +130,6 @@ func _ready() -> void:
 	add_child(monitor)
 	monitor.setup(room.screen, room.screen_size, client, menu)
 
-	hud = Hud.new()
-	hud.client = client
-	add_child(hud)
-
 	tracking = TrackingCam.new()
 	tracking.fish = fish
 	tracking.cards = cards
@@ -130,7 +138,6 @@ func _ready() -> void:
 	tracking.follow(room.room_camera)
 	set_tracking(Settings.tracking_enabled(), Settings.tracking_style())
 	menu.tracking_changed.connect(set_tracking)
-	cards.held_changed.connect(hud.set_held)
 
 	audio = RoomAudio.new()
 	audio.name = "RoomAudio"
@@ -159,9 +166,13 @@ func set_mode(new_mode: Mode) -> void:
 	# The fish holds still while its cards are rearranged around it.
 	fish.set_physics_process(not editing)
 	camera.menu_view = not swimming
+	# Sound is heard from the fish while piloting it, from the camera otherwise.
+	if swimming:
+		ears.make_current()
+	else:
+		ears.clear_current()
 	monitor.menu_visible = not swimming
 	cards.enabled = swimming
-	hud.visible = swimming
 	if editing and not editor.is_open():
 		editor.open()
 	elif not editing and editor.is_open():
@@ -230,7 +241,9 @@ func _process(_delta: float) -> void:
 	var view := get_viewport().get_camera_3d()
 	var underwater := view != null and _water.has_point(view.global_position)
 	room.environment.fog_enabled = underwater
-	audio.underwater = underwater
+	Sound.underwater = underwater or (mode == Mode.SWIM)
+	# No HUD: the camera's tally light and the monitor say whether we're live.
+	room.moods.live = client != null and client.is_streaming()
 	_pump_audio()
 
 
@@ -314,9 +327,29 @@ func _apply_args() -> void:
 		Input.action_press("gaze")
 	if _args.has("zones"):
 		cards.toggle_zones()
+	if _args.has("mood"):
+		Mood.set_mood(String(_args.mood), false)
+	if _args.has("quality"):
+		Quality.set_setting(String(_args.quality), false)
+	if _args.has("glyphs"):
+		Glyphs.set_setting(String(_args.glyphs), false)
 	if _args.has("room-camera"):
 		(room.room_camera as Camera3D).make_current()
-		hud.visible = false
+	if _args.has("overview"):
+		var eye := Camera3D.new()
+		eye.fov = 75.0
+		add_child(eye)
+		var shift: Vector3 = room.room_model.position
+		var from := Vector3(-1.25, 1.55, 1.55)
+		var at := Vector3(0.35, 1.0, -1.4)
+		var spec := String(_args.overview)
+		if spec.contains(";"):
+			var a := spec.get_slice(";", 0).split_floats(",")
+			var b := spec.get_slice(";", 1).split_floats(",")
+			from = Vector3(a[0], a[1], a[2])
+			at = Vector3(b[0], b[1], b[2])
+		eye.look_at_from_position(from + shift, at + shift)
+		eye.make_current()
 	if _args.has("tracking"):
 		var i := ["minimal", "earnest", "over-the-top"].find(String(_args.tracking))
 		set_tracking(true, i if i >= 0 else TrackingCam.Style.EARNEST)

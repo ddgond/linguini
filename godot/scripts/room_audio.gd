@@ -3,11 +3,11 @@ extends Node3D
 ## Game audio from the host.
 ##
 ## ROOM: plays from the two speakers by the monitor, positioned in 3D, with the
-## left channel on the left speaker and the right on the right. While the
-## camera is underwater everything goes through a low-pass filter, so the game
-## sounds muffled through the water and glass.
+## left channel on the left speaker and the right on the right, through the
+## Game bus, which the Sound autoload muffles lightly while the listener is
+## underwater.
 ##
-## STEREO: plain stereo straight to the output, no filter.
+## STEREO: plain stereo straight to the output, no muffling.
 
 enum Mode { ROOM, STEREO }
 
@@ -15,23 +15,18 @@ const BUS := "Game"
 const MIX_RATE := 48000
 const BUFFER_SECONDS := 0.08
 const CLEAR_HZ := 20000.0
-const UNDERWATER_HZ := 700.0
 
 var mode := Mode.ROOM:
 	set = set_mode
-var underwater := false
 
 var _speakers: Array[AudioStreamPlayer3D] = []
 var _speaker_playbacks: Array[AudioStreamGeneratorPlayback] = []
 var _stereo: AudioStreamPlayer
 var _stereo_playback: AudioStreamGeneratorPlayback
-var _filter: AudioEffectLowPassFilter
-var _bus := -1
 
 
 ## `positions` are the speakers' global positions, left first.
 func setup(positions: Array) -> void:
-	_bus = _ensure_bus()
 	for p: Vector3 in positions:
 		var player := AudioStreamPlayer3D.new()
 		player.stream = _generator()
@@ -44,7 +39,16 @@ func setup(positions: Array) -> void:
 		_speakers.append(player)
 	_stereo = AudioStreamPlayer.new()
 	_stereo.stream = _generator()
+	_stereo.bus = BUS
 	add_child(_stereo)
+
+
+func _enter_tree() -> void:
+	Sound.game_direct = mode == Mode.STEREO
+
+
+func _exit_tree() -> void:
+	Sound.game_direct = false
 
 
 func set_mode(value: Mode) -> void:
@@ -53,6 +57,7 @@ func set_mode(value: Mode) -> void:
 	var was_playing := is_playing()
 	stop()
 	mode = value
+	Sound.game_direct = mode == Mode.STEREO
 	if was_playing:
 		start()
 
@@ -109,34 +114,6 @@ static func split_channel(pcm: PackedVector2Array, channel: int) -> PackedVector
 		var v := pcm[i][channel]
 		out[i] = Vector2(v, v)
 	return out
-
-
-func _process(delta: float) -> void:
-	if _filter == null:
-		return
-	var target := UNDERWATER_HZ if (underwater and mode == Mode.ROOM) else CLEAR_HZ
-	# Glide in log space so surfacing and diving both sound smooth.
-	var k := 1.0 - exp(-6.0 * delta)
-	_filter.cutoff_hz = exp(lerpf(log(_filter.cutoff_hz), log(target), k))
-	AudioServer.set_bus_effect_enabled(_bus, 0, _filter.cutoff_hz < CLEAR_HZ * 0.95)
-
-
-## The Game bus (created on first use) with its low-pass filter at slot 0.
-func _ensure_bus() -> int:
-	var i := AudioServer.get_bus_index(BUS)
-	if i < 0:
-		AudioServer.add_bus()
-		i = AudioServer.bus_count - 1
-		AudioServer.set_bus_name(i, BUS)
-		AudioServer.set_bus_send(i, "Master")
-	if AudioServer.get_bus_effect_count(i) == 0:
-		var lp := AudioEffectLowPassFilter.new()
-		lp.cutoff_hz = CLEAR_HZ
-		lp.resonance = 0.6
-		AudioServer.add_bus_effect(i, lp, 0)
-	_filter = AudioServer.get_bus_effect(i, 0) as AudioEffectLowPassFilter
-	AudioServer.set_bus_effect_enabled(i, 0, false)
-	return i
 
 
 static func _generator() -> AudioStreamGenerator:

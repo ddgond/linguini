@@ -50,9 +50,10 @@ static func auto_level() -> Level:
 			return Level.MEDIUM
 
 
-func set_setting(value: String) -> void:
+func set_setting(value: String, remember := true) -> void:
 	setting = value
-	Settings.set_value("graphics", "quality", value)
+	if remember:
+		Settings.set_value("graphics", "quality", value)
 	var new_level := _resolve(value)
 	if new_level != level:
 		level = new_level

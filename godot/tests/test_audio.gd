@@ -1,5 +1,5 @@
 extends "res://tests/test_case.gd"
-## Game audio: speakers in the room, the underwater filter, plain stereo.
+## Game audio: speakers in the room, the light underwater muffle, plain stereo.
 
 
 func _audio() -> RoomAudio:
@@ -24,27 +24,25 @@ func test_each_speaker_plays_one_channel() -> void:
 	check(right == PackedVector2Array([Vector2(-0.25, -0.25), Vector2(0.9, 0.9)]), "the right speaker gets the right channel (%s)" % right)
 
 
-func test_underwater_muffles_and_clears() -> void:
+func test_underwater_muffles_lightly_and_clears() -> void:
 	var audio := _audio()
-	var bus := AudioServer.get_bus_index(RoomAudio.BUS)
-	check(bus >= 0, "the Game bus exists")
-	var filter := AudioServer.get_bus_effect(bus, 0) as AudioEffectLowPassFilter
-	check(filter != null, "with a low-pass filter")
+	var water := AudioServer.get_bus_index("Water")
+	check(water >= 0, "the Water bus exists")
+	check(AudioServer.get_bus_send(AudioServer.get_bus_index(RoomAudio.BUS)) == &"Water", "the stream goes through the water")
 
-	audio.underwater = true
-	await _run(1.2)
-	check(filter.cutoff_hz < 1000.0, "underwater, the cutoff glides down (%.0f Hz)" % filter.cutoff_hz)
-	check(AudioServer.is_bus_effect_enabled(bus, 0), "and the filter is on")
-
-	audio.underwater = false
+	Sound.underwater = true
 	await _run(1.5)
-	check(filter.cutoff_hz > 15000.0, "surfacing opens it back up (%.0f Hz)" % filter.cutoff_hz)
-	check(not AudioServer.is_bus_effect_enabled(bus, 0), "and switches it off")
+	check(Sound.muffle_hz() < 4500.0 and Sound.muffle_hz() > 2500.0, "underwater, it's muffled lightly (%.0f Hz)" % Sound.muffle_hz())
+	check(AudioServer.is_bus_effect_enabled(water, 0), "and the filter is on")
+
+	Sound.underwater = false
+	await _run(1.5)
+	check(Sound.muffle_hz() > 15000.0, "surfacing opens it back up (%.0f Hz)" % Sound.muffle_hz())
+	check(not AudioServer.is_bus_effect_enabled(water, 0), "and switches it off")
 
 	audio.mode = RoomAudio.Mode.STEREO
-	audio.underwater = true
-	await _run(0.5)
-	check(filter.cutoff_hz > 15000.0, "plain stereo is never muffled")
+	check(AudioServer.get_bus_send(AudioServer.get_bus_index(RoomAudio.BUS)) == &"Master", "plain stereo skips the water")
+	audio.mode = RoomAudio.Mode.ROOM
 	audio.queue_free()
 
 

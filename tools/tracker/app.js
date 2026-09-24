@@ -1,4 +1,4 @@
-// Polls /data.json and redraws the roadmap and model gallery when it changes.
+// Polls /data.json and redraws the scene snapshots, roadmap and model gallery when they change.
 "use strict";
 
 const POLL_MS = 3000;
@@ -55,14 +55,14 @@ function renderNow() {
   const items = m.items || [];
   const current = items.filter((i) => i.status === "in-progress");
   const done = items.filter((i) => i.status === "done").length;
-  box.append(
+  box.append(...[
     el("p", { class: "eyebrow" }, "Now working on"),
     el("h2", {}, `Milestone ${m.id}: ${m.title}`),
     el("p", { class: "summary" }, m.summary || ""),
     progress(items),
     el("p", { class: "count" }, `${done} of ${items.length} items done`),
     current.length ? el("ul", { class: "current" }, current.map((i) => el("li", {}, i.text))) : null,
-  );
+  ].filter(Boolean));
 }
 
 function renderRoadmap() {
@@ -82,6 +82,7 @@ function renderRoadmap() {
           ),
           el("p", { class: "summary" }, m.summary || ""),
           progress(items),
+          milestoneStrip(m.id),
           items.length
             ? el("ul", { class: "items" }, items.map((i) => el("li", { class: i.status },
                 el("span", { class: "tick", "aria-hidden": "true" }), el("span", {}, i.text),
@@ -129,16 +130,114 @@ function renderModels() {
   }
 }
 
+// The viewer shows one image of a list ({url, caption}) and steps through it.
+let viewerList = [];
+let viewerIndex = 0;
+
 function openViewer(m) {
+  openImages(m.renders.map((r) => ({ url: r.url, caption: `${m.name} · ${STATUS_LABEL[m.status] || m.status}${m.note ? " · " + m.note : ""}` })), 0);
+}
+
+function openImages(list, index) {
+  viewerList = list;
+  viewerIndex = index;
+  showViewerImage();
   const dlg = $("viewer");
-  $("viewer-img").src = m.renders[0].url;
-  $("viewer-img").alt = `${m.name} render`;
-  $("viewer-caption").textContent = `${m.name} · ${STATUS_LABEL[m.status] || m.status}${m.note ? " · " + m.note : ""}`;
-  dlg.showModal();
+  if (!dlg.open) dlg.showModal();
+}
+
+function showViewerImage() {
+  const item = viewerList[viewerIndex];
+  if (!item) return;
+  $("viewer-img").src = item.url;
+  $("viewer-img").alt = item.caption;
+  const many = viewerList.length > 1;
+  $("viewer-caption").textContent = many ? `${item.caption} (${viewerIndex + 1} of ${viewerList.length})` : item.caption;
+  $("viewer-prev").hidden = !many;
+  $("viewer-next").hidden = !many;
+}
+
+function stepViewer(delta) {
+  if (viewerList.length < 2) return;
+  viewerIndex = (viewerIndex + delta + viewerList.length) % viewerList.length;
+  showViewerImage();
+}
+
+$("viewer-prev").addEventListener("click", () => stepViewer(-1));
+$("viewer-next").addEventListener("click", () => stepViewer(1));
+$("viewer").addEventListener("keydown", (e) => {
+  if (e.key === "ArrowLeft") stepViewer(-1);
+  if (e.key === "ArrowRight") stepViewer(1);
+});
+
+// --- scene snapshots ---
+
+function milestoneTitle(id) {
+  const m = (data.roadmap.milestones || []).find((x) => x.id === id);
+  return m ? `Milestone ${m.id}: ${m.title}` : `Milestone ${id}`;
+}
+
+function when(iso) {
+  const t = Date.parse(iso);
+  if (Number.isNaN(t)) return iso;
+  return new Date(t).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+function snapImages(snap) {
+  return snap.shots.map((s) => ({ url: s.url, caption: `${s.title} · ${milestoneTitle(snap.milestone)} · ${when(snap.time)}` }));
+}
+
+function shotButton(snap, i, cls) {
+  const s = snap.shots[i];
+  return el("figure", { class: cls },
+    el("button", { class: "thumb", type: "button", "aria-label": `Enlarge: ${s.title}`, onclick: () => openImages(snapImages(snap), i) },
+      el("img", { src: s.url, alt: s.title, loading: "lazy" })),
+    el("figcaption", {}, s.title),
+  );
+}
+
+function snapMeta(snap) {
+  return el("p", { class: "snapmeta" },
+    el("strong", {}, milestoneTitle(snap.milestone)), ` · ${when(snap.time)}`,
+    snap.commit ? el("code", {}, snap.commit) : null,
+    snap.note ? ` · ${snap.note}` : "",
+  );
+}
+
+function renderScenes() {
+  const snaps = data.scenes || [];
+  const latest = $("latest");
+  const timeline = $("timeline");
+  latest.replaceChildren();
+  timeline.replaceChildren();
+  if (!snaps.length) {
+    latest.append(el("p", { class: "empty" }, "No snapshots yet. Take one with tools/tracker/capture.py."));
+    return;
+  }
+  const newest = snaps[snaps.length - 1];
+  latest.append(
+    snapMeta(newest),
+    el("div", { class: "scene-hero" }, newest.shots.map((_, i) => shotButton(newest, i, i === 0 ? "hero" : "shot"))),
+  );
+  for (const snap of [...snaps].reverse()) {
+    timeline.append(el("li", { class: "snap" },
+      snapMeta(snap),
+      el("div", { class: "strip" }, snap.shots.map((_, i) => shotButton(snap, i, "shot"))),
+    ));
+  }
+}
+
+// A milestone's newest snapshot, shown in its roadmap entry.
+function milestoneStrip(id) {
+  const snaps = (data.scenes || []).filter((s) => s.milestone === id);
+  if (!snaps.length) return null;
+  const snap = snaps[snaps.length - 1];
+  return el("div", { class: "strip small" }, snap.shots.map((_, i) => shotButton(snap, i, "shot")));
 }
 
 function render() {
   renderNow();
+  renderScenes();
   renderRoadmap();
   renderModels();
 }

@@ -22,6 +22,8 @@ var variant := 0
 var size := "M"
 ## Degrees about the vertical axis.
 var yaw := 0.0
+## No sounds (the editor's thumbnails).
+var quiet := false
 ## Where bubbles stop rising: the water line, in this piece's parent's space.
 var water_level := 0.56
 
@@ -77,9 +79,17 @@ func _build() -> void:
 			var mat_name: String = imported.resource_name if imported else ""
 			mi.set_surface_override_material(i, _material_for(mat_name, colours))
 	_add_body()
+	var bubble_rate := 0.0
 	for emitter: Dictionary in info().get("bubbles", []):
 		var at: Array = emitter.at
 		_add_bubbles(Vector3(at[0], at[1], at[2]), float(emitter.get("rate", 8)))
+		bubble_rate += float(emitter.get("rate", 8))
+	if not quiet:
+		# Bubbles sound as busy as they look; the filter trickles.
+		if bubble_rate > 0.0:
+			Sound.loop_on(self, "bubbles", -22.0 + 10.0 * log(bubble_rate) / log(10.0), 0.8)
+		if info().get("spill", false):
+			Sound.loop_on(self, "trickle", -8.0, 0.8)
 	if info().has("glow"):
 		_glow = OmniLight3D.new()
 		_glow.light_color = _colour(colours.get(info().glow, "#ff7b2b"))

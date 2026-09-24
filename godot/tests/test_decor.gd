@@ -85,8 +85,7 @@ func test_editor_decor() -> void:
 	var editor: TankEditor = main.editor
 	var decor: TankDecor = main.decor
 	var before := decor.pieces.size()
-	editor._decor_choice.select(DecorCatalog.ids().find("chest"))
-	editor._on_add_decor()
+	editor._on_add_decor("chest")
 	check(decor.pieces.size() == before + 1 and editor.selected_decor != null and editor.selected_decor.type == "chest",
 		"+ Decor adds and selects the chosen piece")
 	check(editor.dirty, "and marks the layout unsaved")

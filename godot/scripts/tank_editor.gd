@@ -45,7 +45,8 @@ var _title: Label
 var _status: Label
 var _save_as_name: LineEdit
 var _card_box: VBoxContainer
-var _decor_choice: OptionButton
+var _decor_grid: GridContainer
+var _card_preview: TextureRect
 
 
 func _ready() -> void:
@@ -74,6 +75,11 @@ func open() -> void:
 	cards.set_zones_visible(true)
 	_refresh_presets()
 	_select(null)
+	for tile: Button in _decor_grid.get_children():
+		if tile.icon == null:
+			DecorThumbnails.request(tile.name.trim_prefix("Add_"), self, func(tex: Texture2D) -> void:
+				if is_instance_valid(tile):
+					tile.icon = tex)
 
 
 func close() -> void:
@@ -252,9 +258,10 @@ func _build_panel() -> void:
 	panel.anchor_right = 1.0
 	panel.anchor_bottom = 1.0
 	panel.offset_left = -PANEL_WIDTH
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.06, 0.08, 0.12, 0.94)
-	style.set_content_margin_all(16)
+	panel.theme = UiStyle.make_theme(16)
+	var style := UiStyle.box(UiStyle.PANEL, 0, 18)
+	style.corner_radius_top_left = 20
+	style.corner_radius_bottom_left = 20
 	panel.add_theme_stylebox_override("panel", style)
 	_layer.add_child(panel)
 
@@ -267,9 +274,15 @@ func _build_panel() -> void:
 	box.add_theme_constant_override("separation", 10)
 	scroll.add_child(box)
 
-	_title = _label(box, "Tank editor", 26, Color(1.0, 0.62, 0.25))
+	var title_row := HBoxContainer.new()
+	title_row.add_theme_constant_override("separation", 10)
+	box.add_child(title_row)
+	var logo := MonitorMenu._Logo.new()
+	logo.custom_minimum_size = Vector2(40, 30)
+	title_row.add_child(logo)
+	_title = _label(title_row, "Tank editor", 26, UiStyle.TEXT, 800)
 
-	_label(box, "Preset", 15, Color(0.75, 0.8, 0.9))
+	_heading(box, "Preset")
 	var presets := HBoxContainer.new()
 	box.add_child(presets)
 	_preset_list = OptionButton.new()
@@ -288,34 +301,44 @@ func _build_panel() -> void:
 	save_as.add_child(_save_as_name)
 	_button(save_as, "Save as", _on_save_as)
 
-	_status = _label(box, "", 15, Color(1.0, 0.8, 0.5))
+	_status = _label(box, "", 15, UiStyle.accent())
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
-	box.add_child(HSeparator.new())
-	_label(box, "Add", 15, Color(0.75, 0.8, 0.9))
+	_heading(box, "Add")
 	var add_row := HBoxContainer.new()
 	box.add_child(add_row)
-	_button(add_row, "+ Card", _on_add_card)
-	_decor_choice = OptionButton.new()
-	for id in DecorCatalog.ids():
-		_decor_choice.add_item(DecorCatalog.item(id).name)
-		_decor_choice.set_item_metadata(_decor_choice.item_count - 1, id)
-	_decor_choice.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	add_row.add_child(_decor_choice)
-	_button(add_row, "+ Decor", _on_add_decor)
-	var actions := HBoxContainer.new()
-	box.add_child(actions)
-	_button(actions, "Duplicate", _on_duplicate)
-	_button(actions, "Delete", _on_delete_selected)
-	var hint := _label(box, "Click a card or decor to select it and drag to move it. Shift+drag: depth. Right-drag: orbit. Wheel: zoom.", 14, Color(0.65, 0.7, 0.8))
+	_button(add_row, "+ Card", _on_add_card).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_button(add_row, "Duplicate", _on_duplicate).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_button(add_row, "Delete", _on_delete_selected).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# The decor palette: a tile per piece, with its picture.
+	_decor_grid = GridContainer.new()
+	_decor_grid.columns = 4
+	_decor_grid.add_theme_constant_override("h_separation", 6)
+	_decor_grid.add_theme_constant_override("v_separation", 6)
+	for id: String in DecorCatalog.ids():
+		var tile := Button.new()
+		tile.name = "Add_" + id
+		tile.tooltip_text = "Add " + DecorCatalog.item(id).name
+		tile.text = DecorCatalog.item(id).name
+		tile.add_theme_font_size_override("font_size", 11)
+		tile.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		tile.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
+		tile.expand_icon = true
+		tile.clip_text = true
+		tile.custom_minimum_size = Vector2(92, 96)
+		tile.pressed.connect(_on_add_decor.bind(id))
+		_decor_grid.add_child(tile)
+	var hint := _label(box, "Click a card or decor to select it and drag to move it. Shift+drag: depth. Right-drag: orbit. Wheel: zoom.", 14, UiStyle.MUTED)
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
-	box.add_child(HSeparator.new())
+	_heading(box, "Selected")
 	_card_box = VBoxContainer.new()
 	_card_box.add_theme_constant_override("separation", 8)
 	box.add_child(_card_box)
 
-	box.add_child(HSeparator.new())
+	_heading(box, "Add decor")
+	box.add_child(_decor_grid)
+
 	var done := _button(box, "Done", close)
 	done.custom_minimum_size.y = 40
 
@@ -330,14 +353,24 @@ func _rebuild_card_panel() -> void:
 		_rebuild_decor_panel()
 		return
 	if selected == null or not is_instance_valid(selected):
-		_label(_card_box, "Nothing selected.", 16, Color(0.7, 0.75, 0.85))
+		_label(_card_box, "Nothing selected.", 16, UiStyle.MUTED)
 		return
 	var b := selected.binding
-	_label(_card_box, b.display_name(), 22, Color.WHITE)
+	# A picture of the card as printed.
+	_card_preview = TextureRect.new()
+	_card_preview.custom_minimum_size = Vector2(0, 150)
+	_card_preview.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_card_preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_card_box.add_child(_card_preview)
+	var preview := _card_preview
+	CardFace.request(b, selected.card_color(), selected.size, func(tex: Texture2D) -> void:
+		if is_instance_valid(preview):
+			preview.texture = tex)
+	_label(_card_box, b.display_name(), 22, UiStyle.TEXT, 800)
 
 	var kind_row := HBoxContainer.new()
 	_card_box.add_child(kind_row)
-	_label(kind_row, "Type", 16, Color(0.75, 0.8, 0.9)).custom_minimum_size.x = 70
+	_label(kind_row, "Type", 16, UiStyle.MUTED).custom_minimum_size.x = 70
 	var kind := OptionButton.new()
 	kind.add_item("Hold", CardBinding.Kind.HOLD)
 	kind.add_item("Toggle", CardBinding.Kind.TOGGLE)
@@ -349,7 +382,7 @@ func _rebuild_card_panel() -> void:
 
 	var name_row := HBoxContainer.new()
 	_card_box.add_child(name_row)
-	_label(name_row, "Name", 16, Color(0.75, 0.8, 0.9)).custom_minimum_size.x = 70
+	_label(name_row, "Name", 16, UiStyle.MUTED).custom_minimum_size.x = 70
 	var name_edit := LineEdit.new()
 	name_edit.text = b.label
 	name_edit.placeholder_text = "(automatic)"
@@ -361,7 +394,7 @@ func _rebuild_card_panel() -> void:
 	if b.kind != CardBinding.Kind.SEQUENCE:
 		var hint := "Held while the fish stays." if b.kind == CardBinding.Kind.HOLD \
 			else "Switched on when the fish arrives, off when it arrives again."
-		var help := _label(_card_box, hint + " Pick one or more inputs:", 15, Color(0.75, 0.8, 0.9))
+		var help := _label(_card_box, hint + " Pick one or more inputs:", 15, UiStyle.MUTED)
 		help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		var grid := GridContainer.new()
 		grid.columns = 6
@@ -376,21 +409,21 @@ func _rebuild_card_panel() -> void:
 			toggle.toggled.connect(_on_hold_input_toggled.bind(id))
 			grid.add_child(toggle)
 	else:
-		var help := _label(_card_box, "Plays once each time the fish arrives. Each step holds an input from its start for its length.", 15, Color(0.75, 0.8, 0.9))
+		var help := _label(_card_box, "Plays once each time the fish arrives. Each step holds an input from its start for its length.", 15, UiStyle.MUTED)
 		help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		var header := HBoxContainer.new()
 		_card_box.add_child(header)
 		for title in ["Input", "Start (ms)", "Length (ms)"]:
-			var h := _label(header, title, 13, Color(0.6, 0.65, 0.75))
+			var h := _label(header, title, 13, UiStyle.MUTED)
 			h.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_label(header, "", 13, Color.WHITE).custom_minimum_size.x = 28
 		for i in b.steps.size():
 			_card_box.add_child(_step_row(i, b.steps[i]))
 		_button(_card_box, "+ Step", _on_add_step)
-		_label(_card_box, "Total %.2f s" % (b.duration_ms() / 1000.0), 14, Color(0.65, 0.7, 0.8))
+		_label(_card_box, "Total %.2f s" % (b.duration_ms() / 1000.0), 14, UiStyle.MUTED)
 
 	_card_box.add_child(HSeparator.new())
-	_label(_card_box, "Position (cm): across, up, depth", 15, Color(0.75, 0.8, 0.9))
+	_label(_card_box, "Position (cm): across, up, depth", 15, UiStyle.MUTED)
 	var pos_row := HBoxContainer.new()
 	_card_box.add_child(pos_row)
 	var p := selected.position
@@ -564,8 +597,7 @@ func _on_delete_card() -> void:
 
 # --- decor ---
 
-func _on_add_decor() -> void:
-	var id: String = _decor_choice.get_item_metadata(_decor_choice.selected)
+func _on_add_decor(id: String) -> void:
 	# Near the middle, a little forward, at a height suiting its anchor.
 	var piece := decor.add_piece(id, Vector3(0.0, 0.3, 0.1), 0.0, "M", 0)
 	_set_dirty(true)
@@ -575,13 +607,21 @@ func _on_add_decor() -> void:
 func _rebuild_decor_panel() -> void:
 	var d := selected_decor
 	var item := d.info()
-	_label(_card_box, item.name, 22, Color.WHITE)
+	var thumb := TextureRect.new()
+	thumb.custom_minimum_size = Vector2(0, 110)
+	thumb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	thumb.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_card_box.add_child(thumb)
+	DecorThumbnails.request(d.type, self, func(tex: Texture2D) -> void:
+		if is_instance_valid(thumb):
+			thumb.texture = tex)
+	_label(_card_box, item.name, 22, UiStyle.TEXT, 800)
 	var kind := "Solid: the fish bumps into it" if d.is_solid() else "Soft: the fish swims through"
-	_label(_card_box, kind, 14, Color(0.65, 0.7, 0.8))
+	_label(_card_box, kind, 14, UiStyle.MUTED)
 
 	var colour_row := HBoxContainer.new()
 	_card_box.add_child(colour_row)
-	_label(colour_row, "Colour", 16, Color(0.75, 0.8, 0.9)).custom_minimum_size.x = 70
+	_label(colour_row, "Colour", 16, UiStyle.MUTED).custom_minimum_size.x = 70
 	var colours := OptionButton.new()
 	for v: Dictionary in item.variants:
 		colours.add_item(v.name)
@@ -595,7 +635,7 @@ func _rebuild_decor_panel() -> void:
 
 	var size_row := HBoxContainer.new()
 	_card_box.add_child(size_row)
-	_label(size_row, "Size", 16, Color(0.75, 0.8, 0.9)).custom_minimum_size.x = 70
+	_label(size_row, "Size", 16, UiStyle.MUTED).custom_minimum_size.x = 70
 	for s: String in DecorPiece.SIZES:
 		var b := Button.new()
 		b.text = s
@@ -612,7 +652,7 @@ func _rebuild_decor_panel() -> void:
 	if d.anchor() != "rim":
 		var turn_row := HBoxContainer.new()
 		_card_box.add_child(turn_row)
-		_label(turn_row, "Turn", 16, Color(0.75, 0.8, 0.9)).custom_minimum_size.x = 70
+		_label(turn_row, "Turn", 16, UiStyle.MUTED).custom_minimum_size.x = 70
 		var slider := HSlider.new()
 		slider.min_value = 0
 		slider.max_value = 360
@@ -620,7 +660,7 @@ func _rebuild_decor_panel() -> void:
 		slider.value = d.yaw
 		slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		slider.custom_minimum_size.y = 28
-		var readout := _label(turn_row, "%d°" % int(d.yaw), 15, Color(0.85, 0.9, 1.0))
+		var readout := _label(turn_row, "%d°" % int(d.yaw), 15, UiStyle.TEXT)
 		readout.custom_minimum_size.x = 44
 		slider.value_changed.connect(func(v: float) -> void:
 			d.set_yaw(v)
@@ -629,12 +669,12 @@ func _rebuild_decor_panel() -> void:
 		turn_row.add_child(slider)
 		turn_row.move_child(slider, 1)
 	else:
-		_label(_card_box, "Hangs on the back or side rim; drag to move it along.", 14, Color(0.65, 0.7, 0.8))
+		_label(_card_box, "Hangs on the back or side rim; drag to move it along.", 14, UiStyle.MUTED)
 
 	var where: String = {"gravel": "Sits on the gravel.", "surface": "Floats on the water.",
 		"float": "Floats in the water. Shift+drag: depth.", "rim": ""}[d.anchor()]
 	if where != "":
-		_label(_card_box, where, 14, Color(0.65, 0.7, 0.8))
+		_label(_card_box, where, 14, UiStyle.MUTED)
 
 
 ## Cards and decor together, as a preset.
@@ -744,9 +784,15 @@ func _set_status(text: String) -> void:
 		_status.text = text
 
 
-func _label(parent: Control, text: String, font_size: int, color: Color) -> Label:
+func _heading(parent: Control, text: String) -> void:
+	var h := _label(parent, text.to_upper(), 13, UiStyle.MUTED, 800)
+	h.add_theme_constant_override("line_spacing", 0)
+
+
+func _label(parent: Control, text: String, font_size: int, color: Color, weight := 500) -> Label:
 	var label := Label.new()
 	label.text = text
+	label.add_theme_font_override("font", UiStyle.font(weight))
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", color)
 	parent.add_child(label)

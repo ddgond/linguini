@@ -4,142 +4,41 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Linguini</title>
-  <meta name="description" content="A Moonlight game-streaming client where you are the fish. Swim in front of flash cards to press buttons on your gaming PC.">
+  <meta name="description" content="Play your PC games as a goldfish. A Moonlight game-streaming client.">
   <meta name="color-scheme" content="light dark">
   <link rel="icon" href="assets/fish.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-    <symbol id="os-linux" viewBox="0 0 24 24"><rect x="2.5" y="4" width="19" height="16" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M6.5 9.5l3 2.5-3 2.5M11.5 15h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-    <symbol id="os-windows" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1.2" fill="currentColor"/><rect x="13" y="3" width="8" height="8" rx="1.2" fill="currentColor"/><rect x="3" y="13" width="8" height="8" rx="1.2" fill="currentColor"/><rect x="13" y="13" width="8" height="8" rx="1.2" fill="currentColor"/></symbol>
-    <symbol id="os-macos" viewBox="0 0 24 24"><rect x="4" y="4.5" width="16" height="11" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M2 18.5h20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
-  </svg>
+  <main>
+    <header>
+      <h1>Linguini</h1>
+      <p class="slogan">Fish can do anything.</p>
+    </header>
 
-  <header class="site-header">
-    <a class="brand" href="#top"><img src="assets/fish.svg" alt="" width="28" height="28"> Linguini</a>
-    <nav>
-      <a href="#how">How it works</a>
-      <a href="#controls">Controls</a>
-      <a href="#download">Download</a>
-    </nav>
-  </header>
+    <img class="wide" src="assets/bedroom.jpg" width="1280" height="720" alt="A bedroom at night. A fish tank full of controller flash cards sits under the window, and a desk with a gaming PC and monitor is across the room.">
 
-  <main id="top">
-    <section class="hero">
-      <div class="hero-copy">
-        <p class="kicker">A Moonlight client</p>
-        <h1>You are the&nbsp;fish.</h1>
-        <p class="lede">Linguini streams games from your Sunshine or GeForce&nbsp;Experience PC to a monitor across a streamer's bedroom. You live in the fish tank. Swim in front of a flash card and the game feels the button press.</p>
-        <div class="cta">
-          <a class="button primary" id="hero-download" href="#download">Download</a>
-          <a class="button ghost" href="#how">How it works</a>
-        </div>
-        <p class="version">Version {{version}} · {{platforms}}</p>
-      </div>
+    <p>Linguini lets you play your PC games as a goldfish. Swimming in front of a flash card in your tank presses that button in the game, which plays on a monitor across the room. Any game your PC can stream over <a href="https://moonlight-stream.org/">Moonlight</a> works, from either <a href="https://github.com/LizardByte/Sunshine">Sunshine</a> or GeForce Experience, though you will need to install Linguini on a separate machine from your game host.</p>
+    <p>Inspired by Tortellini, the fish who conquered Elden Ring.</p>
 
-      <figure class="feed">
-        <div class="feed-frame">
-          <img src="assets/room-camera.jpg" width="1280" height="720" alt="The tank seen through the room camera: a goldfish in front of a wall of controller flash cards for the sticks, D-pad, face buttons and triggers.">
-          <div class="track" aria-hidden="true"><span>fish 0.97</span></div>
-          <div class="feed-hud" aria-hidden="true">
-            <span class="rec">REC</span>
-            <span>TANK CAM 01</span>
-          </div>
-        </div>
-        <figcaption>The room camera's view. The fish is holding the left stick right.</figcaption>
-      </figure>
-    </section>
+    <figure>
+      <img src="assets/your-view.jpg" width="1280" height="720" loading="lazy" alt="Behind the goldfish in the tank, with the X, Y, B and A cards ahead and the monitor visible through the glass.">
+      <figcaption>Your view while you play.</figcaption>
+    </figure>
 
-    <section class="how" id="how">
-      <h2>How it works</h2>
-      <ol class="steps">
-        <li>
-          <img src="assets/monitor-menu.jpg" width="1280" height="720" loading="lazy" alt="The monitor in the room showing Linguini's host list and a field to add a host.">
-          <h3><span class="n">1</span> Pair on the monitor</h3>
-          <p>The menus live on the computer monitor in the room. Add your host, enter the PIN in Sunshine, and pick a game.</p>
-        </li>
-        <li>
-          <img src="assets/swimming.jpg" width="1280" height="720" loading="lazy" alt="Third-person view of the goldfish swimming in front of the right-stick, START and face-button cards.">
-          <h3><span class="n">2</span> Swim like a fish</h3>
-          <p><strong>Real Fishy Movement™</strong> turns your input into what the fish wants to do, not where it goes. It arcs through turns, thrusts in tail beats, and drifts when you let go.</p>
-        </li>
-        <li>
-          <img src="assets/watching-the-monitor.jpg" width="1280" height="720" loading="lazy" alt="Looking past the fish through the tank glass at the monitor, which is showing a test pattern.">
-          <h3><span class="n">3</span> Watch through the glass</h3>
-          <p>The game only plays on the monitor across the room. Hold the gaze button and the camera looks past the fish, through the glass, at the screen.</p>
-        </li>
-      </ol>
+    <figure>
+      <img src="assets/tank-cam.jpg" width="1280" height="720" loading="lazy" alt="The front of the tank with a tracking box labelled &quot;goldfish 0.96&quot; around the fish and readouts in the corners.">
+      <figcaption>The tank cam opens as its own window, so you can add it to your stream in OBS.</figcaption>
+    </figure>
 
-      <div class="cards-explainer">
-        <div>
-          <h3>24 flash cards, one whole controller</h3>
-          <p>Face buttons, D-pad, both sticks, bumpers, triggers, Start, Back and stick clicks. A card holds its button for as long as the fish stays in front of it. Hover between two stick cards for a diagonal.</p>
-        </div>
-        <ul class="chips" aria-label="Flash cards">
-          <li class="chip a">A</li><li class="chip b">B</li><li class="chip x">X</li><li class="chip y">Y</li>
-          <li class="chip">LB</li><li class="chip">RB</li><li class="chip">LT</li><li class="chip">RT</li>
-          <li class="chip stick">L ↑</li><li class="chip stick">L ↓</li><li class="chip stick">L ←</li><li class="chip stick">L →</li>
-          <li class="chip rstick">R ↑</li><li class="chip rstick">R ↓</li><li class="chip rstick">R ←</li><li class="chip rstick">R →</li>
-          <li class="chip">D ↑</li><li class="chip">D ↓</li><li class="chip">D ←</li><li class="chip">D →</li>
-          <li class="chip">START</li><li class="chip">BACK</li><li class="chip stick">L3</li><li class="chip rstick">R3</li>
-        </ul>
-      </div>
-    </section>
-
-    <section class="controls" id="controls">
-      <h2>Controls</h2>
-      <p class="section-lede">Your keyboard and gamepad only move the fish. The game on your PC only gets what the flash cards send.</p>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th scope="col">Action</th><th scope="col">Keyboard &amp; mouse</th><th scope="col">Gamepad</th></tr></thead>
-          <tbody>
-            <tr><th scope="row">Swim</th><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></td><td>Left stick</td></tr>
-            <tr><th scope="row">Rise / sink</th><td><kbd>Space</kbd> / <kbd>C</kbd></td><td>RB / LB</td></tr>
-            <tr><th scope="row">Dart</th><td><kbd>Shift</kbd></td><td>A</td></tr>
-            <tr><th scope="row">Look around</th><td>Mouse</td><td>Right stick</td></tr>
-            <tr><th scope="row">Watch the monitor</th><td>Hold right mouse</td><td>Hold LT</td></tr>
-            <tr><th scope="row">Menu</th><td><kbd>Esc</kbd></td><td>Start</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="get" id="download" data-available="{{available_json}}">
+    <section id="download">
       <h2>Download</h2>
-      <p class="section-lede">{{downloads_summary}}</p>
-      <ul class="downloads">{{download_cards}}
-      </ul>
-      <div class="download-notes">
-        <p><strong>You'll also need a host:</strong> a gaming PC running <a href="https://github.com/LizardByte/Sunshine">Sunshine</a> (free and open source) or GeForce Experience with GameStream.</p>
-        <p class="small">Version {{version}}, built {{built}}. {{checksums_link}}</p>
-      </div>
+      {{downloads}}
     </section>
   </main>
 
-  <footer class="site-footer">
-    <p>Inspired by the great deeds of the mighty Tortellini, the fish who conquered Elden Ring.</p>
-    <p class="small">{{repo_link}}Built on <a href="https://moonlight-stream.org/">Moonlight</a> and <a href="https://godotengine.org/">Godot</a>. Licensed under the GPLv3.</p>
+  <footer>
+    <p>{{repo_link}}GPLv3. Built on <a href="https://moonlight-stream.org/">Moonlight</a> and <a href="https://godotengine.org/">Godot</a>.</p>
   </footer>
-
-  <script>
-    // Point the hero button at this visitor's platform when a build exists.
-    (function () {
-      var section = document.getElementById("download");
-      var available = [];
-      try { available = JSON.parse(section.dataset.available || "[]"); } catch (e) {}
-      var ua = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || navigator.userAgent || "";
-      var os = /win/i.test(ua) ? "windows" : /mac/i.test(ua) ? "macos" : /linux|x11/i.test(ua) && !/android/i.test(navigator.userAgent) ? "linux" : "";
-      if (!os || available.indexOf(os) < 0) return;
-      var card = section.querySelector('[data-os="' + os + '"]');
-      var link = card && card.querySelector("a.button");
-      if (!link) return;
-      card.classList.add("recommended");
-      var hero = document.getElementById("hero-download");
-      hero.href = link.getAttribute("href");
-      hero.setAttribute("download", "");
-      hero.textContent = "Download for " + card.querySelector("h3").textContent;
-    })();
-  </script>
 </body>
 </html>

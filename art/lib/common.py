@@ -221,3 +221,34 @@ def smoothstep(e0, e1, x):
 
 def mix_color(a, b, t, alpha=1.0):
     return (lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t), alpha)
+
+
+def image_np(name, pixels):
+    """A packed image from a numpy array (H x W x 3 or 4, floats 0..1, top row
+    first). Much faster than image() for big textures."""
+    import numpy as np
+
+    arr = np.asarray(pixels, dtype=np.float32)
+    h, w = arr.shape[:2]
+    if arr.shape[2] == 3:
+        arr = np.concatenate([arr, np.ones((h, w, 1), np.float32)], axis=2)
+    img = bpy.data.images.new(name, w, h, alpha=True)
+    # Blender stores images bottom row first.
+    img.pixels.foreach_set(arr[::-1].reshape(-1))
+    img.pack()
+    return img
+
+
+def G(x, y, z):
+    """A point given in Godot coordinates (Y up, -Z forward) as a Blender Vector."""
+    return Vector((x, -z, y))
+
+
+def gbox(name, size, center, mat, bevel=0.006, segments=2):
+    """A bevelled box sized and placed in Godot coordinates (x, y-up, z)."""
+    return bevelled_box(name, (size[0], size[2], size[1]), bevel, segments, mat, G(*center))
+
+
+def fill_colour(obj, colour=(1.0, 1.0, 1.0, 1.0)):
+    """Gives an object a flat "Col" attribute (so joined meshes all have one)."""
+    paint(obj, lambda co, n: colour)
