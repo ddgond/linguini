@@ -4,7 +4,7 @@ Fish can do anything.
 
 ![A bedroom at night. A fish tank full of controller flash cards sits under the window, and a desk with a gaming PC and monitor is across the room.](site/assets/bedroom.jpg)
 
-Linguini lets you play your PC games as a goldfish. Swimming in front of a flash card in your tank presses that button in the game, which plays on a monitor across the room. Any game your PC can stream over [Moonlight](https://moonlight-stream.org/) works, from either [Sunshine](https://github.com/LizardByte/Sunshine) or GeForce Experience.
+Linguini lets you play your PC games as a goldfish. Swimming in front of a flash card in your tank presses that button in the game, which plays on a monitor across the room. Any game your PC can stream over [Moonlight](https://moonlight-stream.org/) works, from either [Sunshine](https://github.com/LizardByte/Sunshine) or GeForce Experience, though you will need to install Linguini on a separate machine from your game host.
 
 Inspired by Tortellini, the fish who conquered Elden Ring.
 
