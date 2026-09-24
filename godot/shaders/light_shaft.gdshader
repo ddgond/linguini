@@ -19,10 +19,15 @@ float streaks(float x, float t) {
 }
 
 void fragment() {
-	float edge = smoothstep(0.0, 0.35, UV.x) * smoothstep(1.0, 0.65, UV.x);
+	// smoothstep() needs edge0 < edge1, so the far edges are 1 - smoothstep.
+	float edge = smoothstep(0.0, 0.35, UV.x) * (1.0 - smoothstep(0.65, 1.0, UV.x));
+	// With MSAA, pixels on the plane's edge can sample the varying from just
+	// outside it; a slightly negative `up` makes pow() NaN, and glow blooms
+	// that into a white bar along the shaft's foot. Clamp it back.
+	float u = clamp(up, 0.0, 1.0);
 	// Brightest by the lamp, fading down, and soft at both ends so neither
 	// the water's surface nor the gravel shows a hard edge.
-	float fall = pow(up, 1.6) * smoothstep(0.0, 0.3, up) * smoothstep(1.0, 0.9, up);
+	float fall = pow(u, 1.6) * smoothstep(0.0, 0.3, u) * (1.0 - smoothstep(0.9, 1.0, u));
 	float s = streaks(UV.x, TIME);
 	// Fade where the plane is seen edge-on, so it never shows as a sheet.
 	float facing = abs(dot(NORMAL, VIEW));
