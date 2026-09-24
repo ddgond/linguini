@@ -1,33 +1,13 @@
 /* Linguini landing page. */
 
 :root {
-  --bg: #f3f7f6;
-  --ink: #10202a;
-  --muted: #56686f;
-  --line: #d3dfde;
-  --link: #b8520d;            /* goldfish orange that reads on light */
-  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --mono: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, monospace;
-  color-scheme: light;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0b161c;
-    --ink: #e3edee;
-    --muted: #97abb1;
-    --line: #213a44;
-    --link: #ffa061;
-    color-scheme: dark;
-  }
-}
-
-:root[data-theme="dark"] {
   --bg: #0b161c;
   --ink: #e3edee;
   --muted: #97abb1;
   --line: #213a44;
-  --link: #ffa061;
+  --link: #ffa061;            /* goldfish orange */
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, monospace;
   color-scheme: dark;
 }
 
