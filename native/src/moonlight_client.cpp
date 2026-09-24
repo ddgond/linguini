@@ -9,6 +9,7 @@
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iterator>
 
@@ -496,7 +497,8 @@ void MoonlightClient::play_test_file(const String &path, double fps) {
 }
 
 void MoonlightClient::test_loop(std::string path, double fps) {
-	std::ifstream file(path, std::ios::binary);
+	// u8path: the path is UTF-8, which Windows' narrow file APIs don't assume.
+	std::ifstream file(std::filesystem::u8path(path), std::ios::binary);
 	std::vector<uint8_t> data((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 	if (data.empty()) {
 		UtilityFunctions::push_error("Linguini: can't read test file ", String::utf8(path.c_str()));

@@ -1,7 +1,7 @@
 name: Release
 
-# Pushing a version tag (v0.1.0, v1.2.3-beta.1, ...) packages the Linux and
-# macOS builds, publishes them as a GitHub Release, and then has pages.yml
+# Pushing a version tag (v0.1.0, v1.2.3-beta.1, ...) packages the Linux, macOS
+# and Windows builds, publishes them as a GitHub Release, and then has pages.yml
 # deploy the landing page with download links pointing at that release.
 on:
   push:
@@ -69,8 +69,42 @@ jobs:
           name: build-macos
           path: dist/builds/*
 
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install SCons
+        run: pip install scons
+
+      - name: Install Godot and the Windows export template
+        run: |
+          $base = "https://github.com/godotengine/godot/releases/download/${env:GODOT_VERSION}-stable"
+          curl.exe -fsSL -o godot.zip "$base/Godot_v${env:GODOT_VERSION}-stable_win64.exe.zip"
+          Expand-Archive godot.zip -DestinationPath $env:RUNNER_TEMP
+          "GODOT=$env:RUNNER_TEMP\Godot_v${env:GODOT_VERSION}-stable_win64_console.exe" >> $env:GITHUB_ENV
+          curl.exe -fsSL -o templates.tpz "$base/Godot_v${env:GODOT_VERSION}-stable_export_templates.tpz"
+          tar -xf templates.tpz -C $env:RUNNER_TEMP templates/windows_release_x86_64.exe templates/windows_release_x86_64_console.exe templates/version.txt
+          "GODOT_TEMPLATES=$env:RUNNER_TEMP\templates" >> $env:GITHUB_ENV
+
+      # vcpkg's binary cache, shared with build.yml.
+      - uses: actions/cache@v4
+        with:
+          path: dist/windows/vcpkg-cache
+          key: windows-deps-${{ hashFiles('packaging/windows/vcpkg.json', 'packaging/windows/build-deps.ps1') }}
+
+      - name: Package Windows
+        run: packaging/windows/package.ps1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-windows
+          path: dist/builds/*
+
   release:
-    needs: [linux, macos]
+    needs: [linux, macos, windows]
     runs-on: ubuntu-24.04
     permissions:
       contents: write

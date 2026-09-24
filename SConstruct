@@ -57,13 +57,21 @@ if static_deps:
 elif platform in ["linux", "macos"]:
     pkg_config(env, PKG_MODULES)
 elif platform == "windows":
+    # Static libraries from packaging/windows/build-deps.ps1 (vcpkg,
+    # x64-windows-static-release), so the extension links only system DLLs.
     prefix = os.environ.get("LINGUINI_DEPS_PREFIX")
     if not prefix:
-        print("Set LINGUINI_DEPS_PREFIX to a prefix with FFmpeg, Opus, OpenSSL, curl and expat.")
+        print("Set LINGUINI_DEPS_PREFIX to the prefix packaging/windows/build-deps.ps1 prints.")
         Exit(1)
-    env.Append(CPPPATH=[os.path.join(prefix, "include")], LIBPATH=[os.path.join(prefix, "lib")])
-    env.Append(LIBS=["avcodec", "avutil", "opus", "libssl", "libcrypto", "libcurl", "libexpat"])
-    env.Append(LIBS=["ws2_32", "winmm", "crypt32", "bcrypt", "advapi32", "user32"])
+    if not is_msvc:
+        print("The Windows build needs MSVC (the dependencies are built with it).")
+        Exit(1)
+    env.Append(CPPPATH=[os.path.join(prefix, "include"), os.path.join(prefix, "include", "opus")])
+    env.Append(LIBPATH=[os.path.join(prefix, "lib")])
+    env.Append(CPPDEFINES=["CURL_STATICLIB", "XML_STATIC"])
+    env.Append(LIBS=["avcodec", "avutil", "libcurl", "libssl", "libcrypto", "libexpatMT", "opus", "zs"])
+    env.Append(LIBS=["ws2_32", "winmm", "crypt32", "bcrypt", "advapi32", "user32", "iphlpapi",
+                     "ole32", "mfuuid", "strmiids"])
 else:
     print("Unsupported platform: " + platform)
     Exit(1)
