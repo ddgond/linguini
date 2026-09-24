@@ -315,7 +315,7 @@ ART_BAKE=final ART_DEVICE=GPU nix develop .#art -c art/build.sh room   # final b
 ART_BAKE=none nix develop .#art -c art/build.sh room               # geometry only, keeping the existing bakes
 ```
 
-The committed lightmaps are drafts; `layout.json` records which quality they were baked at. Keep the mood table in `godot/scripts/room_moods.gd` in step with `art/models/room/moods.py`.
+The committed lightmaps are final bakes; `layout.json` records which quality they were baked at. Keep the mood table in `godot/scripts/room_moods.gd` in step with `art/models/room/moods.py`.
 
 ### Progress tracker
 
