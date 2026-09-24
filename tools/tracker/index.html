@@ -20,6 +20,14 @@
   <main>
     <section class="now" id="now" aria-label="Current milestone"></section>
 
+    <section aria-labelledby="scene-h">
+      <h2 id="scene-h">Scene</h2>
+      <p class="lede">In-game screenshots of the whole scene, so you can see how everything comes together. The newest snapshot first, then how it looked at each earlier milestone.</p>
+      <div id="latest"></div>
+      <h3 class="group">How it's come together</h3>
+      <ol class="timeline" id="timeline"></ol>
+    </section>
+
     <section aria-labelledby="roadmap-h">
       <h2 id="roadmap-h">Roadmap</h2>
       <ol class="roadmap" id="roadmap"></ol>
@@ -42,7 +50,11 @@
   <dialog id="viewer">
     <form method="dialog"><button class="close" aria-label="Close">×</button></form>
     <img id="viewer-img" alt="">
-    <p id="viewer-caption"></p>
+    <div class="viewer-bar">
+      <button type="button" id="viewer-prev" aria-label="Previous image">‹</button>
+      <p id="viewer-caption"></p>
+      <button type="button" id="viewer-next" aria-label="Next image">›</button>
+    </div>
   </dialog>
 
   <script src="app.js"></script>

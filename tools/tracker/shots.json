@@ -1,0 +1,16 @@
+{
+  "shots": [
+    {"id": "overview-night", "title": "The bedroom at night", "args": ["--overview"]},
+    {"id": "overview-rainy", "title": "Rainy evening", "args": ["--overview", "--mood=rainy"]},
+    {"id": "overview-golden", "title": "Golden hour", "args": ["--overview", "--mood=golden"]},
+    {"id": "room-camera", "title": "The room camera's view of the tank", "args": ["--swim", "--fish=0.05,0.3,0.12,20", "--room-camera"]},
+    {"id": "tank-cam", "title": "Tank cam window (Earnest)", "args": ["--swim", "--fish=0.05,0.3,0.12,20", "--tracking=earnest"], "tracking": true},
+    {"id": "tank-cam-ott", "title": "Tank cam window (Over-the-top)", "args": ["--swim", "--fish=0.3,0.3,0.12,-60", "--tracking=over-the-top"], "tracking": true},
+    {"id": "swimming", "title": "Swimming, from behind the fish", "args": ["--swim", "--fish=0.35,0.2,0.1,-40"]},
+    {"id": "menu", "title": "The monitor's menu, from the tank", "args": []},
+    {"id": "editor", "title": "Tank editor", "args": ["--edit", "--select=3"]},
+    {"id": "cards-playstation", "title": "Cards with PlayStation glyphs", "args": ["--swim", "--fish=0.35,0.2,0.1,-40", "--glyphs=playstation"]},
+    {"id": "desk", "title": "The streamer's desk", "args": ["--overview=0.6,1.3,0.4;1.8,1.0,-0.8"]},
+    {"id": "bed", "title": "The bed side", "args": ["--overview=-0.6,1.3,0.6;-1.6,0.6,-0.3"]}
+  ]
+}
