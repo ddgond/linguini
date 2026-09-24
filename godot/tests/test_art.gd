@@ -50,7 +50,7 @@ func test_fish_model() -> void:
 	var model: FishModel = main.fish.get_children().filter(func(c: Node) -> bool: return c is FishModel)[0]
 	var box := model.local_aabb()
 	check(box.has_point(Vector3.ZERO), "the fish's origin (the point cards test) is inside its body")
-	check(box.size.z > 0.08 and box.size.z < 0.11, "nose to tail about 9.5 cm (%.3f)" % box.size.z)
+	check(box.size.z > 0.09 and box.size.z < 0.125, "nose to tail about 11 cm, long tail included (%.3f)" % box.size.z)
 	check(box.position.z < -0.02 and box.end.z > 0.05, "facing -Z with the tail toward +Z (%s)" % box)
 	main.queue_free()
 

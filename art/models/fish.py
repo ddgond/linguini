@@ -1,4 +1,7 @@
-"""Linguini, a fancy fantail goldfish.
+"""Linguini, a fancy fantail goldfish, modelled on the real Tortellini
+(art/reference/tortellini.jpg): a longish body with a humped back, a red
+cap, silvery cheeks and belly, small gold eyes, a tall sail of a dorsal and
+long, flowing, translucent fins.
 
 Faces Blender +Y (Godot -Z), up +Z. Nose at y = NOSE, tail tip near y = -0.067.
 Three materials, swapped for Godot shaders by name:
@@ -19,13 +22,13 @@ from mathutils import Matrix, Vector
 
 from lib.common import PALETTE, anim_uv, image, join, linear_rgba, material, mesh_object, mix_color, paint, shade_smooth, smoothstep
 
-NOSE = 0.028
-PEDUNCLE = -0.022
-TAIL_LENGTH = 0.046
+NOSE = 0.03
+PEDUNCLE = -0.024
+TAIL_LENGTH = 0.06
 TAIL_TIP = PEDUNCLE - TAIL_LENGTH
-HALF_WIDTH = 0.0165
-HALF_HEIGHT_UP = 0.0205
-HALF_HEIGHT_DOWN = 0.0235
+HALF_WIDTH = 0.0112
+HALF_HEIGHT_UP = 0.0165
+HALF_HEIGHT_DOWN = 0.0168
 
 RENDER_VIEWS = [(35, 14), (90, 4), (155, 28)]
 
@@ -38,32 +41,33 @@ def bend(y):
 
 # The body proper runs from the peduncle to BODY_FRONT; a rounded snout caps
 # it out to the nose, with the mouth on its front.
-SNOUT = 0.0055
+SNOUT = 0.007
 BODY_FRONT = NOSE - SNOUT
 
 
 def _profile(x):
     """Radius factor along the body: x = 0 at the peduncle, 1 at the front of
-    the body (the snout continues from there). A fantail's egg: full through
-    the belly, pinching quickly (not a cone) into the peduncle, and blunt at
-    the head."""
+    the body (the snout continues from there). Full through the middle, easing
+    into a slim peduncle, and tapering to a snout at the head."""
     front = 0.5
     if x >= front:
         k = (x - front) / (1.0 - front)
-        return math.sqrt(max(0.0, 1.0 - (k * 0.9) ** 2))
+        return math.sqrt(max(0.0, 1.0 - (k * 0.95) ** 2))
     t = x / front
-    return 0.28 + 0.72 * (1.0 - (1.0 - t) ** 2.2) ** 0.8
+    return 0.3 + 0.7 * (1.0 - (1.0 - t) ** 2.0) ** 0.85
 
 
 def _hump(x):
-    # A fantail's hump: the back rises a little behind the head.
-    return 1.0 + 0.12 * math.exp(-((x - 0.55) / 0.2) ** 2)
+    # The back rises steeply behind the head, to the front of the dorsal.
+    return 1.0 + 0.34 * math.exp(-((x - 0.58) / 0.24) ** 2)
 
 
 def _ring_radii(x):
-    """(half width, half height up, half height down, centre height) at x."""
+    """(half width, half height up, half height down, centre height) at x.
+    The head dips a little toward the snout."""
     f = _profile(x)
-    return HALF_WIDTH * f, HALF_HEIGHT_UP * _hump(x) * f, HALF_HEIGHT_DOWN * f, -0.002 * f
+    centre = -0.002 * f - 0.003 * smoothstep(0.7, 1.0, x)
+    return HALF_WIDTH * f, HALF_HEIGHT_UP * _hump(x) * f, HALF_HEIGHT_DOWN * f, centre
 
 
 def _snout_y(px, pz):
@@ -124,27 +128,38 @@ def _body():
     shade_smooth(obj)
 
     def colour(co, n):
-        back = PALETTE["goldfish_deep"]
-        belly = PALETTE["goldfish_belly"]
-        t = smoothstep(-0.016, 0.014, co.z)
-        c = mix_color(belly, PALETTE["goldfish"], smoothstep(-0.016, 0.0, co.z))
-        c = mix_color(c[:3], back, smoothstep(0.004, 0.02, co.z) * 0.8)
-        # Pale cheeks, a hint of a gill line, and a paler, rosy muzzle.
-        x = (co.y - PEDUNCLE) / (NOSE - PEDUNCLE)
-        cheek = smoothstep(0.7, 0.9, x) * (1.0 - t) * 0.5
-        c = mix_color(c[:3], PALETTE["goldfish_belly"], cheek)
-        gill = math.exp(-((x - 0.74) / 0.025) ** 2) * (1.0 - smoothstep(0.004, 0.014, co.z))
-        c = mix_color(c[:3], PALETTE["goldfish_deep"], 0.3 * gill)
-        muzzle = smoothstep(BODY_FRONT - 0.004, NOSE, co.y) * 0.35
-        c = mix_color(c[:3], LIP, muzzle)
-        return c
+        # Tortellini: deep orange, darker along the back, a red cap over the
+        # head, silvery-white cheeks, gill cover and belly.
+        x = max(0.0, min(1.0, (co.y - PEDUNCLE) / (BODY_FRONT - PEDUNCLE)))
+        hw, hu, hd, c0 = _ring_radii(x)
+        up = (co.z - c0) / max(hu, 1e-4)
+        c = ORANGE
+        c = mix_color(c, ORANGE_DEEP, smoothstep(0.2, 0.9, up) * 0.7)[:3]
+        c = mix_color(c, RED_CAP, smoothstep(0.66, 0.8, x) * smoothstep(-0.45, 0.05, up))[:3]
+        cheek = smoothstep(0.6, 0.72, x) * (1.0 - smoothstep(0.92, 1.0, x)) * (1.0 - smoothstep(-0.45, 0.0, up))
+        belly = smoothstep(0.25, 0.4, x) * (1.0 - smoothstep(0.64, 0.78, x)) * (1.0 - smoothstep(-0.35, 0.15, up))
+        c = mix_color(c, SILVER, max(cheek, belly) * 0.9)[:3]
+        # The gill cover's edge, and here and there a pale scale.
+        gill = math.exp(-((x - 0.68) / 0.018) ** 2) * (1.0 - smoothstep(-0.2, 0.4, up))
+        c = mix_color(c, ORANGE_DEEP, 0.35 * gill)[:3]
+        speck = math.sin(co.x * 3100.0) * math.sin(co.y * 2700.0 + co.z * 1900.0)
+        if speck > 0.93 and 0.2 < x < 0.7:
+            c = mix_color(c, (1.0, 0.82, 0.55), 0.5)[:3]
+        muzzle = smoothstep(BODY_FRONT - 0.003, NOSE, co.y) * 0.3
+        return mix_color(c, LIP, muzzle)
 
     paint(obj, colour)
     anim_uv(obj, lambda co: (bend(co.y), 0.0))
     return obj
 
 
-LIP = (1.0, 0.62, 0.46)
+ORANGE = (1.0, 0.54, 0.12)
+ORANGE_DEEP = (0.98, 0.42, 0.06)
+RED_CAP = (0.96, 0.2, 0.07)
+SILVER = (0.94, 0.9, 0.84)
+LIP = (1.0, 0.56, 0.42)
+FIN_ROOT = (1.0, 0.5, 0.12)
+FIN_EDGE = (1.0, 0.74, 0.48)
 
 
 def _mouth():
@@ -183,15 +198,16 @@ def _mouth():
         anim_uv(obj, lambda co, w=weight: (bend(co.y), w))
         return obj
 
-    parts.append(lip("UpperLip", 0.0042, -0.0031, -0.0010, 0.0012, 0.0))
-    parts.append(lip("LowerLip", 0.0040, -0.0060, 0.0012, 0.0015, 2.0))
+    c = _ring_radii(1.0)[3]
+    parts.append(lip("UpperLip", 0.0026, c + 0.0006, -0.0006, 0.0008, 0.0))
+    parts.append(lip("LowerLip", 0.0025, c - 0.0014, 0.0008, 0.001, 2.0))
     # The mouth behind them, dark, seen when the lower lip drops.
     bm = bmesh.new()
-    cz = -0.0046
+    cz = c - 0.0004
     pts = []
     for k in range(16):
         a = 2 * math.pi * k / 16
-        px, pz = math.cos(a) * 0.0036, cz + math.sin(a) * 0.0017
+        px, pz = math.cos(a) * 0.0017, cz + math.sin(a) * 0.0007
         pts.append(bm.verts.new((px, _snout_y(px, pz) + 0.0002, pz)))
     bm.faces.new(pts)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
@@ -313,8 +329,10 @@ def _fin(name, base_a, base_b, direction, outline, spread=0.0, cup=0.0, ruffle=0
         for li in poly.loop_indices:
             vi = me.loops[li].vertex_index
             s, r = grid[vi]
-            stripe = 0.9 + 0.1 * math.cos(s * rays * 2 * math.pi)
-            c = mix_color(PALETTE["goldfish"], PALETTE["fin_edge"], smoothstep(0.1, 0.9, r), alpha=0.95 - 0.5 * r)
+            # Orange at the root fading paler and clearer toward the edge,
+            # with darker rays.
+            stripe = 0.84 + 0.16 * math.cos(s * rays * 2 * math.pi)
+            c = mix_color(FIN_ROOT, FIN_EDGE, smoothstep(0.2, 1.0, r), alpha=0.9 - 0.55 * r)
             colour.data[li].color = linear_rgba((c[0] * stripe, c[1] * stripe, c[2] * stripe, c[3]))
             anim.data[li].uv = (bend(me.vertices[vi].co.y), r)
     me.uv_layers.active = me.uv_layers[0]
@@ -329,17 +347,17 @@ def _rounded(peak, lo=0.0, power=0.6):
 def _tail():
     lobes = []
     for sign in (-1, 1):
-        # Each lobe is a broad fan with a notch in the middle of its trailing
-        # edge, so the pair reads as the fantail's four-pointed double tail.
-        outline = lambda s: TAIL_LENGTH * (0.55 + 0.45 * math.sin(math.pi * s) ** 0.5) * (
-            1.0 - 0.3 * math.exp(-((s - 0.5) / 0.14) ** 2))
+        # Each lobe is a long fan with a deep notch in its trailing edge, so
+        # the pair reads as a double tail with pointed tips that droop.
+        outline = lambda s: TAIL_LENGTH * (0.45 + 0.55 * math.sin(math.pi * s) ** 0.6) * (
+            1.0 - 0.42 * math.exp(-((s - 0.5) / 0.12) ** 2))
         lobe = _fin(
-            "Tail", (0, PEDUNCLE + 0.004, 0.0105), (0, PEDUNCLE + 0.004, -0.0105), (0, -1, 0),
-            outline, spread=0.05, cup=0.004 * sign, ruffle=0.0009, rays=12, droop=0.007,
-            root=0.004, res=(22, 14))
-        # Splay the lobes into a V seen from above, hanging slightly.
+            "Tail", (0, PEDUNCLE + 0.004, 0.0075), (0, PEDUNCLE + 0.004, -0.0085), (0, -1, 0),
+            outline, spread=0.055, cup=0.005 * sign, ruffle=0.0014, rays=14, droop=0.026,
+            root=0.004, res=(26, 18))
+        # Splay the lobes into a V seen from above, hanging down a little.
         pivot = Vector((0, PEDUNCLE + 0.004, 0))
-        rot = Matrix.Rotation(math.radians(26 * sign), 4, "Z") @ Matrix.Rotation(math.radians(-7), 4, "X")
+        rot = Matrix.Rotation(math.radians(24 * sign), 4, "Z") @ Matrix.Rotation(math.radians(-18), 4, "X")
         lobe.data.transform(Matrix.Translation(-pivot))
         lobe.data.transform(rot)
         lobe.data.transform(Matrix.Translation(pivot))
@@ -359,25 +377,28 @@ def _reweight(obj):
 
 def _fins():
     fins = _tail()
-    # Dorsal: a tall rounded sail along the back, highest at the front.
+    # Dorsal: a tall sail from the top of the hump, highest at the front,
+    # leaning back.
     fins.append(_fin(
-        "Dorsal", surface(0.011, "top"), surface(-0.017, "top"), (0, -0.5, 1),
-        lambda s: 0.022 * math.sin(math.pi * s) ** 0.55 * (1.1 - 0.5 * s),
-        spread=0.004, cup=0.0, ruffle=0.0005, rays=8, res=(14, 8)))
+        "Dorsal", surface(0.006, "top"), surface(-0.02, "top"), (0, -0.45, 1),
+        lambda s: 0.033 * math.sin(math.pi * min(1.0, s * 1.5 + 0.1)) ** 0.4 * (1.0 - 0.5 * s),
+        spread=0.012, cup=0.0, ruffle=0.001, rays=11, droop=0.004, res=(16, 12)))
     for sign in (-1, 1):
-        # Pectorals: rounded paddles behind the gills, out, back and down.
-        pa = surface(0.009, sign) + Vector((0, 0, -0.006))
-        pb = surface(0.002, sign) + Vector((0, 0, -0.009))
-        fins.append(_fin("Pectoral", pa, pb, (0.55 * sign, -0.8, -0.55), _rounded(0.016, 0.35),
-                         spread=0.006, cup=0.002 * sign, rays=6, res=(8, 6)))
-        # Pelvics: a pair under the belly, trailing back.
-        fins.append(_fin("Pelvic", surface(0.003, "bottom") + Vector((0.004 * sign, 0, 0.001)),
-                         surface(-0.006, "bottom") + Vector((0.004 * sign, 0, 0.001)),
-                         (0.35 * sign, -0.7, -1), _rounded(0.015, 0.3), spread=0.004, rays=5, res=(8, 6)))
-        # Twin anal fins near the tail.
-        fins.append(_fin("Anal", surface(-0.011, "bottom") + Vector((0.003 * sign, 0, 0.001)),
-                         surface(-0.019, "bottom") + Vector((0.003 * sign, 0, 0.001)),
-                         (0.3 * sign, -0.8, -1), _rounded(0.013, 0.3), spread=0.004, rays=5, res=(8, 6)))
+        # Pectorals: small paddles behind the gill covers.
+        pa = surface(0.012, sign) + Vector((0, 0, -0.005))
+        pb = surface(0.006, sign) + Vector((0, 0, -0.007))
+        fins.append(_fin("Pectoral", pa, pb, (0.55 * sign, -0.8, -0.55), _rounded(0.012, 0.35),
+                         spread=0.005, cup=0.0015 * sign, rays=6, res=(8, 6)))
+        # Pelvics: long, trailing back under the belly.
+        fins.append(_fin("Pelvic", surface(0.004, "bottom") + Vector((0.003 * sign, 0, 0.001)),
+                         surface(-0.004, "bottom") + Vector((0.003 * sign, 0, 0.001)),
+                         (0.28 * sign, -0.9, -0.75), lambda s: 0.03 * math.sin(math.pi * s) ** 0.7 * (0.55 + 0.45 * s),
+                         spread=0.006, rays=6, droop=0.006, res=(8, 12)))
+        # Twin anal fins, long and trailing, near the tail.
+        fins.append(_fin("Anal", surface(-0.012, "bottom") + Vector((0.0025 * sign, 0, 0.001)),
+                         surface(-0.021, "bottom") + Vector((0.0025 * sign, 0, 0.001)),
+                         (0.25 * sign, -1.0, -0.6), lambda s: 0.03 * math.sin(math.pi * s) ** 0.7 * (0.5 + 0.5 * s),
+                         spread=0.006, rays=6, droop=0.008, res=(8, 12)))
     return fins
 
 
@@ -409,15 +430,21 @@ def _eyes():
     left them jagged)."""
     eyes = []
     for sign in (-1, 1):
-        centre = Vector((0.0112 * sign, 0.0165, 0.0055))
-        look = Vector((0.85 * sign, 0.45, 0.2)).normalized()
-        r = 0.0068
+        # Small and set into the head, looking out sideways and a little forward.
+        r = 0.0036
+        x = 0.83
+        y = PEDUNCLE + (BODY_FRONT - PEDUNCLE) * x
+        hw, hu, hd, c0 = _ring_radii(x)
+        z = c0 + 0.35 * hu
+        side = hw * math.sqrt(max(0.0, 1.0 - 0.35 ** 2))
+        centre = Vector(((side - r * 0.35) * sign, y, z))
+        look = Vector((1.0 * sign, 0.3, 0.12)).normalized()
         parts = []
         eye_mat = bpy.data.materials.get("FishEye") or material("FishEye", roughness=0.08, vertex_color=True)
-        for name, radius, angle, colour in (("EyeWhite", r, None, (0.93, 0.92, 0.88)),
-                                            ("IrisRim", r * 1.02, math.radians(74), (0.5, 0.28, 0.08)),
-                                            ("Iris", r * 1.03, math.radians(68), PALETTE["eye_iris"]),
-                                            ("Pupil", r * 1.04, math.radians(40), PALETTE["black"])):
+        for name, radius, angle, colour in (("EyeWhite", r, None, (0.42, 0.3, 0.16)),
+                                            ("IrisRim", r * 1.02, math.radians(82), (0.45, 0.25, 0.08)),
+                                            ("Iris", r * 1.03, math.radians(74), PALETTE["eye_iris"]),
+                                            ("Pupil", r * 1.04, math.radians(44), PALETTE["black"])):
             bm = bmesh.new()
             if angle is None:
                 bmesh.ops.create_uvsphere(bm, u_segments=36, v_segments=24, radius=radius)

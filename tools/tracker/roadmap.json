@@ -437,28 +437,28 @@
     {
       "id": "4h",
       "title": "Look like Tortellini",
-      "status": "in-progress",
+      "status": "done",
       "summary": "Model the fish on the real Tortellini (art/reference/tortellini.jpg): a longer fantail with a red cap, silvery cheeks and belly, small realistic eyes and long, flowing, translucent fins.",
       "items": [
         {
           "text": "Body: longer and deeper than the cartoon egg, a gently humped back, a slightly bumpy red head cap",
-          "status": "planned"
+          "status": "done"
         },
         {
           "text": "Colour: red-orange head, deep orange body, silvery-white cheeks, gill cover and belly patch, a few pale scales",
-          "status": "planned"
+          "status": "done"
         },
         {
           "text": "Eyes: small, gold-ringed and realistic",
-          "status": "planned"
+          "status": "done"
         },
         {
           "text": "Fins: tall sail dorsal; a long double tail with pointed lobes that droop and flow; long trailing pelvic and anal fins; translucent orange fading paler at the edges",
-          "status": "planned"
+          "status": "done"
         },
         {
           "text": "Swimming tuned for the longer fins (they trail and drape more); side-by-side with the photo",
-          "status": "planned"
+          "status": "done"
         }
       ]
     }

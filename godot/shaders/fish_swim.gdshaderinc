@@ -16,7 +16,7 @@ uniform float fin_phase = 0.0;   // Fish.fin_phase: pectoral fin sculling
 uniform float effort = 0.0;      // Fish.effort, 0..1
 uniform float turn = 0.0;        // yaw rate, rad/s: the body curves into a turn
 
-const float BODY_LENGTH = 0.096; // nose to tail tip, metres
+const float BODY_LENGTH = 0.114; // nose to tail tip, metres
 
 // The spine's sideways offset at body position b.
 float spine(float b) {
@@ -41,7 +41,7 @@ void swim_vertex(inout vec3 vertex, inout vec3 normal, vec2 weights) {
 	// goldfish's gulp.
 	if (lower_lip) {
 		float gulp = pow(max(0.0, sin(TIME * 2.6)), 6.0) * 0.45 + effort * 0.1;
-		vec2 hinge = vec2(-0.0045, -0.0215);  // (y, z) of the lips' corners
+		vec2 hinge = vec2(-0.0045, -0.025);  // (y, z): behind the lips, the jaw
 		vec2 p = vertex.yz - hinge;
 		float c = cos(gulp);
 		float s = sin(gulp);
