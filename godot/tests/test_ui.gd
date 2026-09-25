@@ -102,7 +102,8 @@ func test_tank_cam_keypoints() -> void:
 	main.set_tracking(true, TrackingCam.Style.EARNEST)
 	main.fish.player_control = false
 	main.fish.position = Vector3(0.0, 0.3, 0.12)
-	for i in 4:
+	# The box eases after the fish (35% a frame), so give it time to settle.
+	for i in 20:
 		await tree.process_frame
 	var cam: TrackingCam = main.tracking
 	check(cam.detected, "the fish is detected")

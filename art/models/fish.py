@@ -428,30 +428,38 @@ def _fins():
 
 # --- eyes -------------------------------------------------------------------
 
-def _cap(bm, centre, radius, look, angle, rings=6, segs=40):
-    """A spherical cap round `look`, as its own little mesh in bm."""
+def _band(bm, centre, radius, look, a0, a1, rings, segs=40):
+    """The band of a sphere between angles a0 and a1 from `look` (a cap when
+    a0 is 0), as its own little mesh in bm."""
     look = look.normalized()
     u = look.cross(Vector((0, 0, 1))).normalized()
     v = look.cross(u).normalized()
-    loops = []
-    for i in range(1, rings + 1):
-        th = angle * i / rings
-        loops.append([bm.verts.new(centre + (look * math.cos(th) + (u * math.cos(2 * math.pi * j / segs)
-                                                                     + v * math.sin(2 * math.pi * j / segs)) * math.sin(th)) * radius)
-                      for j in range(segs)])
-    tip = bm.verts.new(centre + look * radius)
-    for j in range(segs):
-        bm.faces.new((tip, loops[0][j], loops[0][(j + 1) % segs]))
-    for i in range(rings - 1):
+
+    def point(th, j):
+        a = 2 * math.pi * j / segs
+        return centre + (look * math.cos(th) + (u * math.cos(a) + v * math.sin(a)) * math.sin(th)) * radius
+
+    loops = [[bm.verts.new(point(a0 + (a1 - a0) * i / rings, j)) for j in range(segs)]
+             for i in range(0 if a0 > 0 else 1, rings + 1)]
+    if a0 <= 0:
+        tip = bm.verts.new(centre + look * radius)
+        for j in range(segs):
+            bm.faces.new((tip, loops[0][j], loops[0][(j + 1) % segs]))
+    if a1 >= math.pi - 1e-6:
+        back = bm.verts.new(centre - look * radius)
+        for j in range(segs):
+            bm.faces.new((back, loops[-1][(j + 1) % segs], loops[-1][j]))
+    for i in range(len(loops) - 1):
         for j in range(segs):
             j2 = (j + 1) % segs
             bm.faces.new((loops[i][j], loops[i + 1][j], loops[i + 1][j2], loops[i][j2]))
 
 
 def _eyes():
-    """Glossy eyes: a white ball with a gold iris, a darker rim to it and a
-    round pupil, each its own crisp cap (painting them on the ball's vertices
-    left them jagged)."""
+    """Glossy eyes: a round pupil, a gold iris lighter toward it, a darker rim
+    and the dark ball around, as bands of one sphere that meet edge to edge
+    (painting them on the ball's vertices left them jagged, and caps laid over
+    the ball z-fought)."""
     eyes = []
     for sign in (-1, 1):
         # Small and set into the head, looking out sideways and a little forward.
@@ -467,24 +475,20 @@ def _eyes():
         look = Vector((1.0 * sign, 0.3, 0.12)).normalized()
         parts = []
         eye_mat = bpy.data.materials.get("FishEye") or material("FishEye", roughness=0.08, vertex_color=True)
-        for name, radius, angle, colour in (("EyeWhite", r, None, (0.42, 0.3, 0.16)),
-                                            ("IrisRim", r * 1.02, math.radians(82), (0.45, 0.25, 0.08)),
-                                            ("Iris", r * 1.03, math.radians(74), PALETTE["eye_iris"]),
-                                            ("Pupil", r * 1.04, math.radians(44), PALETTE["black"])):
+        bands = (("Pupil", 0, 44, 5, PALETTE["black"]), ("Iris", 44, 74, 5, PALETTE["eye_iris"]),
+                 ("IrisRim", 74, 82, 2, (0.45, 0.25, 0.08)), ("EyeWhite", 82, 180, 10, (0.42, 0.3, 0.16)))
+        for name, a0, a1, rings, colour in bands:
             bm = bmesh.new()
-            if angle is None:
-                bmesh.ops.create_uvsphere(bm, u_segments=36, v_segments=24, radius=radius)
-                bmesh.ops.translate(bm, verts=bm.verts, vec=centre)
-            else:
-                _cap(bm, centre, radius, look, angle)
+            _band(bm, centre, r, look, math.radians(a0), math.radians(a1), rings)
             bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
             bm.loops.layers.uv.new("UVMap")
             obj = mesh_object(name, bm, [eye_mat])
             shade_smooth(obj)
             if name == "Iris":
                 # Lighter toward the pupil.
-                paint(obj, lambda co, n_, c=centre, lk=look: mix_color(PALETTE["eye_iris"], (1.0, 0.86, 0.45),
-                                                                    smoothstep(0.5, 0.9, (co - c).normalized().dot(lk))))
+                paint(obj, lambda co, n_, c=centre, lk=look: mix_color((1.0, 0.86, 0.45), PALETTE["eye_iris"],
+                                                                    smoothstep(math.cos(math.radians(46)), math.cos(math.radians(70)),
+                                                                               (co - c).normalized().dot(lk))))
             else:
                 paint(obj, lambda co, n_, col=colour: (*col, 1.0))
             anim_uv(obj, lambda co: (bend(co.y), 0.0))
