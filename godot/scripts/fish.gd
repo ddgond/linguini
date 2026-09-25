@@ -70,12 +70,16 @@ var dart_timer := 0.0
 ## swimming in place at this effort, turning at pose_turn rad/s.
 var pose_effort := -1.0
 var pose_turn := 0.0
+## For screenshots: when set, the fish swims this way (tank space) at full
+## effort instead of reading the player's input.
+var autopilot := Vector3.ZERO
 
 var _time := 0.0
 var _noise := FastNoiseLite.new()
 
 
 func _ready() -> void:
+	add_to_group("fish")  # for things it pushes around (DecorBall)
 	motion_mode = CharacterBody3D.MOTION_MODE_FLOATING
 	wall_min_slide_angle = 0.0
 	_noise.seed = randi()
@@ -87,7 +91,9 @@ func _physics_process(delta: float) -> void:
 	if pose_effort >= 0.0:
 		_hold_pose(delta)
 		return
-	if player_control:
+	if autopilot != Vector3.ZERO:
+		drive(autopilot, 1.0)
+	elif player_control:
 		read_player_input()
 	simulate(delta)
 	move_and_slide()

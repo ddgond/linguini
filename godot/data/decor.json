@@ -19,7 +19,7 @@
 			]
 		},
 		"moss_ball": {
-			"name": "Moss ball", "kind": "soft", "anchor": "float",
+			"name": "Moss ball", "kind": "soft", "anchor": "float", "physics": "ball",
 			"variants": [
 				{ "name": "Green", "Primary": "#45843a" },
 				{ "name": "Lime", "Primary": "#74ad40" }

@@ -1,6 +1,6 @@
 {
   "project": "Linguini",
-  "now": "4i",
+  "now": "4j",
   "milestones": [
     {
       "id": "1",
@@ -482,6 +482,34 @@
         },
         {
           "text": "Tall sail of a dorsal fin; pelvic fins moved forward under the chest",
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "4j",
+      "title": "A moss ball to push around",
+      "status": "done",
+      "summary": "The fish can nudge and knock the moss ball around the tank, like a beach ball in water.",
+      "items": [
+        {
+          "text": "Knocked along the contact normal, harder the faster the fish is going; the fish isn't slowed",
+          "status": "done"
+        },
+        {
+          "text": "No gravity: it drifts, slows in the water and rolls as it goes",
+          "status": "done"
+        },
+        {
+          "text": "Bounces off the glass, gravel, surface and solid decor",
+          "status": "done"
+        },
+        {
+          "text": "The layout keeps where the editor put it; moving it in the editor stills it",
+          "status": "done"
+        },
+        {
+          "text": "--fish-drive for screenshots of the fish swimming on its own",
           "status": "done"
         }
       ]

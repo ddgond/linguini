@@ -27,6 +27,9 @@ var quiet := false
 ## Where bubbles stop rising: the water line, in this piece's parent's space.
 var water_level := 0.56
 
+## Physics for pieces the fish can push around (the moss ball), or null.
+var ball: DecorBall
+
 var _model: Node3D
 var _body: StaticBody3D
 var _bubbles: Array[GPUParticles3D] = []
@@ -67,6 +70,8 @@ func _build() -> void:
 	_bubbles.clear()
 	_plant_materials.clear()
 	_glow = null
+	var ball_home: Vector3 = ball.home if ball else position
+	ball = null
 	rotation = Vector3(0, deg_to_rad(yaw), 0)
 	scale = Vector3.ONE * DecorCatalog.size_scale(size)
 
@@ -97,7 +102,15 @@ func _build() -> void:
 		_glow.omni_range = 0.12
 		_glow.position = Vector3(0, 0.03, 0)
 		add_child(_glow)
+	if info().get("physics", "") == "ball":
+		position = ball_home
+		ball = DecorBall.new(self)
+		add_child(ball)
 	set_selected(_selected)
+
+
+func model() -> Node3D:
+	return _model
 
 
 func _colour(hex: String) -> Color:
@@ -269,7 +282,8 @@ func set_selected(value: bool) -> void:
 
 
 func to_dict() -> Dictionary:
-	var p := position
+	# A ball saves where it was put, not where the fish pushed it.
+	var p: Vector3 = ball.home if ball else position
 	return {
 		"type": type,
 		"position": [snappedf(p.x, 0.001), snappedf(p.y, 0.001), snappedf(p.z, 0.001)],

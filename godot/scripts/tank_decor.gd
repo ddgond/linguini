@@ -55,6 +55,8 @@ func remove_piece(piece: DecorPiece) -> void:
 
 func move_piece(piece: DecorPiece, pos: Vector3) -> void:
 	piece.position = place(piece, pos)
+	if piece.ball:
+		piece.ball.place(piece.position)
 	if piece.anchor() == "rim":
 		piece.set_yaw(_rim_yaw(piece.position))
 

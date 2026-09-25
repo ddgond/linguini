@@ -15,6 +15,7 @@ extends Node3D
 ##   --fish=X,Y,Z[,YAW]     place the fish (tank space, yaw in degrees)
 ##   --fish-pose=EFFORT[,TURN]  hold the fish in place, swimming at EFFORT (0..1)
 ##                          and turning at TURN rad/s
+##   --fish-drive=X,Y,Z     swim the fish that way on its own
 ##   --gaze                 hold the gaze button
 ##   --zones                show card trigger zones
 ##   --room-camera          view through the room camera
@@ -323,6 +324,9 @@ func _apply_args() -> void:
 			fish.yaw = deg_to_rad(v[3])
 		fish.global_basis = Basis.from_euler(Vector3(0, fish.yaw, 0))
 		camera.orbit_yaw = fish.yaw
+	if _args.has("fish-drive"):
+		var d: PackedFloat64Array = String(_args["fish-drive"]).split_floats(",")
+		fish.autopilot = Vector3(d[0], d[1], d[2])
 	if _args.has("fish-pose"):
 		var p: PackedFloat64Array = String(_args["fish-pose"]).split_floats(",")
 		fish.pose_effort = p[0]

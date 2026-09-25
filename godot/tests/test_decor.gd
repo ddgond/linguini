@@ -94,3 +94,35 @@ func test_editor_decor() -> void:
 	editor._on_delete_selected()
 	check(decor.pieces.size() == before + 1 and editor.selected_decor == null, "Delete removes it")
 	main.queue_free()
+
+
+func test_fish_pushes_the_moss_ball() -> void:
+	var main := await _main()
+	var decor: TankDecor = main.decor
+	decor.clear()
+	var ball := decor.add_piece("moss_ball", Vector3(0.0, 0.3, 0.0))
+	check(ball.ball != null, "the moss ball has ball physics")
+	var fish: Fish = main.fish
+	fish.player_control = false
+	# The fish, just to its right, swimming left (-X) into it.
+	fish.position = Vector3(0.09, 0.3, 0.0)
+	fish.yaw = PI / 2
+	fish.global_basis = Basis.from_euler(Vector3(0, fish.yaw, 0))
+	for i in 120:
+		fish.drive(Vector3(-1, 0, 0), 1.0)
+		await tree.physics_frame
+	var pushed := ball.position
+	check(pushed.x < -0.01, "the fish knocks it away, the way it was swimming (%s)" % pushed)
+	check(absf(pushed.y - 0.3) < 0.03, "no gravity: it doesn't sink (%s)" % pushed)
+	check(ball.to_dict().position == [0.0, 0.3, 0.0], "the layout keeps where it was put (%s)" % [ball.to_dict().position])
+	# Left alone, it slows in the water and stays in the tank.
+	fish.position = Vector3(0.5, 0.45, 0.2)
+	fish.drive(Vector3.ZERO, 0.0)
+	for i in 400:
+		await tree.physics_frame
+	check(ball.ball.velocity.length() < 0.02, "the water slows it down (%.3f m/s)" % ball.ball.velocity.length())
+	check(decor.water.has_point(ball.position), "it stays in the water (%s)" % ball.position)
+	# The editor puts it back.
+	decor.move_piece(ball, Vector3(0.1, 0.2, 0.0))
+	check(ball.ball.velocity == Vector3.ZERO and ball.ball.home.is_equal_approx(ball.position), "moving it in the editor stills it")
+	main.queue_free()
