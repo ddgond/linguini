@@ -84,7 +84,11 @@ func _process(delta: float) -> void:
 
 	# Drift back behind the fish once it's swimming and the player has let go.
 	var speed := fish.velocity.length()
-	if _manual_timer <= 0.0 and speed > 0.04:
+	# Steering by the camera, it doesn't swing round while the player swims
+	# sideways across the view (or it would chase the fish in circles).
+	var sideways := Fish.steering == "camera" and not menu_view \
+		and absf(Input.get_axis("fish_left", "fish_right")) > 0.3
+	if _manual_timer <= 0.0 and speed > 0.04 and not sideways:
 		var k := 1.0 - exp(-recenter_rate * clampf(speed / fish.cruise_speed, 0.0, 1.0) * delta)
 		orbit_yaw = lerp_angle(orbit_yaw, fish.yaw, k)
 		orbit_pitch = lerpf(orbit_pitch, -0.25 - fish.pitch * 0.5, k)

@@ -115,6 +115,8 @@ func _run_input(f: Fish, actions: Array, seconds: float) -> Vector3:
 
 func test_controls_are_fish_relative() -> void:
 	var f := _fish()
+	var steering := Fish.steering
+	Fish.set_steering("fish", false)
 	f.yaw = PI / 2 # facing -X
 	var path := _run_input(f, ["fish_forward"], 2.0)
 	check(path.x < -0.2 and absf(path.z) < 0.02, "forward swims along the fish's heading (%s)" % path)
@@ -133,4 +135,29 @@ func test_controls_are_fish_relative() -> void:
 	before = f.yaw
 	_run_input(f, ["fish_back", "fish_left"], 0.5)
 	check(angle_difference(before, f.yaw) > 0.2, "left turns the fish while backing up")
+	Fish.set_steering(steering, false)
+	f.free()
+
+
+func test_swim_where_you_point() -> void:
+	var f := _fish()
+	var before := Fish.steering
+	Fish.set_steering("camera", false)
+	# The camera behind the fish's left, looking toward -Z; the fish faces +X.
+	var view := Node3D.new()
+	tree.root.add_child(view)
+	view.global_basis = Basis()  # looks down -Z
+	f.view = view
+	f.yaw = -PI / 2  # facing +X
+	var path := _run_input(f, ["fish_forward"], 3.0)
+	check(path.z < -0.15, "up swims away from the camera, whichever way the fish faced (%s)" % path)
+	check(absf(angle_difference(f.yaw, 0.0)) < 0.3, "the fish turned to face away from the camera (yaw %.2f)" % f.yaw)
+	f.velocity = Vector3.ZERO
+	path = _run_input(f, ["fish_right"], 3.0)
+	check(path.x > 0.15, "right swims to the right of the view (%s)" % path)
+	f.velocity = Vector3.ZERO
+	path = _run_input(f, ["fish_back"], 3.0)
+	check(path.z > 0.15 and not f.backing, "down swims toward the camera, not backing up (%s)" % path)
+	Fish.set_steering(before, false)
+	view.free()
 	f.free()

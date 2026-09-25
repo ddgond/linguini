@@ -321,7 +321,7 @@ func _show_launching() -> void:
 
 
 ## "Tank cam" on/off plus its overlay style (the OBS-capturable window), the
-## graphics quality preset and the room's mood.
+## graphics quality preset, the room's mood, the button art and steering.
 func _tracking_row() -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
@@ -371,6 +371,16 @@ func _tracking_row() -> void:
 		tracking_changed.emit(toggle.button_pressed, style.selected)
 	toggle.toggled.connect(func(_on: bool) -> void: apply.call())
 	style.item_selected.connect(func(_i: int) -> void: apply.call())
+	# How the stick steers the fish.
+	var steering := OptionButton.new()
+	steering.name = "SteeringPicker"
+	for label: String in Fish.STEERING_LABELS:
+		steering.add_item("Steering: " + label)
+	steering.selected = maxi(Fish.STEERING.find(Fish.steering), 0)
+	steering.item_selected.connect(func(i: int) -> void:
+		Fish.set_steering(Fish.STEERING[i])
+		_refresh_help())
+	row.add_child(steering)
 
 
 ## Volume sliders: Master, Game (the stream), Room & tank, UI.
@@ -517,9 +527,10 @@ func _refresh_help() -> void:
 
 func _help_text() -> String:
 	var g := func(id: String) -> String: return Glyphs.label(id)
-	return ("Swim, turn  WASD / left stick      Rise / sink  Space, C / %s, %s      Dart  Shift / %s\n" +
+	var swim := "Swim, turn" if Fish.steering == "fish" else "Swim where you point"
+	return ("%s  WASD / left stick      Rise / sink  Space, C / %s, %s      Dart  Shift / %s\n" +
 		"Look  mouse / right stick      Watch the monitor  hold right mouse / %s      Menu  Esc / %s      Edit tank  F2      Tank cam  F4") % [
-		g.call("RB"), g.call("LB"), g.call("A"), g.call("LT"), g.call("START")]
+		swim, g.call("RB"), g.call("LB"), g.call("A"), g.call("LT"), g.call("START")]
 
 
 ## A little square icon for an app, coloured from its name.

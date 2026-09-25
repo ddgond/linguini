@@ -1,6 +1,6 @@
 {
   "project": "Linguini",
-  "now": "4k",
+  "now": "4l",
   "milestones": [
     {
       "id": "1",
@@ -538,6 +538,30 @@
         },
         {
           "text": "Looking at the monitor (gaze or the menu) with the fish in front of it: the fish fades the same way",
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "4l",
+      "title": "Steering options",
+      "status": "done",
+      "summary": "A Steering setting on the monitor: Turn the fish (fish-relative, as before) or Swim where you point (camera-relative).",
+      "items": [
+        {
+          "text": "Steering: Turn the fish: forward swims the way the fish faces, back backs up, left and right turn",
+          "status": "done"
+        },
+        {
+          "text": "Steering: Swim where you point: up swims straight away from the camera, left to the left of the view, down toward the camera; the fish arcs round to it",
+          "status": "done"
+        },
+        {
+          "text": "The camera doesn't swing behind the fish while swimming across the view in the new mode",
+          "status": "done"
+        },
+        {
+          "text": "Saved in settings; controls hint and guide follow it; --steering for a single run",
           "status": "done"
         }
       ]

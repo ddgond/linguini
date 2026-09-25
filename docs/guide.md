@@ -33,6 +33,13 @@ Playing, building and working on Linguini. The original vision is in [core.md](c
 | Tank cam window | F4 | |
 | Show card trigger zones | F3 | |
 
+**Steering** on the monitor's home page sets how the stick (or WASD) steers:
+
+- **Turn the fish** (the default): from the fish's point of view. Forward swims the way the fish faces, back backs it up on its fins, and left and right turn it, as in the table above.
+- **Swim where you point:** from the camera's. Push the way you want to go on screen: up swims straight away from the camera, left to the left of the view, down back toward it. The fish turns and arcs round toward that direction at its own pace. The camera doesn't swing round behind the fish while you swim across the view.
+
+Rise, sink and dart work the same either way.
+
 Your own keyboard and gamepad never reach the host. Only the cards do.
 
 The gamepad names above are Xbox's. **Buttons** on the monitor's home page sets which controller's art the cards, menus and hints use: **Xbox**, **PlayStation** or **Nintendo**. It starts on **Auto**, which follows the controller you last used, going by its name. Only the art changes; the host always gets the same inputs. Nintendo's face letters swap by position, so the bottom button (A on Xbox) shows as B.

@@ -8,14 +8,24 @@ extends CharacterBody3D
 ## come out as arcs. Water drag is much stronger sideways than lengthways, which
 ## makes the velocity follow the heading the way a real fish's does.
 ##
-## The player steers from the fish's point of view, not the camera's: forward
-## swims along the fish's heading, back makes it back up, and left and right
-## turn it.
+## Two ways to steer, picked on the monitor ("Steering"):
+## - Turn the fish (the default): from the fish's point of view. Forward swims
+##   along its heading, back makes it back up, and left and right turn it.
+## - Swim where you point: from the camera's. The stick picks a direction on
+##   screen (up swims straight away from the camera) and the fish turns and
+##   swims that way, arcing round as fish do.
 ##
 ## With no input the fish hovers: pectoral-fin sculling, a slow bob and a lazy
 ## wander that steers away from the glass.
 
 signal darted
+
+## Steering settings, as stored ("controls", "steering") and in the picker.
+const STEERING := ["fish", "camera"]
+const STEERING_LABELS := ["Turn the fish", "Swim where you point"]
+
+## "fish" or "camera": see above. Shared by every fish; saved in settings.
+static var steering := "fish"
 
 @export_group("Swimming")
 @export var cruise_speed := 0.30 ## m/s at full effort
@@ -55,6 +65,8 @@ var dart_requested := false
 
 ## When true, the fish reads the keyboard/gamepad each physics tick.
 var player_control := false
+## The camera the player sees through, for "Swim where you point" steering.
+var view: Node3D
 
 # Body state, readable by the model and camera.
 var yaw := 0.0
@@ -81,7 +93,14 @@ var _time := 0.0
 var _noise := FastNoiseLite.new()
 
 
+static func set_steering(value: String, remember := true) -> void:
+	steering = value if value in STEERING else "fish"
+	if remember:
+		Settings.set_value("controls", "steering", steering)
+
+
 func _ready() -> void:
+	steering = Settings.get_value("controls", "steering", steering)
 	add_to_group("fish")  # for things it pushes around (DecorBall)
 	motion_mode = CharacterBody3D.MOTION_MODE_FLOATING
 	wall_min_slide_angle = 0.0
@@ -124,6 +143,9 @@ func read_player_input() -> void:
 	if Input.is_action_just_pressed("fish_dart"):
 		request_dart()
 
+	if steering == "camera" and view:
+		_steer_by_view(stick, vertical)
+		return
 	# Left/right points the urge off to that side of the fish's heading, by an
 	# angle that makes it turn at turn_rate with the stick fully over.
 	var heading := yaw - stick.x * turn_rate / turn_response
@@ -136,6 +158,21 @@ func read_player_input() -> void:
 	var thrust := maxf(stick.y, absf(stick.x) * 0.35)
 	# Rising or sinking tilts the fish that way as it swims.
 	drive(dir * thrust + Vector3.UP * vertical * 0.6, maxf(thrust, absf(vertical) * 0.6), vertical)
+
+
+## "Swim where you point": the stick is a direction in the camera's view,
+## flattened onto the water; the fish turns toward it at its own rate.
+func _steer_by_view(stick: Vector2, vertical: float) -> void:
+	var ahead := -view.global_basis.z
+	ahead.y = 0.0
+	var right := view.global_basis.x
+	right.y = 0.0
+	if ahead.length() < 0.01:
+		ahead = view.global_basis.y * signf(view.global_basis.z.y)  # looking straight down or up
+		ahead.y = 0.0
+	var dir := ahead.normalized() * stick.y + right.normalized() * stick.x
+	var thrust := minf(stick.length(), 1.0)
+	drive(dir.normalized() * thrust + Vector3.UP * vertical * 0.6, maxf(thrust, absf(vertical) * 0.6), vertical)
 
 
 func simulate(delta: float) -> void:

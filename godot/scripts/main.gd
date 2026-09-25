@@ -16,6 +16,7 @@ extends Node3D
 ##   --fish-pose=EFFORT[,TURN]  hold the fish in place, swimming at EFFORT (0..1)
 ##                          and turning at TURN rad/s
 ##   --fish-drive=X,Y,Z     swim the fish that way on its own
+##   --steering=fish|camera turn the fish, or swim where you point, just for this run
 ##   --look=PITCH           aim the follow camera up or down (radians, negative looks down)
 ##   --gaze                 hold the gaze button
 ##   --zones                show card trigger zones
@@ -99,6 +100,7 @@ func _ready() -> void:
 
 	camera = FishCamera.new()
 	camera.fish = fish
+	fish.view = camera
 	camera.screen = room.screen
 	camera.screen_size = room.screen_size
 	camera.bounds = water
@@ -325,6 +327,8 @@ func _apply_args() -> void:
 			fish.yaw = deg_to_rad(v[3])
 		fish.global_basis = Basis.from_euler(Vector3(0, fish.yaw, 0))
 		camera.orbit_yaw = fish.yaw
+	if _args.has("steering"):
+		Fish.set_steering(String(_args.steering), false)
 	if _args.has("look"):
 		camera.orbit_pitch = clampf(float(_args.look), FishCamera.MIN_PITCH, FishCamera.MAX_PITCH)
 		camera._manual_timer = 999.0
