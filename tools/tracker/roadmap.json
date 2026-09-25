@@ -1,6 +1,6 @@
 {
   "project": "Linguini",
-  "now": "4j",
+  "now": "4k",
   "milestones": [
     {
       "id": "1",
@@ -510,6 +510,30 @@
         },
         {
           "text": "--fish-drive for screenshots of the fish swimming on its own",
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "4k",
+      "title": "Camera at the top and bottom of the tank",
+      "status": "done",
+      "summary": "Near the gravel or the surface the camera keeps its angle and slides in close; the fish fades so it doesn't block the view.",
+      "items": [
+        {
+          "text": "Against the gravel or the water surface the camera slides in along its line of sight (down to 3 cm) instead of being pushed flat",
+          "status": "done"
+        },
+        {
+          "text": "Up close it looks at the fish itself, not above it, so steep angles hold",
+          "status": "done"
+        },
+        {
+          "text": "The fish fades by a dither (body and fins) when a camera is that close; the room camera and tank cam never see it fade",
+          "status": "done"
+        },
+        {
+          "text": "--look=PITCH to aim the follow camera in screenshots",
           "status": "done"
         }
       ]

@@ -1,7 +1,8 @@
 extends "res://tests/test_case.gd"
 ## The assembled room: the fish under real physics can't leave the water,
 ## swimming into a card zone presses it, the follow camera can back out through
-## any glass wall, and the home menu offers a way out.
+## any glass wall and slides in close against the gravel and the surface, and
+## the home menu offers a way out.
 
 
 func _main() -> Node3D:
@@ -72,4 +73,23 @@ func test_home_menu_offers_quit() -> void:
 	var main := await _main()
 	var buttons: Array = main.menu.find_children("*", "Button", true, false).map(func(b: Button) -> String: return b.text)
 	check("Quit" in buttons, "home menu has a Quit button (buttons: %s)" % [buttons])
+	main.queue_free()
+
+
+func test_camera_slides_in_against_the_surface_and_gravel() -> void:
+	var main := await _main()
+	var cam: FishCamera = main.camera
+	var water := cam.bounds
+	for case: Array in [[water.end.y - 0.03, -0.9, "surface"], [water.position.y + 0.03, 0.8, "gravel"]]:
+		# The fish near the surface with the camera looking down on it, then
+		# near the gravel looking up at it.
+		var target := Vector3(water.get_center().x, case[0], water.get_center().z)
+		var dir := Basis.from_euler(Vector3(case[1], 0.3, 0.0)) * Vector3(0, 0, 1)
+		var d := cam.follow_distance(target, dir)
+		check(d < cam.distance * 0.5, "against the %s it slides in close (%.3f m)" % [case[2], d])
+		check(d >= cam.min_distance, "but not into the fish (%.3f m)" % d)
+		check(water.has_point(target + dir * d), "and stays in the water, keeping its angle")
+	# Mid-water it keeps its full distance.
+	var mid := water.get_center()
+	check(is_equal_approx(cam.follow_distance(mid, Vector3(0, -0.2, 1).normalized()), cam.distance), "mid-water, full distance")
 	main.queue_free()

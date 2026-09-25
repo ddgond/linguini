@@ -37,6 +37,9 @@ float scale_pattern(vec2 uv) {
 }
 
 void fragment() {
+	if (fish_dither_out(FRAGCOORD.xy, fish_fade(CAMERA_POSITION_WORLD, NODE_POSITION_WORLD, (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz))) {
+		discard;
+	}
 	float s = mix(1.0, scale_pattern(UV), scale_strength);
 	ALBEDO = COLOR.rgb * s;
 	ROUGHNESS = roughness;

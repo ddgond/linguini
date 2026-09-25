@@ -11,13 +11,20 @@ extends Camera3D
 ## The camera stays between the gravel and the water surface, but it may back
 ## out through any of the four glass walls: the tank is only 50 cm deep, so when
 ## the fish is near the glass the camera backs out and looks in, which keeps it
-## aimable near the edges.
+## aimable near the edges. Against the gravel or the surface it keeps its angle
+## and slides in closer to the fish instead of being pushed flat; the fish fades
+## when the camera is that close (fish_swim.gdshaderinc), so it doesn't block
+## the view.
 
 const FOLLOW_FOV := 70.0
 const MIN_PITCH := -1.2
 const MAX_PITCH := 0.9
+const LIFT := 0.02 ## m above the fish the camera looks at, from its full distance
+## How close to the gravel and the water surface the camera may go.
+const FLOOR_MARGIN := 0.008
 
 @export var distance := 0.26
+@export var min_distance := 0.03 ## how close it may slide in against the gravel or surface
 @export var mouse_sensitivity := 0.004
 @export var stick_speed := 2.5 ## rad/s
 @export var recenter_delay := 1.2 ## s after the last manual look
@@ -108,10 +115,24 @@ func is_underwater() -> bool:
 
 
 func _follow_transform() -> Transform3D:
-	var offset := Basis.from_euler(Vector3(orbit_pitch, orbit_yaw, 0.0)) * Vector3(0, 0, distance)
-	var target := _pivot + Vector3(0, 0.02, 0)
-	var pos := _clamp_inside(target + offset, glass_leeway)
+	var dir := Basis.from_euler(Vector3(orbit_pitch, orbit_yaw, 0.0)) * Vector3(0, 0, 1)
+	# It looks a little above the fish, but less as it slides in close: right
+	# up against it, it looks at the fish itself.
+	var d := follow_distance(_pivot + Vector3(0, LIFT, 0), dir)
+	var target := _pivot + Vector3(0, LIFT * d / distance, 0)
+	d = follow_distance(target, dir)
+	var pos := _clamp_inside(target + dir * d, glass_leeway)
 	return Transform3D(Basis.looking_at(target - pos, Vector3.UP), pos)
+
+
+## How far back from `target` along `dir` the camera can sit: its full
+## distance, or less where the gravel or the water surface is in the way.
+func follow_distance(target: Vector3, dir: Vector3) -> float:
+	var d := distance
+	if bounds.size != Vector3.ZERO and absf(dir.y) > 1e-4:
+		var limit := (bounds.end.y - FLOOR_MARGIN if dir.y > 0.0 else bounds.position.y + FLOOR_MARGIN) - target.y
+		d = clampf(limit / dir.y, min_distance, distance)
+	return d
 
 
 func _gaze_position() -> Vector3:
@@ -141,6 +162,8 @@ func _clamp_inside(p: Vector3, glass_leeway := 0.0) -> Vector3:
 	if bounds.size == Vector3.ZERO:
 		return p
 	var inner := bounds.grow(-0.02)
+	inner.position.y = bounds.position.y + FLOOR_MARGIN
+	inner.end.y = bounds.end.y - FLOOR_MARGIN
 	var clamped := p.clamp(inner.position, inner.end)
 	if glass_leeway > 0.0:
 		# Out through the side, front and back glass; never below the gravel or above the water.

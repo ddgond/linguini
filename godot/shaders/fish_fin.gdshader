@@ -12,6 +12,11 @@ void vertex() {
 
 void fragment() {
 	ALBEDO = COLOR.rgb;
+	// Faded up close by the same dither as the body: plain alpha isn't enough,
+	// as the fins overlap many layers deep when seen edge-on.
+	if (fish_dither_out(FRAGCOORD.xy, fish_fade(CAMERA_POSITION_WORLD, NODE_POSITION_WORLD, (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz))) {
+		discard;
+	}
 	ALPHA = COLOR.a;
 	ROUGHNESS = roughness;
 	// Light through the membrane.

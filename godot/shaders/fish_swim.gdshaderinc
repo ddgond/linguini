@@ -62,3 +62,23 @@ void swim_vertex(inout vec3 vertex, inout vec3 normal, vec2 weights) {
 	float ripple = sin(fin_phase * 1.3 + b * 9.0 + f * 5.0) * (0.0006 + 0.0012 * (1.0 - effort));
 	vertex += normal * ripple * f * f;
 }
+
+// Up close the fish fades, so a camera squeezed in near it (against the
+// gravel or the water surface) sees past it: by how close the camera is to
+// the fish's middle and to this very pixel (the long tail can reach the lens
+// while the body is further off). The room camera and the tank cam, further
+// away, never see it fade.
+float fish_fade(vec3 camera, vec3 fish, vec3 here) {
+	float body = smoothstep(0.04, 0.1, distance(camera, fish));
+	float part = smoothstep(0.025, 0.07, distance(camera, here));
+	return mix(0.1, 1.0, min(body, part));
+}
+
+// An ordered dither, so the opaque body can fade without sorting against
+// the water and glass: a pixel is dropped when the fade falls below its
+// threshold.
+bool fish_dither_out(vec2 frag, float fade) {
+	const float bayer[16] = float[](0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);
+	ivec2 p = ivec2(frag) % 4;
+	return fade < 1.0 && (bayer[p.y * 4 + p.x] + 0.5) / 16.0 > fade;
+}
