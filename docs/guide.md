@@ -74,7 +74,7 @@ Esc or **Done** leaves the editor. Changes stay in the tank until you quit, even
 
 **Mood** on the monitor's home page sets the bedroom's lighting. The choice is remembered.
 
-- **Night gamer den** (the default): street lamps, lit windows and neon across the street, stars and a low moon, lamps on, the LED strip in purple.
+- **Late night** (the default): street lamps, lit windows and neon across the street, stars and a low moon, lamps on, the LED strip in purple.
 - **Rainy evening:** rain falling outside and running down the window, a wet street reflecting the lights, umbrellas.
 - **Golden hour:** the low sun behind the houses opposite and through the window, long shadows, lamps off, pigeons now and then.
 

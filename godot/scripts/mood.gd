@@ -5,7 +5,7 @@ extends Node
 signal changed(mood: String)
 
 const NAMES := ["night", "rainy", "golden"]
-const LABELS := ["Night gamer den", "Rainy evening", "Golden hour"]
+const LABELS := ["Late night", "Rainy evening", "Golden hour"]
 
 var current := "night"
 
