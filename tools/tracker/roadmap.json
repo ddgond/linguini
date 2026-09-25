@@ -1,6 +1,6 @@
 {
   "project": "Linguini",
-  "now": "4h",
+  "now": "4i",
   "milestones": [
     {
       "id": "1",
@@ -458,6 +458,30 @@
         },
         {
           "text": "Swimming tuned for the longer fins (they trail and drape more); side-by-side with the photo",
+          "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "4i",
+      "title": "Tortellini's shape",
+      "status": "done",
+      "summary": "The body outline traced from the photo of Tortellini instead of guessed at.",
+      "items": [
+        {
+          "text": "Body built from the photo's top and bottom contours: a forehead climbing steeply from the snout, the back peaking before the dorsal, a deep belly, a short thick peduncle",
+          "status": "done"
+        },
+        {
+          "text": "Egg-shaped cross-section, narrower along the back",
+          "status": "done"
+        },
+        {
+          "text": "Eye placed where the photo has it; the red cap reaches further back over the head",
+          "status": "done"
+        },
+        {
+          "text": "Tall sail of a dorsal fin; pelvic fins moved forward under the chest",
           "status": "done"
         }
       ]

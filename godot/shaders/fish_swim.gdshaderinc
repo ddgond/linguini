@@ -16,7 +16,7 @@ uniform float fin_phase = 0.0;   // Fish.fin_phase: pectoral fin sculling
 uniform float effort = 0.0;      // Fish.effort, 0..1
 uniform float turn = 0.0;        // yaw rate, rad/s: the body curves into a turn
 
-const float BODY_LENGTH = 0.114; // nose to tail tip, metres
+const float BODY_LENGTH = 0.104; // nose to tail tip, metres
 
 // The spine's sideways offset at body position b.
 float spine(float b) {

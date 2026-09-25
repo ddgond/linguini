@@ -24,11 +24,8 @@ from lib.common import PALETTE, anim_uv, image, join, linear_rgba, material, mes
 
 NOSE = 0.03
 PEDUNCLE = -0.024
-TAIL_LENGTH = 0.06
+TAIL_LENGTH = 0.05
 TAIL_TIP = PEDUNCLE - TAIL_LENGTH
-HALF_WIDTH = 0.0112
-HALF_HEIGHT_UP = 0.0165
-HALF_HEIGHT_DOWN = 0.0168
 
 RENDER_VIEWS = [(35, 14), (90, 4), (155, 28)]
 
@@ -39,35 +36,60 @@ def bend(y):
 
 # --- body -------------------------------------------------------------------
 
+# The body's outline is traced from the photo of Tortellini
+# (art/reference/tortellini.jpg): (along, height) points, `along` from the
+# peduncle (0) to the tip of the nose (1), heights as a share of that length,
+# measured from the nose. A big head with a forehead climbing steeply from the
+# snout, the back peaking just before the dorsal fin, a deep full belly and a
+# short, thick peduncle.
+_PHOTO_NOSE, _PHOTO_PEDUNCLE, _PHOTO_Y = 35.0, 460.0, 265.0
+_TOP_PX = [(460, 190), (440, 160), (410, 135), (360, 113), (300, 110), (260, 120), (210, 140), (150, 160),
+           (110, 180), (70, 212), (45, 240), (35, 265)]
+_BOTTOM_PX = [(460, 285), (435, 298), (400, 318), (360, 340), (300, 352), (220, 346), (160, 337), (110, 322),
+              (65, 298), (40, 277)]
+
+
+def _traced(points):
+    span = _PHOTO_PEDUNCLE - _PHOTO_NOSE
+    return [((_PHOTO_PEDUNCLE - px) / span, (_PHOTO_Y - py) / span) for px, py in points]
+
+
+_TOP = _traced(_TOP_PX)
+_BOTTOM = _traced(_BOTTOM_PX)
+# Heights are measured from the nose; the body's middle sits at the origin.
+_MID = 0.08
+
+
+def _curve(points, x):
+    """A smooth (Catmull-Rom) curve through the traced points, at x."""
+    x = max(points[0][0], min(points[-1][0], x))
+    i = max(j for j in range(len(points) - 1) if points[j][0] <= x) if x < points[-1][0] else len(points) - 2
+    p0 = points[max(i - 1, 0)][1]
+    p1, p2 = points[i][1], points[i + 1][1]
+    p3 = points[min(i + 2, len(points) - 1)][1]
+    t = (x - points[i][0]) / max(1e-6, points[i + 1][0] - points[i][0])
+    return 0.5 * (2 * p1 + (p2 - p0) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (3 * p1 - p0 - 3 * p2 + p3) * t ** 3)
+
+
 # The body proper runs from the peduncle to BODY_FRONT; a rounded snout caps
 # it out to the nose, with the mouth on its front.
-SNOUT = 0.007
+_FRONT = 0.93                      # where the body proper ends, along the outline
+SNOUT = (NOSE - PEDUNCLE) * (1.0 - _FRONT)
 BODY_FRONT = NOSE - SNOUT
 
 
-def _profile(x):
-    """Radius factor along the body: x = 0 at the peduncle, 1 at the front of
-    the body (the snout continues from there). Full through the middle, easing
-    into a slim peduncle, and tapering to a snout at the head."""
-    front = 0.5
-    if x >= front:
-        k = (x - front) / (1.0 - front)
-        return math.sqrt(max(0.0, 1.0 - (k * 0.95) ** 2))
-    t = x / front
-    return 0.3 + 0.7 * (1.0 - (1.0 - t) ** 2.0) ** 0.85
-
-
-def _hump(x):
-    # The back rises steeply behind the head, to the front of the dorsal.
-    return 1.0 + 0.34 * math.exp(-((x - 0.58) / 0.24) ** 2)
-
-
 def _ring_radii(x):
-    """(half width, half height up, half height down, centre height) at x.
-    The head dips a little toward the snout."""
-    f = _profile(x)
-    centre = -0.002 * f - 0.003 * smoothstep(0.7, 1.0, x)
-    return HALF_WIDTH * f, HALF_HEIGHT_UP * _hump(x) * f, HALF_HEIGHT_DOWN * f, centre
+    """(half width, half height up, half height down, centre height) at x,
+    0 at the peduncle and 1 at the front of the body proper."""
+    L = NOSE - PEDUNCLE
+    a = x * _FRONT
+    top = _curve(_TOP, a)
+    bottom = _curve(_BOTTOM, a)
+    half = (top - bottom) / 2 * L
+    centre = ((top + bottom) / 2 - _MID) * L
+    # Narrower than deep, most of all at the flattened peduncle.
+    ratio = 0.5 + 0.16 * smoothstep(0.0, 0.35, a) + 0.04 * smoothstep(0.7, 0.95, a)
+    return half * ratio, half, half, centre
 
 
 def _snout_y(px, pz):
@@ -88,7 +110,9 @@ def _body():
         for j in range(sides):
             a = 2 * math.pi * j / sides
             h = hu if math.sin(a) >= 0 else hd
-            out.append(bm.verts.new((hw * math.cos(a), y, c + h * math.sin(a))))
+            # An egg in section: narrowing toward the ridge of the back.
+            w = hw * (1.0 - 0.18 * max(0.0, math.sin(a)))
+            out.append(bm.verts.new((w * math.cos(a), y, c + h * math.sin(a))))
         return out
 
     for i in range(rings):
@@ -135,9 +159,9 @@ def _body():
         up = (co.z - c0) / max(hu, 1e-4)
         c = ORANGE
         c = mix_color(c, ORANGE_DEEP, smoothstep(0.2, 0.9, up) * 0.7)[:3]
-        c = mix_color(c, RED_CAP, smoothstep(0.66, 0.8, x) * smoothstep(-0.45, 0.05, up))[:3]
-        cheek = smoothstep(0.6, 0.72, x) * (1.0 - smoothstep(0.92, 1.0, x)) * (1.0 - smoothstep(-0.45, 0.0, up))
-        belly = smoothstep(0.25, 0.4, x) * (1.0 - smoothstep(0.64, 0.78, x)) * (1.0 - smoothstep(-0.35, 0.15, up))
+        c = mix_color(c, RED_CAP, smoothstep(0.52, 0.68, x) * smoothstep(-0.6, -0.1, up))[:3]
+        cheek = smoothstep(0.55, 0.68, x) * (1.0 - smoothstep(0.9, 1.0, x)) * (1.0 - smoothstep(-0.6, -0.2, up))
+        belly = smoothstep(0.3, 0.45, x) * (1.0 - smoothstep(0.62, 0.74, x)) * (1.0 - smoothstep(-0.45, 0.0, up))
         c = mix_color(c, SILVER, max(cheek, belly) * 0.9)[:3]
         # The gill cover's edge, and here and there a pale scale.
         gill = math.exp(-((x - 0.68) / 0.018) ** 2) * (1.0 - smoothstep(-0.2, 0.4, up))
@@ -352,8 +376,8 @@ def _tail():
         outline = lambda s: TAIL_LENGTH * (0.45 + 0.55 * math.sin(math.pi * s) ** 0.6) * (
             1.0 - 0.42 * math.exp(-((s - 0.5) / 0.12) ** 2))
         lobe = _fin(
-            "Tail", (0, PEDUNCLE + 0.004, 0.0075), (0, PEDUNCLE + 0.004, -0.0085), (0, -1, 0),
-            outline, spread=0.055, cup=0.005 * sign, ruffle=0.0014, rays=14, droop=0.026,
+            "Tail", (0, PEDUNCLE + 0.004, 0.0052), (0, PEDUNCLE + 0.004, -0.0068), (0, -1, 0),
+            outline, spread=0.05, cup=0.005 * sign, ruffle=0.0014, rays=14, droop=0.024,
             root=0.004, res=(26, 18))
         # Splay the lobes into a V seen from above, hanging down a little.
         pivot = Vector((0, PEDUNCLE + 0.004, 0))
@@ -380,8 +404,8 @@ def _fins():
     # Dorsal: a tall sail from the top of the hump, highest at the front,
     # leaning back.
     fins.append(_fin(
-        "Dorsal", surface(0.006, "top"), surface(-0.02, "top"), (0, -0.45, 1),
-        lambda s: 0.033 * math.sin(math.pi * min(1.0, s * 1.5 + 0.1)) ** 0.4 * (1.0 - 0.5 * s),
+        "Dorsal", surface(0.0, "top"), surface(-0.022, "top"), (0, -0.55, 1),
+        lambda s: 0.042 * (1.0 - 0.55 * s) * math.sin(math.pi * (0.05 + 0.95 * s)) ** 0.3,
         spread=0.012, cup=0.0, ruffle=0.001, rays=11, droop=0.004, res=(16, 12)))
     for sign in (-1, 1):
         # Pectorals: small paddles behind the gill covers.
@@ -390,14 +414,14 @@ def _fins():
         fins.append(_fin("Pectoral", pa, pb, (0.55 * sign, -0.8, -0.55), _rounded(0.012, 0.35),
                          spread=0.005, cup=0.0015 * sign, rays=6, res=(8, 6)))
         # Pelvics: long, trailing back under the belly.
-        fins.append(_fin("Pelvic", surface(0.004, "bottom") + Vector((0.003 * sign, 0, 0.001)),
-                         surface(-0.004, "bottom") + Vector((0.003 * sign, 0, 0.001)),
-                         (0.28 * sign, -0.9, -0.75), lambda s: 0.03 * math.sin(math.pi * s) ** 0.7 * (0.55 + 0.45 * s),
-                         spread=0.006, rays=6, droop=0.006, res=(8, 12)))
+        fins.append(_fin("Pelvic", surface(0.011, "bottom") + Vector((0.003 * sign, 0, 0.001)),
+                         surface(0.004, "bottom") + Vector((0.003 * sign, 0, 0.001)),
+                         (0.28 * sign, -0.9, -0.75), lambda s: 0.018 * math.sin(math.pi * s) ** 0.7 * (0.55 + 0.45 * s),
+                         spread=0.005, rays=6, droop=0.004, res=(8, 10)))
         # Twin anal fins, long and trailing, near the tail.
         fins.append(_fin("Anal", surface(-0.012, "bottom") + Vector((0.0025 * sign, 0, 0.001)),
                          surface(-0.021, "bottom") + Vector((0.0025 * sign, 0, 0.001)),
-                         (0.25 * sign, -1.0, -0.6), lambda s: 0.03 * math.sin(math.pi * s) ** 0.7 * (0.5 + 0.5 * s),
+                         (0.25 * sign, -1.0, -0.6), lambda s: 0.026 * math.sin(math.pi * s) ** 0.7 * (0.5 + 0.5 * s),
                          spread=0.006, rays=6, droop=0.008, res=(8, 12)))
     return fins
 
@@ -431,12 +455,14 @@ def _eyes():
     eyes = []
     for sign in (-1, 1):
         # Small and set into the head, looking out sideways and a little forward.
-        r = 0.0036
-        x = 0.83
+        # Where the photo has it: 0.79 along the outline, 0.047 above the nose.
+        r = 0.0028
+        x = 0.788 / _FRONT
         y = PEDUNCLE + (BODY_FRONT - PEDUNCLE) * x
         hw, hu, hd, c0 = _ring_radii(x)
-        z = c0 + 0.35 * hu
-        side = hw * math.sqrt(max(0.0, 1.0 - 0.35 ** 2))
+        z = (0.047 - _MID) * (NOSE - PEDUNCLE)
+        k = (z - c0) / hu
+        side = hw * (1.0 - 0.18 * max(0.0, k)) * math.sqrt(max(0.0, 1.0 - k * k))
         centre = Vector(((side - r * 0.35) * sign, y, z))
         look = Vector((1.0 * sign, 0.3, 0.12)).normalized()
         parts = []
