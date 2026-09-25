@@ -126,3 +126,43 @@ func test_fish_pushes_the_moss_ball() -> void:
 	decor.move_piece(ball, Vector3(0.1, 0.2, 0.0))
 	check(ball.ball.velocity == Vector3.ZERO and ball.ball.home.is_equal_approx(ball.position), "moving it in the editor stills it")
 	main.queue_free()
+
+
+func test_moss_ball_thumbnail_has_no_physics() -> void:
+	# The editor draws each piece alone in its own little world; the ball has
+	# no tank or fish there, so it mustn't try to bounce around.
+	var host := Node.new()
+	add(host)
+	var vp := SubViewport.new()
+	vp.own_world_3d = true
+	host.add_child(vp)
+	var piece := DecorPiece.new("moss_ball")
+	piece.quiet = true
+	vp.add_child(piece)
+	for i in 5:
+		await tree.physics_frame
+	check(piece.ball == null, "a thumbnail's moss ball has no ball physics")
+	host.queue_free()
+
+
+func test_moss_ball_resets_in_the_editor() -> void:
+	var main := await _main()
+	var decor: TankDecor = main.decor
+	decor.clear()
+	var ball := decor.add_piece("moss_ball", Vector3(0.0, 0.3, 0.0))
+	await tree.physics_frame
+	var home := ball.position
+	# Knocked across the tank while swimming.
+	ball.ball.velocity = Vector3(-0.3, 0.0, 0.1)
+	for i in 30:
+		await tree.physics_frame
+	check(ball.position.distance_to(home) > 0.02, "it was knocked away (%s)" % ball.position)
+	main.set_mode(main.Mode.EDIT)
+	check(ball.position.is_equal_approx(home) and ball.ball.velocity == Vector3.ZERO, "opening the editor puts it back (%s)" % ball.position)
+	ball.ball.velocity = Vector3(0.3, 0.0, 0.0)
+	for i in 30:
+		await tree.physics_frame
+	check(ball.position.is_equal_approx(home), "and it holds still while editing (%s)" % ball.position)
+	main.set_mode(main.Mode.SWIM)
+	check(ball.position.is_equal_approx(home) and ball.ball.velocity == Vector3.ZERO, "closing the editor leaves it there, still (%s)" % ball.position)
+	main.queue_free()

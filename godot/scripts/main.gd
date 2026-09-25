@@ -172,8 +172,10 @@ func set_mode(new_mode: Mode) -> void:
 	fish.player_control = swimming
 	if not swimming:
 		fish.drive(Vector3.ZERO, 0.0)
-	# The fish holds still while its cards are rearranged around it.
+	# The fish holds still while its cards are rearranged around it, and the
+	# moss ball goes back where the layout has it.
 	fish.set_physics_process(not editing)
+	decor.editing = editing
 	camera.menu_view = not swimming
 	# Sound is heard from the fish while piloting it, from the camera otherwise.
 	if swimming:

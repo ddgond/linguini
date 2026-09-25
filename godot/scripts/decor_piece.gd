@@ -102,7 +102,9 @@ func _build() -> void:
 		_glow.omni_range = 0.12
 		_glow.position = Vector3(0, 0.03, 0)
 		add_child(_glow)
-	if info().get("physics", "") == "ball":
+	# Only in the tank: not in the editor's thumbnails (quiet), which have no
+	# tank or fish around them.
+	if info().get("physics", "") == "ball" and not quiet:
 		position = ball_home
 		ball = DecorBall.new(self)
 		add_child(ball)

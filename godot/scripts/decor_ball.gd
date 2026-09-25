@@ -8,7 +8,8 @@ extends Node
 ##
 ## It moves its DecorPiece (the parent) directly. `home` is where the tank
 ## editor put it, which is what gets saved; pushing it around doesn't change
-## the layout.
+## the layout. Opening the editor puts it back there, and it holds still
+## until the editor closes (TankDecor.editing).
 
 const FISH_RADIUS := 0.018       ## the fish's collision capsule (main.gd)
 const FISH_HALF_LENGTH := 0.022  ## half the capsule's straight part, along Z
@@ -56,7 +57,10 @@ func place(pos: Vector3) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if not piece.is_inside_tree() or delta <= 0.0:
+	# Only in the tank (the water it bounces around is the tank's), and not
+	# while the tank editor is open: there it stays where the layout has it.
+	var decor := piece.get_parent() as TankDecor
+	if not piece.is_inside_tree() or decor == null or decor.editing or delta <= 0.0:
 		return
 	_since_bump += delta
 	var r := radius()

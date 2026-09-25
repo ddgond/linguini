@@ -13,6 +13,16 @@ var water := AABB(Vector3(-0.6, 0.03, -0.25), Vector3(1.2, 0.53, 0.5))
 
 var pieces: Array[DecorPiece] = []
 
+## While the tank editor is open: pieces that move on their own (the moss
+## ball) are put back where the layout has them and hold still. Opening and
+## closing the editor both leave them there, stilled.
+var editing := false:
+	set(value):
+		editing = value
+		for p in pieces:
+			if p.ball:
+				p.ball.place(p.ball.home)
+
 
 func load_data(entries: Array) -> void:
 	clear()
