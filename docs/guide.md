@@ -36,7 +36,7 @@ Playing, building and working on Linguini. The original vision is in [core.md](c
 **Steering** on the monitor's home page sets how the stick (or WASD) steers:
 
 - **Turn the fish** (the default): from the fish's point of view. Forward swims the way the fish faces, back backs it up on its fins, and left and right turn it, as in the table above.
-- **Swim where you point:** from the camera's. Push the way you want to go on screen: up swims straight away from the camera, left to the left of the view, down back toward it. The fish turns and arcs round toward that direction at its own pace. The camera doesn't swing round behind the fish while you swim across the view.
+- **Swim where you point:** from the camera's. Push the way you want to go on screen: up swims straight away from the camera, left to the left of the view, down back toward it. It follows the camera's tilt too, so with the camera looking down, up dives toward what you see, and looking up it climbs. The fish turns and arcs round toward that direction at its own pace. The camera stays where you aim it; it doesn't swing round behind the fish.
 
 Rise, sink and dart work the same either way.
 

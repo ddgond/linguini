@@ -158,6 +158,16 @@ func test_swim_where_you_point() -> void:
 	f.velocity = Vector3.ZERO
 	path = _run_input(f, ["fish_back"], 3.0)
 	check(path.z > 0.15 and not f.backing, "down swims toward the camera, not backing up (%s)" % path)
+	# The camera tilted down: up dives; tilted up: up climbs.
+	view.global_basis = Basis(Vector3.RIGHT, -0.6)
+	f.velocity = Vector3.ZERO
+	f.pitch = 0.0
+	path = _run_input(f, ["fish_forward"], 2.0)
+	check(path.y < -0.08 and path.z < -0.05, "looking down, up dives toward the view (%s)" % path)
+	view.global_basis = Basis(Vector3.RIGHT, 0.6)
+	f.velocity = Vector3.ZERO
+	path = _run_input(f, ["fish_forward"], 2.0)
+	check(path.y > 0.08, "looking up, up climbs (%s)" % path)
 	Fish.set_steering(before, false)
 	view.free()
 	f.free()

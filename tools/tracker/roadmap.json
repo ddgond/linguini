@@ -553,11 +553,11 @@
           "status": "done"
         },
         {
-          "text": "Steering: Swim where you point: up swims straight away from the camera, left to the left of the view, down toward the camera; the fish arcs round to it",
+          "text": "Steering: Swim where you point: the stick is a direction in the view, tilt included (up swims away from the camera, diving when it looks down, climbing when it looks up); the fish arcs round to it",
           "status": "done"
         },
         {
-          "text": "The camera doesn't swing behind the fish while swimming across the view in the new mode",
+          "text": "In Swim where you point the camera stays where it's aimed (no swinging round behind the fish)",
           "status": "done"
         },
         {
