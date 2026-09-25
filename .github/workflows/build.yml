@@ -75,8 +75,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: Install SCons
-        run: pip install scons
+      - name: Install SCons and FFmpeg
+        # FFmpeg's command line makes the decoder test's video (the extension
+        # links its own static FFmpeg libraries, from vcpkg).
+        run: |
+          pip install scons
+          choco install ffmpeg -y --no-progress
       # vcpkg's binary cache: FFmpeg and friends take a while to build and
       # change only with the manifest or the script that pins vcpkg.
       - uses: actions/cache@v4
