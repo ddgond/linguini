@@ -110,7 +110,7 @@ func _draw() -> void:
 	var band := h * 0.2
 	draw_rect(Rect2(0, 0, w, band), color)
 	draw_rect(Rect2(0, band - 3, w, 3), color.darkened(0.25))
-	var ids := binding.all_inputs()
+	var ids := binding.printed_inputs()
 	var info: Dictionary = CardSystem.INPUTS[ids[0]]
 	var arrow := FlashCard.combined_arrow(binding)
 	var single := binding.kind != CardBinding.Kind.SEQUENCE and ids.size() == 1

@@ -166,3 +166,38 @@ func test_moss_ball_resets_in_the_editor() -> void:
 	main.set_mode(main.Mode.SWIM)
 	check(ball.position.is_equal_approx(home) and ball.ball.velocity == Vector3.ZERO, "closing the editor leaves it there, still (%s)" % ball.position)
 	main.queue_free()
+
+
+func test_editor_selection_box_goes_away() -> void:
+	var main := await _main()
+	main.open_editor()
+	var editor: TankEditor = main.editor
+	editor._on_add_decor("rock_round")
+	var piece := editor.selected_decor
+	# Recolour it (which rebuilds it and reselects), then deselect.
+	piece.set_look(1, piece.size, piece.yaw)
+	editor._select_decor(piece)
+	await tree.process_frame
+	editor._select_decor(null)
+	await tree.process_frame
+	var boxes := 0
+	for child in piece.get_children():
+		if child is MeshInstance3D and not child.is_queued_for_deletion():
+			boxes += 1
+	check(boxes == 0, "deselecting leaves no highlight box behind (%d)" % boxes)
+	main.queue_free()
+
+
+func test_editor_title_fits_when_unsaved() -> void:
+	var main := await _main()
+	main.open_editor()
+	var editor: TankEditor = main.editor
+	var panel := editor._title.get_parent().get_parent().get_parent() as Control  # box > scroll > panel
+	await tree.process_frame
+	var clean := panel.size.x
+	editor.preset_name = "A preset with a rather long name indeed"
+	editor._set_dirty(true)
+	await tree.process_frame
+	check(panel.size.x <= clean + 0.5, "the panel keeps its width with 'unsaved' showing (%.0f, was %.0f)" % [panel.size.x, clean])
+	check(editor._title.text.contains("unsaved changes"), "and says so (%s)" % editor._title.text)
+	main.queue_free()

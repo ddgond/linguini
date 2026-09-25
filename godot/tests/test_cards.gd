@@ -356,3 +356,11 @@ func test_flags_match_native_constants() -> void:
 	for id in native:
 		var value := ClassDB.class_get_integer_constant("MoonlightClient", native[id])
 		check(CardSystem.BUTTON_FLAGS[id] == value, "%s flag matches Limelight.h" % id)
+
+
+func test_sequence_prints_every_step() -> void:
+	var seq := CardBinding.sequence([{"input": "A", "at": 0, "hold": 80}, {"input": "B", "at": 120, "hold": 80},
+		{"input": "A", "at": 240, "hold": 80}, {"input": "B", "at": 360, "hold": 80}])
+	check(seq.printed_inputs() == PackedStringArray(["A", "B", "A", "B"]), "an ABAB sequence prints all four steps (%s)" % seq.printed_inputs())
+	check(seq.all_inputs() == PackedStringArray(["A", "B"]), "while what it can press is still A and B")
+	check(seq.display_name().count("›") == 3, "its name lists every step (%s)" % seq.display_name())

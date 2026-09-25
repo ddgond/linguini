@@ -36,6 +36,7 @@ var _bubbles: Array[GPUParticles3D] = []
 var _glow: OmniLight3D
 var _plant_materials: Array[ShaderMaterial] = []
 var _selected := false
+var _selection_box: MeshInstance3D
 
 
 func _init(p_type: String, p_variant := 0, p_size := "M", p_yaw := 0.0) -> void:
@@ -257,9 +258,13 @@ func intersects(box: AABB) -> bool:
 ## Editor highlight: a faint outline box.
 func set_selected(value: bool) -> void:
 	_selected = value
-	var old := get_node_or_null("Selection")
-	if old:
-		old.queue_free()
+	# Held by reference and taken out at once: found by name, a box still on
+	# its way out made the new one take another name, and that one stayed.
+	if is_instance_valid(_selection_box):
+		if _selection_box.get_parent() == self:
+			remove_child(_selection_box)
+		_selection_box.queue_free()
+	_selection_box = null
 	if not value or _model == null:
 		return
 	var box := MeshInstance3D.new()
@@ -281,6 +286,7 @@ func set_selected(value: bool) -> void:
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	box.material_override = mat
 	add_child(box)
+	_selection_box = box
 
 
 func to_dict() -> Dictionary:

@@ -2,7 +2,8 @@ class_name DecorThumbnails
 extends RefCounted
 ## Little pictures of each decor piece for the tank editor's palette, rendered
 ## once each in an offscreen world of its own (a SubViewport with a camera,
-## a key light and the piece in its first colour).
+## a key light and the piece in its first colour), and a live preview of the
+## selected piece in its own colour and turn (live()).
 
 const SIZE := 96
 
@@ -26,12 +27,45 @@ static func request(id: String, host: Node, done: Callable) -> void:
 	_render(id, host)
 
 
-static func _render(id: String, host: Node) -> void:
+## A live picture of decor `id` in colour `variant`, turned `yaw` degrees:
+## a control to put in a panel. Turn it with set_live_yaw().
+static func live(id: String, variant: int, yaw: float, height: float) -> SubViewportContainer:
+	var holder := SubViewportContainer.new()
+	holder.stretch = true
+	holder.custom_minimum_size = Vector2(0, height)
+	var vp := _stage()
+	vp.size = Vector2i(int(height * 2.0), int(height))
+	vp.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
+	var piece := DecorPiece.new(id, variant, "M", yaw)
+	piece.quiet = true
+	vp.add_child(piece)
+	holder.add_child(vp)
+	holder.set_meta("piece", piece)
+	# Frame it once it's built, by a sphere round it, so any turn fits.
+	holder.ready.connect(func() -> void:
+		var box := piece.bounds()
+		var cam := Camera3D.new()
+		cam.fov = 30.0
+		vp.add_child(cam)
+		var radius := maxf(box.size.length() * 0.5, 0.01)
+		var dist := radius / sin(deg_to_rad(cam.fov * 0.5)) * 1.0
+		var center := box.get_center()
+		cam.look_at_from_position(center + Vector3(0.0, 0.35, 1.0).normalized() * dist, center))
+	return holder
+
+
+static func set_live_yaw(holder: SubViewportContainer, yaw: float) -> void:
+	var piece: DecorPiece = holder.get_meta("piece", null)
+	if piece and is_instance_valid(piece):
+		piece.set_yaw(yaw)
+
+
+## An offscreen world with the thumbnails' lighting, empty.
+static func _stage() -> SubViewport:
 	var vp := SubViewport.new()
 	vp.size = Vector2i(SIZE, SIZE)
 	vp.own_world_3d = true
 	vp.transparent_bg = true
-	vp.render_target_update_mode = SubViewport.UPDATE_ONCE
 	var env := Environment.new()
 	env.background_mode = Environment.BG_CLEAR_COLOR
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
@@ -45,6 +79,12 @@ static func _render(id: String, host: Node) -> void:
 	sun.rotation_degrees = Vector3(-50, 30, 0)
 	sun.light_energy = 1.4
 	vp.add_child(sun)
+	return vp
+
+
+static func _render(id: String, host: Node) -> void:
+	var vp := _stage()
+	vp.render_target_update_mode = SubViewport.UPDATE_ONCE
 	var piece := DecorPiece.new(id)
 	piece.quiet = true
 	vp.add_child(piece)

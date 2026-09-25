@@ -147,10 +147,21 @@ func all_inputs() -> PackedStringArray:
 	return out
 
 
+## What the card prints: for a sequence, every step in order (A › B › A › B),
+## repeats and all; otherwise its inputs.
+func printed_inputs() -> PackedStringArray:
+	if kind != Kind.SEQUENCE:
+		return inputs
+	var out := PackedStringArray()
+	for s in steps:
+		out.append(s.input)
+	return out
+
+
 func display_name() -> String:
 	if label != "":
 		return label
 	var names := PackedStringArray()
-	for id in all_inputs():
+	for id in printed_inputs():
 		names.append(CardSystem.short_name(id))
 	return (" › " if kind == Kind.SEQUENCE else " + ").join(names)

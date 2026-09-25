@@ -280,7 +280,14 @@ func _build_panel() -> void:
 	var logo := MonitorMenu._Logo.new()
 	logo.custom_minimum_size = Vector2(40, 30)
 	title_row.add_child(logo)
-	_title = _label(title_row, "Tank editor", 26, UiStyle.TEXT, 800)
+	_label(title_row, "Tank editor", 26, UiStyle.TEXT, 800)
+	# The preset and whether it's saved, on a line of their own: in the title
+	# they pushed the panel off the side of the screen.
+	_title = _label(box, "", 16, UiStyle.MUTED, 600)
+	_title.clip_text = true
+	_title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_title.custom_minimum_size.x = 0
+	_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	_heading(box, "Preset")
 	var presets := HBoxContainer.new()
@@ -607,14 +614,9 @@ func _on_add_decor(id: String) -> void:
 func _rebuild_decor_panel() -> void:
 	var d := selected_decor
 	var item := d.info()
-	var thumb := TextureRect.new()
-	thumb.custom_minimum_size = Vector2(0, 110)
-	thumb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	thumb.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	_card_box.add_child(thumb)
-	DecorThumbnails.request(d.type, self, func(tex: Texture2D) -> void:
-		if is_instance_valid(thumb):
-			thumb.texture = tex)
+	# A live picture, in its colour and turn.
+	var preview := DecorThumbnails.live(d.type, d.variant, d.yaw, 130)
+	_card_box.add_child(preview)
 	_label(_card_box, item.name, 22, UiStyle.TEXT, 800)
 	var kind := "Solid: the fish bumps into it" if d.is_solid() else "Soft: the fish swims through"
 	_label(_card_box, kind, 14, UiStyle.MUTED)
@@ -664,6 +666,7 @@ func _rebuild_decor_panel() -> void:
 		readout.custom_minimum_size.x = 44
 		slider.value_changed.connect(func(v: float) -> void:
 			d.set_yaw(v)
+			DecorThumbnails.set_live_yaw(preview, v)
 			readout.text = "%d°" % int(v)
 			_set_dirty(true))
 		turn_row.add_child(slider)
@@ -776,7 +779,7 @@ func _set_dirty(value: bool) -> void:
 
 func _update_title() -> void:
 	if _title:
-		_title.text = "Tank editor · %s%s" % [preset_name, "  •  unsaved" if dirty else ""]
+		_title.text = "%s%s" % [preset_name, " · unsaved changes" if dirty else ""]
 
 
 func _set_status(text: String) -> void:
