@@ -15,6 +15,7 @@ uniform float tail_phase = 0.0;  // Fish.tail_phase: advances with each tail bea
 uniform float fin_phase = 0.0;   // Fish.fin_phase: pectoral fin sculling
 uniform float effort = 0.0;      // Fish.effort, 0..1
 uniform float turn = 0.0;        // yaw rate, rad/s: the body curves into a turn
+uniform float screen_fade = 0.0; // Fish.screen_fade: 1 while it's in front of the monitor being watched
 
 const float BODY_LENGTH = 0.104; // nose to tail tip, metres
 
@@ -71,7 +72,14 @@ void swim_vertex(inout vec3 vertex, inout vec3 normal, vec2 weights) {
 float fish_fade(vec3 camera, vec3 fish, vec3 here) {
 	float body = smoothstep(0.04, 0.1, distance(camera, fish));
 	float part = smoothstep(0.025, 0.07, distance(camera, here));
-	return mix(0.1, 1.0, min(body, part));
+	float fade = mix(0.1, 1.0, min(body, part));
+	// In front of the monitor while the player is looking at it: faded to a
+	// ghost, for the follow camera only (the room camera and tank cam are
+	// much further off).
+	if (distance(camera, fish) < 0.8) {
+		fade = min(fade, 1.0 - 0.82 * screen_fade);
+	}
+	return fade;
 }
 
 // An ordered dither, so the opaque body can fade without sorting against

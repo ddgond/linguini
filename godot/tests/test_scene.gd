@@ -93,3 +93,33 @@ func test_camera_slides_in_against_the_surface_and_gravel() -> void:
 	var mid := water.get_center()
 	check(is_equal_approx(cam.follow_distance(mid, Vector3(0, -0.2, 1).normalized()), cam.distance), "mid-water, full distance")
 	main.queue_free()
+
+
+func test_fish_fades_in_front_of_the_monitor() -> void:
+	var main := await _main()
+	var cam: FishCamera = main.camera
+	var fish: Fish = main.fish
+	cam.menu_view = true
+	for i in 60:
+		await tree.process_frame
+	# Right in front of the camera, on its line to the monitor.
+	var eye := cam.global_position
+	var to_screen := (cam.screen.global_position - eye).normalized()
+	fish.global_position = eye + to_screen * 0.1
+	fish.pose_effort = 0.0  # held there
+	for i in 40:
+		await tree.process_frame
+	check(cam.blocks_screen(), "the fish is in the way of the monitor")
+	check(fish.screen_fade > 0.9, "so it fades (%.2f)" % fish.screen_fade)
+	# Out of the way at the far end of the tank.
+	fish.global_position = cam.bounds.position + Vector3(0.1, 0.1, 0.1)
+	for i in 40:
+		await tree.process_frame
+	check(not cam.blocks_screen() and fish.screen_fade < 0.1, "out of the way, it's solid again (%.2f)" % fish.screen_fade)
+	# Following it, it never fades for this.
+	cam.menu_view = false
+	fish.global_position = eye + to_screen * 0.1
+	for i in 90:
+		await tree.process_frame
+	check(fish.screen_fade < 0.1, "not while simply following it (%.2f)" % fish.screen_fade)
+	main.queue_free()

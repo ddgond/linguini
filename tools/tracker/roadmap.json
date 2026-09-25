@@ -518,7 +518,7 @@
       "id": "4k",
       "title": "Camera at the top and bottom of the tank",
       "status": "done",
-      "summary": "Near the gravel or the surface the camera keeps its angle and slides in close; the fish fades so it doesn't block the view.",
+      "summary": "Near the gravel or the surface the camera keeps its angle and slides in close; the fish fades so it doesn't block the view. The same fade clears the fish out of the way of the monitor when looking at it.",
       "items": [
         {
           "text": "Against the gravel or the water surface the camera slides in along its line of sight (down to 3 cm) instead of being pushed flat",
@@ -534,6 +534,10 @@
         },
         {
           "text": "--look=PITCH to aim the follow camera in screenshots",
+          "status": "done"
+        },
+        {
+          "text": "Looking at the monitor (gaze or the menu) with the fish in front of it: the fish fades the same way",
           "status": "done"
         }
       ]

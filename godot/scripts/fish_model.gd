@@ -58,3 +58,4 @@ func _process(_delta: float) -> void:
 		mat.set_shader_parameter("fin_phase", fish.fin_phase)
 		mat.set_shader_parameter("effort", fish.effort)
 		mat.set_shader_parameter("turn", fish.yaw_rate)
+		mat.set_shader_parameter("screen_fade", fish.screen_fade)

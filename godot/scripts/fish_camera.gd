@@ -14,7 +14,8 @@ extends Camera3D
 ## aimable near the edges. Against the gravel or the surface it keeps its angle
 ## and slides in closer to the fish instead of being pushed flat; the fish fades
 ## when the camera is that close (fish_swim.gdshaderinc), so it doesn't block
-## the view.
+## the view. Likewise, when the player looks at the monitor (gaze or the menu)
+## and the fish is in front of it, the fish fades.
 
 const FOLLOW_FOV := 70.0
 const MIN_PITCH := -1.2
@@ -22,6 +23,8 @@ const MAX_PITCH := 0.9
 const LIFT := 0.02 ## m above the fish the camera looks at, from its full distance
 ## How close to the gravel and the water surface the camera may go.
 const FLOOR_MARGIN := 0.008
+## How far round the fish's middle it can block the view (its long fins).
+const FISH_REACH := 0.06
 
 @export var distance := 0.26
 @export var min_distance := 0.03 ## how close it may slide in against the gravel or surface
@@ -108,6 +111,29 @@ func _process(delta: float) -> void:
 	kick = maxf(kick - delta / 0.4, 0.0)
 	var follow_weight := (1.0 - smoothstep(0.0, 1.0, gaze)) * (1.0 - smoothstep(0.0, 1.0, _menu))
 	fov = f + dart_kick * kick * kick * follow_weight
+	# Looking at the monitor with the fish in the way: fade it.
+	var focus := maxf(smoothstep(0.0, 1.0, gaze), smoothstep(0.0, 1.0, _menu))
+	var fade_target := focus if focus > 0.0 and blocks_screen() else 0.0
+	fish.screen_fade = move_toward(fish.screen_fade, fade_target, delta / 0.2)
+
+
+## Whether, from where the camera is now, the fish covers any of the monitor.
+func blocks_screen() -> bool:
+	if screen == null or fish == null or is_position_behind(fish.global_position):
+		return false
+	var to_fish := fish.global_position.distance_to(global_position)
+	if to_fish > global_position.distance_to(screen.global_position):
+		return false
+	var rect := Rect2(unproject_position(screen.global_position), Vector2.ZERO)
+	var right := screen.global_basis.x.normalized() * screen_size.x * 0.5
+	var up := screen.global_basis.y.normalized() * screen_size.y * 0.5
+	for corner in [right + up, right - up, -right + up, -right - up]:
+		rect = rect.expand(unproject_position(screen.global_position + corner))
+	# The fish as a disc of FISH_REACH around its middle, on screen.
+	var centre := unproject_position(fish.global_position)
+	var edge := unproject_position(fish.global_position + global_basis.x * FISH_REACH)
+	var r := centre.distance_to(edge)
+	return rect.grow(r).has_point(centre)
 
 
 func is_underwater() -> bool:

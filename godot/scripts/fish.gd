@@ -73,6 +73,9 @@ var pose_turn := 0.0
 ## For screenshots: when set, the fish swims this way (tank space) at full
 ## effort instead of reading the player's input.
 var autopilot := Vector3.ZERO
+## 0..1: how far the fish is faded because it's in front of the monitor while
+## the player looks at it (FishCamera sets it; the model's shaders use it).
+var screen_fade := 0.0
 
 var _time := 0.0
 var _noise := FastNoiseLite.new()
