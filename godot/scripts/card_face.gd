@@ -119,6 +119,8 @@ func _draw() -> void:
 		header = "SEQUENCE · %.1f s" % (binding.duration_ms() / 1000.0)
 	elif binding.kind == CardBinding.Kind.TOGGLE:
 		header = "TOGGLE"
+	elif binding.kind == CardBinding.Kind.TAP:
+		header = "TAP"
 	elif arrow != Vector2.ZERO:
 		header = info.get("caption", "")
 	elif single:
@@ -140,11 +142,9 @@ func _draw() -> void:
 	elif single:
 		_glyph(ids[0], body_center, body * 0.7)
 	else:
-		var name_text := binding.display_name() if binding.label != "" else ""
-		var chips_y := body_center.y + (body * 0.35 if name_text != "" else 0.0)
-		if name_text != "":
-			_text_centered(name_text, Vector2(w / 2, body_center.y - body * 0.2), int(body * 0.42), INK, 800, w * 0.88)
-		_chips(ids, Vector2(w / 2, chips_y), body * (0.3 if name_text != "" else 0.42))
+		if binding.label != "":
+			_text_centered(binding.display_name(), Vector2(w / 2, body_center.y - body * 0.2), int(body * 0.42), INK, 800, w * 0.88)
+		_chips(chip_layout(binding, set_name, Vector2(w, h)))
 
 
 func _glyph(id: String, center: Vector2, r: float) -> void:
@@ -154,15 +154,63 @@ func _glyph(id: String, center: Vector2, r: float) -> void:
 		Glyphs.draw_pill(self, id, center, r * 1.3, CardSystem.INPUTS[id].color, set_name)
 
 
-## A row of small glyphs joined by + (combo) or › (sequence).
-func _chips(ids: PackedStringArray, center: Vector2, r: float) -> void:
-	var sep := " › " if binding.kind == CardBinding.Kind.SEQUENCE else " + "
-	var n := ids.size()
-	var step := minf(r * 3.0, size.x * 0.9 / maxf(n, 1))
-	r = minf(r, step * 0.36)
-	var x0 := center.x - step * (n - 1) / 2.0
-	for i in n:
-		var c := Vector2(x0 + step * i, center.y)
+## Where a combo's or sequence's row of glyph chips goes on a face `face`
+## pixels in size: {"r": chip radius, "rects": a Rect2 per printed input, in
+## order}. Chips take their own widths (a shoulder pill is wider than a
+## badge), with room for a separator between each, and shrink together to
+## fit. The face draws from this, and a playing sequence card highlights its
+## current step from it too. Empty for single inputs and arrows.
+static func chip_layout(b: CardBinding, glyph_set: String, face: Vector2) -> Dictionary:
+	var ids := b.printed_inputs()
+	var single := b.kind != CardBinding.Kind.SEQUENCE and ids.size() == 1
+	if single or FlashCard.combined_arrow(b) != Vector2.ZERO:
+		return {"r": 0.0, "rects": []}
+	var band := face.y * 0.2
+	var body := (face.y - band) * 0.5
+	var center_y := band + body + (body * 0.35 if b.label != "" else 0.0)
+	var r := body * (0.3 if b.label != "" else 0.42)
+	var widths := []
+	var gap := 0.0
+	for attempt in 2:
+		widths.clear()
+		gap = r * 0.9
+		var total := gap * (ids.size() - 1)
+		for id in ids:
+			var width := r * 2.0 if _is_round(id, glyph_set) else Glyphs.pill_width(id, r * 1.3, glyph_set)
+			widths.append(width)
+			total += width
+		var room := face.x * 0.9
+		if total <= room:
+			break
+		r *= room / total  # and measure again: text widths don't scale exactly
+	var total_width := gap * (ids.size() - 1)
+	for width: float in widths:
+		total_width += width
+	var x := face.x / 2.0 - total_width / 2.0
+	var rects := []
+	for i in ids.size():
+		var width: float = widths[i]
+		var height := r * 2.0 if _is_round(ids[i], glyph_set) else r * 1.3
+		rects.append(Rect2(x, center_y - height / 2.0, width, height))
+		x += width + gap
+	return {"r": r, "rects": rects}
+
+
+## Round chips (badges and arrows) rather than pills.
+static func _is_round(id: String, glyph_set: String) -> bool:
+	return CardSystem.INPUTS[id].has("arrow") or Glyphs.FACE[glyph_set].has(id)
+
+
+## A row of small glyphs joined by + (combo) or › (sequence), laid out by
+## chip_layout().
+func _chips(layout: Dictionary) -> void:
+	var ids := binding.printed_inputs()
+	var rects: Array = layout.rects
+	var r: float = layout.r
+	var sep := "›" if binding.kind == CardBinding.Kind.SEQUENCE else "+"
+	for i in ids.size():
+		var rect: Rect2 = rects[i]
+		var c := rect.get_center()
 		var id := ids[i]
 		var info: Dictionary = CardSystem.INPUTS[id]
 		if info.has("arrow"):
@@ -170,11 +218,13 @@ func _chips(ids: PackedStringArray, center: Vector2, r: float) -> void:
 			Glyphs.draw_arrow(self, info.arrow, c, r * 0.72, Color(info.color).darkened(0.1))
 		else:
 			_glyph(id, c, r)
-		if i < n - 1:
-			var s := sep.strip_edges()
-			var fs := int(r * 0.9)
-			var tw := UiStyle.font(800).get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-			_text(s, Vector2(c.x + step / 2 - tw / 2, c.y + fs * 0.35), fs, INK.lightened(0.3), 800)
+		if i < ids.size() - 1:
+			# Centred in the gap to the next chip.
+			var next: Rect2 = rects[i + 1]
+			var mid := (rect.end.x + next.position.x) / 2.0
+			var fs := int(r * 1.1)
+			var tw := UiStyle.font(800).get_string_size(sep, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+			_text(sep, Vector2(mid - tw / 2, c.y + fs * 0.35), fs, INK.lightened(0.3), 800)
 
 
 func _kind_of(id: String) -> String:

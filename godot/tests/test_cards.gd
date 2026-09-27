@@ -364,3 +364,58 @@ func test_sequence_prints_every_step() -> void:
 	check(seq.printed_inputs() == PackedStringArray(["A", "B", "A", "B"]), "an ABAB sequence prints all four steps (%s)" % seq.printed_inputs())
 	check(seq.all_inputs() == PackedStringArray(["A", "B"]), "while what it can press is still A and B")
 	check(seq.display_name().count("›") == 3, "its name lists every step (%s)" % seq.display_name())
+
+
+func test_tap_presses_briefly_on_each_arrival() -> void:
+	var s := _system("")
+	var cards: CardSystem = s[0]
+	cards.load_layout_data({"cards": [{"inputs": ["DPAD_DOWN"], "tap": true, "position": [0.0, 0.2, -0.225]}]})
+	var card := cards.cards[0]
+	check(card.binding.kind == CardBinding.Kind.TAP, "a card with \"tap\": true loads as a tap")
+	check(card.binding.to_dict().get("tap", false), "and saves as one")
+	var at := _in_front(card)
+	var timeline := _pressed_at(cards, at, 0.0, 1.0)
+	var pressed_until := 0.0
+	for sample: Array in timeline:
+		if "DPAD_DOWN" in sample[1]:
+			pressed_until = sample[0]
+	check(timeline[0][1].has("DPAD_DOWN"), "it presses as the fish arrives")
+	check(pressed_until > 0.05 and pressed_until < 0.12, "only briefly, though the fish stays (%.3f s)" % pressed_until)
+	# Away and back: another tap.
+	_pressed_at(cards, Vector3(0.4, 0.45, 0.2), 0.0, 0.3)
+	var again := _pressed_at(cards, at, 0.0, 0.05)
+	check(again.any(func(sample: Array) -> bool: return "DPAD_DOWN" in sample[1]), "arriving again taps again")
+	cards.queue_free()
+
+
+func test_sequence_knows_its_step() -> void:
+	var seq := CardBinding.sequence([{"input": "A", "at": 0, "hold": 80}, {"input": "B", "at": 120, "hold": 80},
+		{"input": "A", "at": 240, "hold": 80}])
+	check(seq.step_at(0) == 0 and seq.step_at(100) == 0 and seq.step_at(130) == 1 and seq.step_at(300) == 2,
+		"the current step is the latest to have begun")
+	var s := _sequence_system()
+	var cards: CardSystem = s[0]
+	var card := cards.cards[0]
+	_pressed_at(cards, _in_front(card), 0.0, 0.2)
+	check(card.step == 1, "a playing card shows its current step (%d)" % card.step)
+	_pressed_at(cards, _in_front(card), 0.0, 0.5)
+	check(card.step == -1, "and none once it's done (%d)" % card.step)
+	cards.queue_free()
+
+
+func test_chips_fit_without_overlapping() -> void:
+	var face := Vector2(CardFace.WIDTH, CardFace.WIDTH * 0.72)
+	var seqs := [["A", "B", "A", "B"], ["X", "Y", "LB", "START", "BACK"], ["LB", "RB", "LT", "RT", "L3", "R3", "START", "BACK"]]
+	for set_name in Glyphs.SETS:
+		for ids: Array in seqs:
+			var steps := []
+			for i in ids.size():
+				steps.append({"input": ids[i], "at": i * 100, "hold": 80})
+			var rects: Array = CardFace.chip_layout(CardBinding.sequence(steps), set_name, face).rects
+			var ok := rects.size() == ids.size()
+			for i in rects.size():
+				var r: Rect2 = rects[i]
+				ok = ok and r.position.x >= 0.0 and r.end.x <= face.x
+				if i > 0:
+					ok = ok and r.position.x - (rects[i - 1] as Rect2).end.x > 4.0  # room for the separator
+			check(ok, "%s chips fit with room between them (%s)" % [set_name, ids])

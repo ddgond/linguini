@@ -7,7 +7,7 @@ Playing, building and working on Linguini. The original vision is in [core.md](c
 - Pair with a Sunshine or GeForce Experience host, pick an app and stream it. Video and audio go to the monitor in the room. All of this happens on the monitor itself.
 - **Real Fishy Movement:** the stick or WASD steers from the fish's point of view, not the camera's. Forward swims along its heading, left and right turn it, and back makes it back up slowly. Input is an urge, not a velocity: the fish turns at a limited rate and moves in tail-beat pulses, so it swims in arcs. With no input it drifts.
 - Third-person camera. Hold the gaze button to look past the fish at the monitor.
-- Flash cards cover the whole controller. Cards can hold several inputs at once (combos), stay on until the fish comes back (toggles), or play a timed macro (sequences).
+- Flash cards cover the whole controller. Cards can hold several inputs at once (combos), tap briefly on arrival (taps), stay on until the fish comes back (toggles), or play a timed macro (sequences).
 - A tank editor (F2) places, rebinds, duplicates and deletes cards, and saves named presets.
 - A **tank cam** window (F4) shows the room camera's view with a fake ML fish-tracking overlay, ready for OBS to capture.
 - Game audio plays from the speakers next to the monitor. While you pilot the fish you hear from the fish, lightly muffled by the water. Cards tap, the tank bubbles and hums, the fish swishes, and the room has its own tone in each mood.
@@ -51,9 +51,10 @@ The built-in Default layout is `godot/data/layouts/default.json`: one card for e
 - **Pressing:** a card presses as soon as the centre of the fish enters its zone. Fins, tail and the rest of the body don't count. It stays held while the fish stays there.
 - **Releasing:** a card releases once the fish has been out of the zone for 150 ms. The zone also has a 1.5 cm margin while held, so a fish drifting along an edge doesn't make the button flicker.
 - **Combos:** a card can hold several inputs together, such as RB + A, or L↑ + L→ for a stick diagonal.
+- **Taps:** a tap card presses its inputs once, briefly (80 ms), each time the fish arrives, however long it stays. Use them for stepping through menus, where holding a direction would scroll too far. It says TAP on its band.
 - **Toggles:** a toggle card switches its inputs on when the fish arrives and keeps them held after it swims off, until it arrives again. Use one to aim down sights or sprint without parking the fish. It stays lit while it's on. Opening a menu or the editor switches toggles off.
 - **Sequences:** a card can instead play a timed macro once each time the fish arrives. For example, "B for 80 ms, then RB at 180 ms for 80 ms". Each step holds one input from its start time for its length, and steps can overlap to press inputs together. A sequence finishes even if the fish swims off. Arriving again replays it.
-- **The printed face:** a coloured band says what kind of input the card is (button, bumper, D-pad, left stick, combo, toggle, sequence). Under it is the button's glyph, an arrow, or a row of glyphs for a combo or sequence. While a card is held or toggled on, its laminated edge lights in the card's colour. A playing sequence fills a bar along the bottom.
+- **The printed face:** a coloured band says what kind of input the card is (button, bumper, D-pad, left stick, combo, tap, toggle, sequence). Under it is the button's glyph, an arrow, or a row of glyphs for a combo or sequence. While a card is held or toggled on, its laminated edge lights in the card's colour. A playing sequence fills a bar along the bottom and rings the step it's on.
 
 ### Tank editor
 
@@ -62,7 +63,7 @@ Press F2, or choose **Edit tank** on the monitor. The fish waits and nothing is 
   - Cards move parallel to the glass; Shift+drag moves them nearer or further. The panel also has exact position fields.
   - Decor moves along whatever it's anchored to: the gravel, the water surface, or the back and side rims (the filter). Moss balls float anywhere, with Shift+drag for depth.
 - **Camera:** right-drag orbits, and the wheel zooms.
-- **Editing a card:** choose **Hold** or **Toggle** and pick one or more inputs, or choose **Sequence** and edit its steps. You can give it a name, which is shown on the card.
+- **Editing a card:** choose **Hold**, **Tap** or **Toggle** and pick one or more inputs, or choose **Sequence** and edit its steps. You can give it a name, which is shown on the card.
 - **Editing decor:** set its colour variant and size (S, M or L), and turn it with the slider. Cards always face the glass, so only decor turns.
 - **Actions:** **+ Card**, **Duplicate** and **Delete**. To add decor, click its picture in the **Add decor** palette. The selected card shows how it's printed, and selected decor shows its picture.
 - **Presets:** **Load**, **Save**, **Save as** and **Delete**. A preset holds both the cards and the decor. Default is built in and read-only. Your presets are saved as JSON in the app's user folder under `layouts/`. The preset in use is remembered between sessions.
@@ -161,7 +162,7 @@ LINGUINI_TEST_HOST=192.168.1.20 godot --headless --path godot -s res://tests/run
 
 The tests cover:
 - Fish behaviour: drift, cruise pulses, arcs, dart, backing up, rising.
-- Card timing and geometry, combos, toggles and sequences, layouts and presets, and the controller state sent to the host.
+- Card timing and geometry, combos, taps, toggles and sequences, layouts and presets, and the controller state sent to the host.
 - The tank editor: entering and leaving it, card edits, and saving and loading presets.
 - The tank cam's detector: tracking, occlusion and what it reports.
 - Game audio: channel routing, the light underwater muffle, and Stereo skipping it.

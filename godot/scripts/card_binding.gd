@@ -8,6 +8,9 @@ extends RefCounted
 ## TOGGLE: a set of inputs like HOLD, switched on when the fish arrives and
 ## held after it leaves, until it arrives again: aim down sights, sprint.
 ##
+## TAP: a set of inputs pressed briefly (TAP_MS) each time the fish arrives,
+## however long it stays: stepping through menus.
+##
 ## SEQUENCE: a timed macro that plays once each time the fish arrives. Each
 ## step holds one input from `at` for `hold` milliseconds; steps may overlap
 ## to press several inputs together.
@@ -16,11 +19,14 @@ extends RefCounted
 ##   {"inputs": ["L_UP", "L_RIGHT"]}                                 hold
 ##   {"input": "A"}                                                  hold (older layouts)
 ##   {"inputs": ["LT"], "toggle": true}                              toggle
+##   {"inputs": ["DPAD_DOWN"], "tap": true}                          tap
 ##   {"label": "Roll", "sequence": [{"input": "B", "at": 0, "hold": 80}, ...]}
 
-enum Kind { HOLD, SEQUENCE, TOGGLE }
+enum Kind { HOLD, SEQUENCE, TOGGLE, TAP }
 
 const MIN_HOLD_MS := 16
+## How long a tap card holds its inputs.
+const TAP_MS := 80
 const MAX_SEQUENCE_MS := 10000
 
 var kind := Kind.HOLD
@@ -43,6 +49,12 @@ static func toggle(p_inputs: Array) -> CardBinding:
 	return b
 
 
+static func tap(p_inputs: Array) -> CardBinding:
+	var b := hold(p_inputs)
+	b.kind = Kind.TAP
+	return b
+
+
 static func sequence(p_steps: Array, p_label := "") -> CardBinding:
 	var b := CardBinding.new()
 	b.kind = Kind.SEQUENCE
@@ -59,7 +71,12 @@ static func from_dict(d: Dictionary) -> CardBinding:
 	if d.has("sequence"):
 		b = sequence(d.sequence, String(d.get("label", "")))
 	elif d.has("inputs"):
-		b = toggle(d.inputs) if d.get("toggle", false) else hold(d.inputs)
+		if d.get("toggle", false):
+			b = toggle(d.inputs)
+		elif d.get("tap", false):
+			b = tap(d.inputs)
+		else:
+			b = hold(d.inputs)
 		b.label = String(d.get("label", ""))
 	elif d.has("input"):
 		b = hold([d.input])
@@ -81,6 +98,8 @@ func to_dict() -> Dictionary:
 		d.inputs = Array(inputs)
 		if kind == Kind.TOGGLE:
 			d.toggle = true
+		elif kind == Kind.TAP:
+			d.tap = true
 	if label != "":
 		d.label = label
 	return d
@@ -121,10 +140,22 @@ func sort_steps() -> void:
 
 
 func duration_ms() -> int:
+	if kind == Kind.TAP:
+		return TAP_MS
 	var end := 0
 	for s in steps:
 		end = maxi(end, s.at + s.hold)
 	return end
+
+
+## Which step (an index into `steps`, as printed) a sequence is on `t_ms`
+## after it started: the latest to have begun. -1 before the first.
+func step_at(t_ms: float) -> int:
+	var current := -1
+	for i in steps.size():
+		if steps[i].at <= t_ms:
+			current = i
+	return current
 
 
 ## Inputs a sequence presses `t_ms` after it started.

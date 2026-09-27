@@ -32,6 +32,9 @@ var latched := false:
 ## How far through its sequence the card is (0..1), or -1 when not playing.
 var progress := -1.0:
 	set = set_progress
+## The step a playing sequence is on (an index into its printed inputs), or -1.
+var step := -1:
+	set = set_step
 
 var _face_mat: ShaderMaterial
 var _face: Node3D
@@ -129,6 +132,23 @@ func set_latched(value: bool) -> void:
 	latched = value
 	if _face != null:
 		_update_highlight()
+
+
+## Rings the current step's chip on the face as a sequence plays.
+func set_step(value: int) -> void:
+	if value == step:
+		return
+	step = value
+	if _face_mat == null:
+		return
+	var rect := Rect2()
+	if step >= 0:
+		var face := Vector2(CardFace.WIDTH, CardFace.WIDTH * size.y / size.x)
+		var rects: Array = CardFace.chip_layout(binding, Glyphs.current, face).rects
+		if step < rects.size():
+			var r: Rect2 = rects[step]
+			rect = Rect2(r.position / face, r.size / face)
+	_face_mat.set_shader_parameter("step_rect", Vector4(rect.position.x, rect.position.y, rect.size.x, rect.size.y))
 
 
 func set_progress(value: float) -> void:

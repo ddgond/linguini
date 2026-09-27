@@ -380,6 +380,7 @@ func _rebuild_card_panel() -> void:
 	_label(kind_row, "Type", 16, UiStyle.MUTED).custom_minimum_size.x = 70
 	var kind := OptionButton.new()
 	kind.add_item("Hold", CardBinding.Kind.HOLD)
+	kind.add_item("Tap", CardBinding.Kind.TAP)
 	kind.add_item("Toggle", CardBinding.Kind.TOGGLE)
 	kind.add_item("Sequence", CardBinding.Kind.SEQUENCE)
 	kind.select(kind.get_item_index(b.kind))
@@ -399,8 +400,11 @@ func _rebuild_card_panel() -> void:
 	name_row.add_child(name_edit)
 
 	if b.kind != CardBinding.Kind.SEQUENCE:
-		var hint := "Held while the fish stays." if b.kind == CardBinding.Kind.HOLD \
-			else "Switched on when the fish arrives, off when it arrives again."
+		var hint: String = {
+			CardBinding.Kind.HOLD: "Held while the fish stays.",
+			CardBinding.Kind.TAP: "Pressed once, briefly, each time the fish arrives: good for menus.",
+			CardBinding.Kind.TOGGLE: "Switched on when the fish arrives, off when it arrives again.",
+		}[b.kind]
 		var help := _label(_card_box, hint + " Pick one or more inputs:", 15, UiStyle.MUTED)
 		help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		var grid := GridContainer.new()

@@ -140,11 +140,17 @@ func _draw_ps_shape(ci: CanvasItem, id: String, c: Vector2, r: float, col: Color
 
 ## Draws a shoulder, trigger, stick-click or menu button as a rounded pill
 ## with its name. `h` is the pill's height in pixels.
+## How wide draw_pill draws `id` at height `h`.
+func pill_width(id: String, h: float, set_name := "") -> float:
+	var size := int(h * 0.55)
+	return maxf(UiStyle.font(800).get_string_size(label(id, set_name), HORIZONTAL_ALIGNMENT_LEFT, -1, size).x + h * 0.7, h * 1.4)
+
+
 func draw_pill(ci: CanvasItem, id: String, center: Vector2, h: float, fill: Color, set_name := "") -> void:
 	var text := label(id, set_name)
 	var font := UiStyle.font(800)
 	var size := int(h * 0.55)
-	var w := maxf(font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x + h * 0.7, h * 1.4)
+	var w := pill_width(id, h, set_name)
 	var rect := Rect2(center - Vector2(w, h) / 2, Vector2(w, h))
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = fill

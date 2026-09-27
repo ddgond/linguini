@@ -251,7 +251,7 @@ func update(fish_pos: Vector3, delta: float) -> void:
 		var zone := _zones[i].grow(HYSTERESIS) if card.active else _zones[i]
 		if zone.has_point(fish_pos):
 			if not card.active:
-				if kind == CardBinding.Kind.SEQUENCE:
+				if kind == CardBinding.Kind.SEQUENCE or kind == CardBinding.Kind.TAP:
 					_play_ms[i] = 0.0
 				elif kind == CardBinding.Kind.TOGGLE:
 					_latched[i] = not _latched[i]
@@ -267,6 +267,7 @@ func update(fish_pos: Vector3, delta: float) -> void:
 		card.latched = _latched[i]
 		if kind == CardBinding.Kind.SEQUENCE:
 			card.progress = _play_ms[i] / maxf(card.binding.duration_ms(), 1.0) if card.playing else -1.0
+			card.step = card.binding.step_at(_play_ms[i]) if card.playing else -1
 	_publish()
 
 
@@ -322,6 +323,9 @@ func _publish() -> void:
 					ids = card.binding.inputs_at(_play_ms[i])
 			CardBinding.Kind.TOGGLE:
 				if _latched[i]:
+					ids = card.binding.inputs
+			CardBinding.Kind.TAP:
+				if _play_ms[i] >= 0.0:
 					ids = card.binding.inputs
 			_:
 				if card.active:
