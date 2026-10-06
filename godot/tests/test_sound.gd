@@ -107,6 +107,7 @@ func test_motes_and_shafts_follow_quality() -> void:
 
 func test_volume_sliders_on_the_monitor() -> void:
 	var main := await _main()
+	main.menu.show_settings()
 	for key in ["master", "game", "room", "ui"]:
-		check(not main.menu.find_children("Volume_" + key, "HSlider", true, false).is_empty(), "a %s slider" % key)
+		check(not main.menu.find_children("Volume_" + key, "HSlider", true, false).is_empty(), "a %s slider on the Settings page" % key)
 	main.queue_free()

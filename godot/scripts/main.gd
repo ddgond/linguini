@@ -19,6 +19,7 @@ extends Node3D
 ##   --fish-variety=N       player 1's fish colouring (FishModel.VARIETIES), just for this run
 ##   --coop=N               N players (2-4), the others on made-up pads
 ##   --coop-choosing        with --coop, the new players are still picking their fish
+##   --menu-page=PAGE       open the monitor on a page: settings or coop
 ##   --steering=fish|camera turn the fish, or swim where you point, just for this run
 ##   --look=PITCH           aim the follow camera up or down (radians, negative looks down)
 ##   --gaze                 hold the gaze button
@@ -140,7 +141,6 @@ func _ready() -> void:
 	menu = MonitorMenu.new()
 	menu.client = client
 	menu.players = players
-	players.changed.connect(menu.refresh_players)
 	monitor = Monitor.new()
 	add_child(monitor)
 	monitor.setup(room.screen, room.screen_size, client, menu)
@@ -223,6 +223,13 @@ func _on_editor_closed() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if mode == Mode.EDIT:
 		return # the editor handles its own input, including Esc
+	# The Co-op page takes every player's pad (and Esc, for back) first.
+	var forwarded := false
+	if mode == Mode.MENU and menu.is_coop_shown():
+		forwarded = monitor.forward_input(event, camera)
+		if forwarded and monitor.viewport.is_input_handled():
+			get_viewport().set_input_as_handled()
+			return
 	if event.is_action_pressed("tracking_cam"):
 		get_viewport().set_input_as_handled()
 		set_tracking(not tracking.visible, tracking.style)
@@ -246,7 +253,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("debug_zones"):
 		cards.toggle_zones()
 		return
-	if mode == Mode.MENU and monitor.forward_input(event, camera):
+	if mode == Mode.MENU and (forwarded or monitor.forward_input(event, camera)):
 		get_viewport().set_input_as_handled()
 
 
@@ -340,8 +347,14 @@ func _apply_args() -> void:
 			if p and not _args.has("coop-choosing"):
 				p.choosing = false
 		players.set_mode(mode == Mode.SWIM, mode == Mode.EDIT)
+	if _args.has("menu-page"):
+		match String(_args["menu-page"]):
+			"settings":
+				menu.show_settings()
+			"coop":
+				menu.show_coop()
 	if _args.has("steering"):
-		Fish.set_steering(String(_args.steering), false)
+		players.set_steering(players.list[0], String(_args.steering), false)
 	if _args.has("look"):
 		camera.orbit_pitch = clampf(float(_args.look), FishCamera.MIN_PITCH, FishCamera.MAX_PITCH)
 		camera._manual_timer = 999.0

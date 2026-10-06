@@ -117,20 +117,51 @@ func test_fish_bump_and_are_tracked() -> void:
 	main.queue_free()
 
 
-func test_players_page() -> void:
+func _key(code: Key) -> void:
+	var ev := InputEventKey.new()
+	ev.physical_keycode = code
+	ev.pressed = true
+	Input.parse_input_event(ev)
+	var up := ev.duplicate() as InputEventKey
+	up.pressed = false
+	Input.parse_input_event(up)
+
+
+func test_coop_page_columns() -> void:
 	var main := await _main()
 	var players: Players = main.players
+	var p1: Players.Player = players.list[0]
 	var p2 := players.join(9)
-	p2.choosing = false
-	main.menu.show_players()
+	main.set_mode(main.Mode.MENU)
+	main.menu.show_coop()
 	await tree.process_frame
-	var pickers: Array = main.menu.find_children("FishPicker*", "OptionButton", true, false)
-	check(pickers.size() == 2, "the Players page has a fish picker per player (%d)" % pickers.size())
-	var picker: OptionButton = pickers[1]
-	picker.select(3)
-	picker.item_selected.emit(3)
-	check(p2.variety == 3, "picking one changes that player's fish")
+	var page: CoopPage = main.menu.find_children("CoopPage", "", true, false)[0]
+	check(page.get_child_count() == Players.MAX, "a column for every player slot")
+	check(not p2.choosing, "a player who joined here picks their fish here")
+	var p1_variety := p1.variety
+	var p2_variety := p2.variety
+	# Player 2's pad works player 2's column only.
+	_press(9, JOY_BUTTON_DPAD_RIGHT)
+	await tree.process_frame
+	check(p2.variety == wrapi(p2_variety + 1, 0, FishModel.VARIETIES.size()) and p1.variety == p1_variety,
+		"player 2's right turns player 2's fish carousel, not player 1's")
+	_press(9, JOY_BUTTON_DPAD_DOWN)
+	_press(9, JOY_BUTTON_A)
+	await tree.process_frame
+	check(page.cursor(2) == 1 and page.cursor(1) == 0, "each column keeps its own cursor")
+	check(p2.steering == "camera" and p2.fish.steering == "camera" and p1.steering == "fish",
+		"steering is each player's own (%s, %s)" % [p1.steering, p2.steering])
+	# Player 1's keyboard works player 1's column.
+	_key(KEY_DOWN)
+	_key(KEY_DOWN)
+	_key(KEY_RIGHT)
+	await tree.process_frame
+	check(p1.invert_y and main.camera.invert_y and not p2.invert_y, "player 1 inverts their own look")
+	players.set_invert_y(p1, false)
+	players.set_steering(p2, "fish")
+	# B from any player goes back.
+	_press(9, JOY_BUTTON_B)
+	await tree.process_frame
+	check(not main.menu.is_coop_shown(), "B goes back")
 	players.leave(p2)
-	await tree.process_frame
-	check(main.menu.find_children("FishPicker*", "OptionButton", true, false).size() == 1, "and it follows players leaving")
 	main.queue_free()

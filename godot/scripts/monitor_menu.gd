@@ -25,7 +25,6 @@ var _window_subtitle: Label
 var _page: VBoxContainer
 ## The local players (co-op), for the Players row; set by main.gd.
 var players: Players
-var _players_list: VBoxContainer
 var _status: Label
 var _idle_note: PanelContainer
 var _live_dot: Label
@@ -228,10 +227,9 @@ func show_home(message := "") -> void:
 	_spacer()
 	_button_row([["Just swim", func() -> void: swim_requested.emit()],
 			["Edit tank", func() -> void: edit_requested.emit()],
-			["Players", show_players],
+			["Co-op", show_coop],
+			["Settings", show_settings],
 			["Quit", func() -> void: get_tree().quit()]])
-	_tracking_row()
-	_volume_row()
 	_controls_help()
 	_focus_first()
 
@@ -244,11 +242,10 @@ func show_in_stream() -> void:
 	_stats_label = _window_subtitle
 	_button_row([["Resume", func() -> void: resume_requested.emit()],
 			["Edit tank", func() -> void: edit_requested.emit()],
-			["Players", show_players]])
+			["Co-op", show_coop],
+			["Settings", show_settings]])
 	_button_row([["Disconnect", func() -> void: client.stop_stream(false)],
 			["Quit game and disconnect", func() -> void: client.stop_stream(true)]])
-	_tracking_row()
-	_volume_row()
 	_controls_help()
 	_focus_first()
 
@@ -324,9 +321,26 @@ func _show_launching() -> void:
 	_focus_first()
 
 
-## "Tank cam" on/off plus its overlay style (the OBS-capturable window), the
-## graphics quality preset, the room's mood, the button art and steering.
-func _tracking_row() -> void:
+## The Settings page: graphics, the room's mood, the tank cam window and its
+## style, and the volumes.
+func show_settings() -> void:
+	_begin_page()
+	_title("Settings", "")
+	_settings_rows()
+	_volume_row()
+	_button_row([["Back", back]])
+	_focus_first()
+
+
+## Back to the home page, or the in-stream page while streaming.
+func back() -> void:
+	if client and client.is_streaming():
+		show_in_stream()
+	else:
+		show_home()
+
+
+func _settings_rows() -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
 	_page.add_child(row)
@@ -345,17 +359,6 @@ func _tracking_row() -> void:
 	mood.selected = Mood.NAMES.find(Mood.current)
 	mood.item_selected.connect(func(i: int) -> void: Mood.set_mood(Mood.NAMES[i]))
 	row.add_child(mood)
-	var glyphs := OptionButton.new()
-	glyphs.name = "GlyphPicker"
-	var glyph_values: Array = ["auto"] + Glyphs.SETS
-	glyphs.add_item("Buttons: Auto (%s)" % Glyphs.SET_LABELS[Glyphs.SETS.find(Glyphs.detected())])
-	for label: String in Glyphs.SET_LABELS:
-		glyphs.add_item("Buttons: " + label)
-	glyphs.selected = maxi(glyph_values.find(Glyphs.setting), 0)
-	glyphs.item_selected.connect(func(i: int) -> void:
-		Glyphs.set_setting(glyph_values[i])
-		_refresh_help())
-	row.add_child(glyphs)
 	row = HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
 	_page.add_child(row)
@@ -375,71 +378,19 @@ func _tracking_row() -> void:
 		tracking_changed.emit(toggle.button_pressed, style.selected)
 	toggle.toggled.connect(func(_on: bool) -> void: apply.call())
 	style.item_selected.connect(func(_i: int) -> void: apply.call())
-	# How the stick steers the fish.
-	var steering := OptionButton.new()
-	steering.name = "SteeringPicker"
-	for label: String in Fish.STEERING_LABELS:
-		steering.add_item("Steering: " + label)
-	steering.selected = maxi(Fish.STEERING.find(Fish.steering), 0)
-	steering.item_selected.connect(func(i: int) -> void:
-		Fish.set_steering(Fish.STEERING[i])
-		_refresh_help())
-	row.add_child(steering)
 
 
-## The Players page: each local player's fish, player 1's controls, a way to
-## remove the others, and how to join (Start on another gamepad).
-func show_players() -> void:
+## The Co-op page: a column per player, each worked by its own player
+## (CoopPage).
+func show_coop() -> void:
 	_begin_page()
-	_title("Players", "Up to %d fish share the tank and its cards" % Players.MAX)
-	_players_list = VBoxContainer.new()
-	_players_list.name = "PlayersList"
-	_players_list.add_theme_constant_override("separation", 10)
-	_page.add_child(_players_list)
-	refresh_players()
-	_label("%s on another gamepad drops a new fish in; its player picks a colouring in their own view. Holding %s on that pad leaves." % [
-		Glyphs.label("START"), Glyphs.label("BACK")], 18, UiStyle.MUTED)
-	_button_row([["Back", func() -> void:
-		if client and client.is_streaming():
-			show_in_stream()
-		else:
-			show_home()]])
-	_focus_first()
+	_title("Co-op", "")
+	if players:
+		_page.add_child(CoopPage.new(players, back))
 
 
-## Redraws the players on the Players page, if it's showing (players joined,
-## left or changed fish).
-func refresh_players() -> void:
-	if _players_list == null or not is_instance_valid(_players_list) or players == null or players.list.is_empty():
-		return
-	for child in _players_list.get_children():
-		_players_list.remove_child(child)
-		child.queue_free()
-	for p: Players.Player in players.list:
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 12)
-		_players_list.add_child(row)
-		var name_label := _plain_label("Player %d" % p.number, 22, UiStyle.TEXT, 800)
-		name_label.custom_minimum_size.x = 120
-		row.add_child(name_label)
-		var fish := OptionButton.new()
-		fish.name = "FishPicker%d" % p.number
-		for v: String in FishModel.VARIETIES:
-			fish.add_item("Fish: " + v)
-		fish.selected = p.variety
-		fish.item_selected.connect(func(i: int) -> void: players.set_variety(p, i))
-		row.add_child(fish)
-		if p.number == 1:
-			var uses := OptionButton.new()
-			uses.name = "Player1Input"
-			uses.add_item("Keyboard & first pad")
-			uses.add_item("Keyboard only")
-			uses.selected = 0 if players.p1_uses_pad else 1
-			uses.item_selected.connect(func(i: int) -> void: players.set_p1_uses_pad(i == 0))
-			row.add_child(uses)
-		else:
-			row.add_child(_plain_label("Gamepad %d" % (p.input.pad + 1), 18, UiStyle.MUTED))
-			_button("Remove", func() -> void: players.leave(p), row)
+func is_coop_shown() -> bool:
+	return _page.get_node_or_null("CoopPage") != null and not (_page.get_node("CoopPage") as Node).is_queued_for_deletion()
 
 
 ## Volume sliders: Master, Game (the stream), Room & tank, UI.
@@ -586,7 +537,8 @@ func _refresh_help() -> void:
 
 func _help_text() -> String:
 	var g := func(id: String) -> String: return Glyphs.label(id)
-	var swim := "Swim, turn" if Fish.steering == "fish" else "Swim where you point"
+	var steer: String = players.list[0].steering if players and not players.list.is_empty() else "fish"
+	var swim := "Swim, turn" if steer == "fish" else "Swim where you point"
 	return ("%s  WASD / left stick      Rise / sink  Space, C / %s, %s      Dart  Shift / %s\n" +
 		"Look  mouse / right stick      Watch the monitor  hold right mouse / %s      Menu  Esc / %s      Edit tank  F2      Tank cam  F4") % [
 		swim, g.call("RB"), g.call("LB"), g.call("A"), g.call("LT"), g.call("START")]

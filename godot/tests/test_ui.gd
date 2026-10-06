@@ -116,20 +116,3 @@ func test_tank_cam_keypoints() -> void:
 	main.set_tracking(false, TrackingCam.Style.EARNEST)
 	main.queue_free()
 
-
-func test_steering_picker_on_the_monitor() -> void:
-	var main := await _main()
-	var before := Fish.steering
-	var stored: String = Settings.get_value("controls", "steering", "fish")
-	var pickers: Array = main.menu.find_children("SteeringPicker", "OptionButton", true, false)
-	check(pickers.size() == 1, "the home page has a steering picker")
-	if pickers.size() == 1:
-		var picker: OptionButton = pickers[0]
-		check(picker.item_count == 2 and picker.get_item_text(1) == "Steering: Swim where you point", "with both ways to steer")
-		picker.select(1)
-		picker.item_selected.emit(1)
-		check(Fish.steering == "camera", "picking it switches the steering")
-		check(Settings.get_value("controls", "steering", "") == "camera", "and it's remembered")
-	Fish.set_steering(before, false)
-	Settings.set_value("controls", "steering", stored)
-	main.queue_free()

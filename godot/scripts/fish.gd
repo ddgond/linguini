@@ -21,12 +21,12 @@ extends CharacterBody3D
 
 signal darted
 
-## Steering settings, as stored ("controls", "steering") and in the picker.
+## Steering settings, as stored and as shown.
 const STEERING := ["fish", "camera"]
 const STEERING_LABELS := ["Turn the fish", "Swim where you point"]
 
-## "fish" or "camera": see above. Shared by every fish; saved in settings.
-static var steering := "fish"
+## "fish" or "camera": see above. Each player's own (Players).
+var steering := "fish"
 
 @export_group("Swimming")
 @export var cruise_speed := 0.30 ## m/s at full effort
@@ -96,14 +96,7 @@ var _time := 0.0
 var _noise := FastNoiseLite.new()
 
 
-static func set_steering(value: String, remember := true) -> void:
-	steering = value if value in STEERING else "fish"
-	if remember:
-		Settings.set_value("controls", "steering", steering)
-
-
 func _ready() -> void:
-	steering = Settings.get_value("controls", "steering", steering)
 	add_to_group("fish")  # for things it pushes around (DecorBall)
 	motion_mode = CharacterBody3D.MOTION_MODE_FLOATING
 	wall_min_slide_angle = 0.0

@@ -129,22 +129,22 @@ func test_camera_stays_aimed_when_swimming_where_you_point() -> void:
 	var main := await _main()
 	var cam: FishCamera = main.camera
 	var fish: Fish = main.fish
-	var before := Fish.steering
+	var before := fish.steering
 	cam.menu_view = false
 	cam._manual_timer = 0.0
 	cam.orbit_yaw = 0.0
 	fish.pose_effort = 0.5
 	fish.yaw = PI / 2
 	fish.velocity = Vector3(-0.3, 0, 0)  # swimming hard, facing another way
-	Fish.set_steering("camera", false)
+	fish.steering = "camera"
 	for i in 30:
 		fish.velocity = Vector3(-0.3, 0, 0)
 		await tree.process_frame
 	check(absf(cam.orbit_yaw) < 0.001, "the camera stays where it was aimed (%.3f)" % cam.orbit_yaw)
-	Fish.set_steering("fish", false)
+	fish.steering = "fish"
 	for i in 30:
 		fish.velocity = Vector3(-0.3, 0, 0)
 		await tree.process_frame
 	check(cam.orbit_yaw > 0.2, "turning the fish, it swings round behind it (%.3f)" % cam.orbit_yaw)
-	Fish.set_steering(before, false)
+	fish.steering = before
 	main.queue_free()

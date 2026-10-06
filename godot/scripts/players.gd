@@ -40,6 +40,10 @@ class Player:
 	var holder: SubViewportContainer
 	var chooser: Label
 	var back_time := 0.0
+	## The player's own controls (Co-op page); player 1's are saved.
+	var steering := "fish"
+	var invert_y := false
+	var look_speed := 1.0
 
 
 var list: Array[Player] = []
@@ -70,7 +74,39 @@ func _ready() -> void:
 ## Player 1: the keyboard and mouse (and their first pad). Called once by main.gd.
 func add_first() -> Player:
 	var p := _add(PlayerInput.new(true, -1), int(Settings.get_value("players", "p1_fish", 0)))
+	set_steering(p, Settings.get_value("controls", "steering", "fish"), false)
+	set_invert_y(p, Settings.get_value("controls", "invert_y", false), false)
+	set_look_speed(p, Settings.get_value("controls", "look_speed", 1.0), false)
 	return p
+
+
+## Look speeds offered (× the base rates).
+const LOOK_SPEEDS := [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
+
+
+func set_steering(p: Player, value: String, remember := true) -> void:
+	p.steering = value if value in Fish.STEERING else "fish"
+	p.fish.steering = p.steering
+	_remember(p, "steering", p.steering, remember)
+
+
+func set_invert_y(p: Player, value: bool, remember := true) -> void:
+	p.invert_y = value
+	p.camera.invert_y = value
+	_remember(p, "invert_y", value, remember)
+
+
+func set_look_speed(p: Player, value: float, remember := true) -> void:
+	p.look_speed = clampf(value, LOOK_SPEEDS[0], LOOK_SPEEDS[-1])
+	p.camera.look_speed = p.look_speed
+	_remember(p, "look_speed", p.look_speed, remember)
+
+
+## Player 1's own settings are kept between runs; the others' last the session.
+func _remember(p: Player, key: String, value: Variant, remember: bool) -> void:
+	if p.number == 1 and remember:
+		Settings.set_value("controls", key, value)
+	changed.emit()
 
 
 ## Drops a new fish in for gamepad `device`. Returns null if the tank is full

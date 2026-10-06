@@ -33,7 +33,7 @@ Playing, building and working on Linguini. The original vision is in [core.md](c
 | Tank cam window | F4 | |
 | Show card trigger zones | F3 | |
 
-**Steering** on the monitor's home page sets how the stick (or WASD) steers:
+**Steering**, in each player's column on the Co-op page, sets how the stick (or WASD) steers:
 
 - **Turn the fish** (the default): from the fish's point of view. Forward swims the way the fish faces, back backs it up on its fins, and left and right turn it, as in the table above.
 - **Swim where you point:** from the camera's. Push the way you want to go on screen: up swims straight away from the camera, left to the left of the view, down back toward it. It follows the camera's tilt too, so with the camera looking down, up dives toward what you see, and looking up it climbs. The fish turns and arcs round toward that direction at its own pace. The camera stays where you aim it; it doesn't swing round behind the fish.
@@ -42,7 +42,7 @@ Rise, sink and dart work the same either way.
 
 Your own keyboard and gamepad never reach the host. Only the cards do.
 
-The gamepad names above are Xbox's. **Buttons** on the monitor's home page sets which controller's art the cards, menus and hints use: **Xbox**, **PlayStation** or **Nintendo**. It starts on **Auto**, which follows the controller you last used, going by its name. Only the art changes; the host always gets the same inputs. Nintendo's face letters swap by position, so the bottom button (A on Xbox) shows as B.
+The gamepad names above are Xbox's. **Button art** in the tank editor sets which controller's art the cards, menus and hints use: **Xbox**, **PlayStation** or **Nintendo**. It starts on **Auto**, which follows the controller you last used, going by its name. Only the art changes; the host always gets the same inputs. Nintendo's face letters swap by position, so the bottom button (A on Xbox) shows as B.
 
 ## Flash cards
 
@@ -80,7 +80,7 @@ Esc or **Done** leaves the editor. Changes stay in the tank until you quit, even
 
 ## Room mood
 
-**Mood** on the monitor's home page sets the bedroom's lighting. The choice is remembered.
+**Mood** on the monitor's Settings page sets the bedroom's lighting. The choice is remembered.
 
 - **Late night** (the default): street lamps, lit windows and neon across the street, stars and a low moon, lamps on, the LED strip in purple.
 - **Rainy evening:** rain falling outside and running down the window, a wet street reflecting the lights, umbrellas.
@@ -94,16 +94,15 @@ Outside the window is a real street, seen from the third floor: brick rowhouses 
 
 Up to four fish can share the tank, each piloted by a local player, all pressing the same cards: they drive the one controller on the host.
 
-- **Joining:** press Start (MENU / OPTIONS / +) on another gamepad. A new fish drops in and the screen splits: two players side by side, three or four in quarters (with three, the fourth quarter shows the room camera). The new player picks their fish in their own view, left and right to browse and A to swim.
+- **Joining:** press Start (MENU / OPTIONS / +) on another gamepad. A new fish drops in and the screen splits: two players side by side, three or four in quarters (with three, the fourth quarter shows the room camera). If they join while swimming, the new player picks their fish in their own view, left and right to browse and A to swim.
 - **Fish:** each fish wears one of four colourings, named for pasta: **Tortellini** (Linguini's own), **Fusilli** (calico), **Gnocchi** (white with a red cap) and **Ravioli** (black and orange).
-- **Player 1** plays with the keyboard and mouse, plus the first gamepad they use. Set **Keyboard only** on the Players page to leave every gamepad free to join.
-- **Leaving:** hold Back (VIEW / CREATE / −) on that pad, or press **Remove** on the Players page.
-- **Players** on the monitor's home page lists everyone, with each fish's colouring.
+- **The Co-op page** on the monitor has a column per player, and every player works their own column at the same time with their own pad (player 1 also with the keyboard; the mouse only works player 1's). Each column has the player's fish, on a turning carousel, and their own **Steering**, **Invert look** and **Look speed**. Player 1's also sets **Controls**: the keyboard and mouse plus the first gamepad they use (**Pad too**), or **Keys only**, which leaves every gamepad free to join. The others' have **Leave**. B, Esc or Start goes back. Empty columns invite another pad to join.
+- **Leaving:** hold Back (VIEW / CREATE / −) on that pad, or press **Leave** in their column.
 - **The menu** is shared: opening it takes everyone to the monitor, full screen, and any pad can drive it. Sound is heard from between the fish.
 
 ## Graphics quality
 
-**Graphics** on the monitor's home page sets **Low**, **Medium** or **High**. It starts on **Auto**, which picks Low on integrated or software GPUs and High on dedicated ones.
+**Graphics** on the monitor's Settings page sets **Low**, **Medium** or **High**. It starts on **Auto**, which picks Low on integrated or software GPUs and High on dedicated ones.
 
 | | Low | Medium | High |
 |---|---|---|---|
@@ -137,7 +136,7 @@ The host's audio plays from the two speakers next to the monitor, placed in 3D: 
 - **The fish:** a swish on each tail beat, harder when it swims harder. It also whooshes when it darts and knocks when it bumps the glass or solid decor.
 - **The cards:** a soft tap as a card presses, a lighter one on release, and a tick for each step of a sequence.
 - **The room:** each mood has its own tone. Night has the PC fan and the distant city, the rainy evening has rain on the window, and golden hour has birds and a breeze. The monitor's buttons click.
-- **Volume:** **Master**, **Game** (the stream), **Room & tank** and **UI** sliders on the monitor's home page. They're remembered.
+- **Volume:** **Master**, **Game** (the stream), **Room & tank** and **UI** sliders on the monitor's Settings page. They're remembered.
 
 The sounds are built by `audio/build.py` into `godot/audio/`:
 

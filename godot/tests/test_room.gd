@@ -103,8 +103,9 @@ func test_moods_switch_the_room() -> void:
 func test_mood_picker_on_the_monitor() -> void:
 	var original: String = Mood.current
 	var main := await _main()
+	main.menu.show_settings()
 	var pickers: Array = main.menu.find_children("MoodPicker", "OptionButton", true, false)
-	check(pickers.size() == 1, "the home page has a mood picker")
+	check(pickers.size() == 1, "the Settings page has a mood picker")
 	if pickers.size() == 1:
 		var picker: OptionButton = pickers[0]
 		check(picker.item_count == Mood.NAMES.size(), "one entry per mood")

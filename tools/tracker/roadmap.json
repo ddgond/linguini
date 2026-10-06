@@ -625,7 +625,15 @@
           "status": "done"
         },
         {
-          "text": "Players page on the monitor: each player's fish, player 1's controls (Keyboard & first pad, or Keyboard only), Remove",
+          "text": "Co-op page on the monitor: a column per player, each worked at once by its own player's pad (player 1's keyboard and mouse in theirs), with a turning fish carousel",
+          "status": "done"
+        },
+        {
+          "text": "Per player: steering, invert look and look speed (player 1's are remembered)",
+          "status": "done"
+        },
+        {
+          "text": "Monitor tidied: the home page keeps the hosts and Just swim / Edit tank / Co-op / Settings / Quit; graphics, mood, tank cam and volumes are on a Settings page; button art is in the tank editor",
           "status": "done"
         }
       ]

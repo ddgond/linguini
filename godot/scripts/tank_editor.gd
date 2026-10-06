@@ -311,6 +311,21 @@ func _build_panel() -> void:
 	_status = _label(box, "", 15, UiStyle.accent())
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
+	# How the cards draw their buttons (they follow the controller by default).
+	var art_row := HBoxContainer.new()
+	box.add_child(art_row)
+	_label(art_row, "Button art", 16, UiStyle.MUTED).custom_minimum_size.x = 110
+	var glyphs := OptionButton.new()
+	glyphs.name = "GlyphPicker"
+	glyphs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var glyph_values: Array = ["auto"] + Glyphs.SETS
+	glyphs.add_item("Auto (%s)" % Glyphs.SET_LABELS[Glyphs.SETS.find(Glyphs.detected())])
+	for label: String in Glyphs.SET_LABELS:
+		glyphs.add_item(label)
+	glyphs.selected = maxi(glyph_values.find(Glyphs.setting), 0)
+	glyphs.item_selected.connect(func(i: int) -> void: Glyphs.set_setting(glyph_values[i]))
+	art_row.add_child(glyphs)
+
 	_heading(box, "Add")
 	var add_row := HBoxContainer.new()
 	box.add_child(add_row)

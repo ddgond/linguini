@@ -29,6 +29,10 @@ const FISH_REACH := 0.06
 @export var distance := 0.26
 @export var min_distance := 0.03 ## how close it may slide in against the gravel or surface
 @export var mouse_sensitivity := 0.004
+## The player's own: how fast looking turns (× the base rates), and whether
+## up and down are flipped.
+var look_speed := 1.0
+var invert_y := false
 @export var stick_speed := 2.5 ## rad/s
 @export var recenter_delay := 1.2 ## s after the last manual look
 @export var recenter_rate := 1.6
@@ -70,8 +74,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if input and not input.keyboard:
 		return  # the mouse belongs to the keyboard player
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		orbit_yaw -= event.relative.x * mouse_sensitivity
-		orbit_pitch = clampf(orbit_pitch - event.relative.y * mouse_sensitivity, MIN_PITCH, MAX_PITCH)
+		var k := mouse_sensitivity * look_speed
+		orbit_yaw -= event.relative.x * k
+		orbit_pitch = clampf(orbit_pitch - event.relative.y * k * (-1.0 if invert_y else 1.0), MIN_PITCH, MAX_PITCH)
 		_manual_timer = recenter_delay
 
 
@@ -83,8 +88,9 @@ func _process(delta: float) -> void:
 	if not menu_view:
 		look = input.look() if input else Input.get_vector("camera_left", "camera_right", "camera_down", "camera_up")
 	if look != Vector2.ZERO:
-		orbit_yaw -= look.x * stick_speed * delta
-		orbit_pitch = clampf(orbit_pitch + look.y * stick_speed * delta, MIN_PITCH, MAX_PITCH)
+		orbit_yaw -= look.x * stick_speed * look_speed * delta
+		var up := look.y * (-1.0 if invert_y else 1.0)
+		orbit_pitch = clampf(orbit_pitch + up * stick_speed * look_speed * delta, MIN_PITCH, MAX_PITCH)
 		_manual_timer = recenter_delay
 	_manual_timer = maxf(_manual_timer - delta, 0.0)
 
@@ -92,7 +98,7 @@ func _process(delta: float) -> void:
 	var speed := fish.velocity.length()
 	# Steering by the camera ("Swim where you point") it stays where the player
 	# aims it: swinging round behind the fish would change what "up" means.
-	var recenter := Fish.steering == "fish"
+	var recenter := fish.steering == "fish"
 	if recenter and _manual_timer <= 0.0 and speed > 0.04:
 		var k := 1.0 - exp(-recenter_rate * clampf(speed / fish.cruise_speed, 0.0, 1.0) * delta)
 		orbit_yaw = lerp_angle(orbit_yaw, fish.yaw, k)
