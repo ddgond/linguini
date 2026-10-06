@@ -33,7 +33,7 @@ Playing, building and working on Linguini. The original vision is in [core.md](c
 | Tank cam window | F4 | |
 | Show card trigger zones | F3 | |
 
-**Steering**, in each player's column on the Co-op page, sets how the stick (or WASD) steers:
+**Steering**, in each player's column on the Controls page, sets how the stick (or WASD) steers:
 
 - **Turn the fish** (the default): from the fish's point of view. Forward swims the way the fish faces, back backs it up on its fins, and left and right turn it, as in the table above.
 - **Swim where you point:** from the camera's. Push the way you want to go on screen: up swims straight away from the camera, left to the left of the view, down back toward it. It follows the camera's tilt too, so with the camera looking down, up dives toward what you see, and looking up it climbs. The fish turns and arcs round toward that direction at its own pace. The camera stays where you aim it; it doesn't swing round behind the fish.
@@ -96,8 +96,8 @@ Up to four fish can share the tank, each piloted by a local player, all pressing
 
 - **Joining:** press Start (MENU / OPTIONS / +) on another gamepad. A new fish drops in and the screen splits: two players side by side, three or four in quarters (with three, the fourth quarter shows the room camera). If they join while swimming, the new player picks their fish in their own view, left and right to browse and A to swim.
 - **Fish:** each fish wears one of four colourings, named for pasta: **Tortellini** (Linguini's own), **Fusilli** (calico), **Gnocchi** (white with a red cap) and **Ravioli** (black and orange).
-- **The Co-op page** on the monitor has a column per player, and every player works their own column at the same time with their own pad (player 1 also with the keyboard; the mouse only works player 1's). Each column has the player's fish, on a turning carousel, and their own **Steering**, **Invert look** and **Look speed**. Player 1's also sets **Controls**: the keyboard and mouse plus the first gamepad they use (**Pad too**), or **Keys only**, which leaves every gamepad free to join. The others' have **Leave**. B, Esc or Start goes back. Empty columns invite another pad to join.
-- **Leaving:** hold Back (VIEW / CREATE / −) on that pad, or press **Leave** in their column.
+- **The Controls page** on the monitor has a column per player, and every player works their own column at the same time with their own pad (player 1 also with the keyboard; the mouse only works player 1's). Each column has the player's fish, on a turning carousel, and their own **Steering**, **Invert look** and **Look speed**. Player 1's also sets **Input**: **Gamepad** (the keyboard and mouse plus the first gamepad they use) or **Keyboard**, which leaves every gamepad free to join. The others' have **Leave**. B, Esc or Start goes back. Empty columns invite another gamepad to join.
+- **Leaving:** hold Back (VIEW / CREATE / −) on that pad, or press **Leave** in their column on the Controls page.
 - **The menu** is shared: opening it takes everyone to the monitor, full screen, and any pad can drive it. Sound is heard from between the fish.
 
 ## Graphics quality
@@ -136,7 +136,7 @@ The host's audio plays from the two speakers next to the monitor, placed in 3D: 
 - **The fish:** a swish on each tail beat, harder when it swims harder. It also whooshes when it darts and knocks when it bumps the glass or solid decor.
 - **The cards:** a soft tap as a card presses, a lighter one on release, and a tick for each step of a sequence.
 - **The room:** each mood has its own tone. Night has the PC fan and the distant city, the rainy evening has rain on the window, and golden hour has birds and a breeze. The monitor's buttons click.
-- **Volume:** **Master**, **Game** (the stream), **Room & tank** and **UI** sliders on the monitor's Settings page. They're remembered.
+- **Volume:** **Master**, **Game** (the stream), **Room & tank** and **Menus** under Sound on the monitor's Settings page. They're remembered.
 
 The sounds are built by `audio/build.py` into `godot/audio/`:
 

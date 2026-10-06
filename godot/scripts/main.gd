@@ -19,7 +19,7 @@ extends Node3D
 ##   --fish-variety=N       player 1's fish colouring (FishModel.VARIETIES), just for this run
 ##   --coop=N               N players (2-4), the others on made-up pads
 ##   --coop-choosing        with --coop, the new players are still picking their fish
-##   --menu-page=PAGE       open the monitor on a page: settings or coop
+##   --menu-page=PAGE       open the monitor on a page: settings or controls
 ##   --steering=fish|camera turn the fish, or swim where you point, just for this run
 ##   --look=PITCH           aim the follow camera up or down (radians, negative looks down)
 ##   --gaze                 hold the gaze button
@@ -225,7 +225,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return # the editor handles its own input, including Esc
 	# The Co-op page takes every player's pad (and Esc, for back) first.
 	var forwarded := false
-	if mode == Mode.MENU and menu.is_coop_shown():
+	if mode == Mode.MENU and menu.is_controls_shown():
 		forwarded = monitor.forward_input(event, camera)
 		if forwarded and monitor.viewport.is_input_handled():
 			get_viewport().set_input_as_handled()
@@ -351,8 +351,8 @@ func _apply_args() -> void:
 		match String(_args["menu-page"]):
 			"settings":
 				menu.show_settings()
-			"coop":
-				menu.show_coop()
+			"controls":
+				menu.show_controls()
 	if _args.has("steering"):
 		players.set_steering(players.list[0], String(_args.steering), false)
 	if _args.has("look"):

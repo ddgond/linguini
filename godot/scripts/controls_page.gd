@@ -1,10 +1,11 @@
-class_name CoopPage
+class_name ControlsPage
 extends HBoxContainer
-## The monitor's Co-op page: a column per player, up to four, each worked by
+## The monitor's Controls page: a column per player, up to four, each worked by
 ## its own player at once: their gamepad moves a cursor in their column only
 ## (player 1's keyboard and mouse work theirs). A column holds the player's
 ## fish, picked on a turning carousel, and their own controls: steering,
-## invert look, look speed; player 1's also says what they play with, the
+## invert look, look speed; player 1's also says what they play with (the
+## keyboard alone, or with a gamepad too), the
 ## others' can leave. Empty columns invite another gamepad to join (Start).
 ## B, Esc or Start goes back, from any player.
 ##
@@ -18,7 +19,7 @@ var players: Players
 ## Called to leave the page.
 var on_back: Callable
 
-var _columns: Array[CoopColumn] = []
+var _columns: Array[ControlsColumn] = []
 var _cursors := {}  ## player number -> row index
 var _stick := {}    ## device -> [x, y] last stick values, for edges
 
@@ -26,14 +27,14 @@ var _stick := {}    ## device -> [x, y] last stick values, for edges
 func _init(p_players: Players, p_on_back: Callable) -> void:
 	players = p_players
 	on_back = p_on_back
-	name = "CoopPage"
+	name = "ControlsPage"
 	add_theme_constant_override("separation", 14)
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 
 func _ready() -> void:
 	for i in Players.MAX:
-		var col := CoopColumn.new(self, i + 1)
+		var col := ControlsColumn.new(self, i + 1)
 		_columns.append(col)
 		add_child(col)
 	refresh()
@@ -152,10 +153,10 @@ func _stick_edge(event: InputEventJoypadMotion) -> Vector2i:
 
 # --- a column ----------------------------------------------------------------------
 
-class CoopColumn:
+class ControlsColumn:
 	extends PanelContainer
 
-	var page: CoopPage
+	var page: ControlsPage
 	var number := 1
 	var player: Players.Player
 	var _box: VBoxContainer
@@ -164,7 +165,7 @@ class CoopColumn:
 	var _preview: FishPreview
 	var _fish_name: Label
 
-	func _init(p_page: CoopPage, p_number: int) -> void:
+	func _init(p_page: ControlsPage, p_number: int) -> void:
 		page = p_page
 		number = p_number
 		# Equal columns, whatever they hold.
@@ -176,7 +177,7 @@ class CoopColumn:
 		add_child(_box)
 
 	func _color() -> Color:
-		return CoopPage.PLAYER_COLORS[number - 1]
+		return ControlsPage.PLAYER_COLORS[number - 1]
 
 	func show_player(p: Players.Player) -> void:
 		if p == player and p != null and not _rows.is_empty():
@@ -215,11 +216,12 @@ class CoopColumn:
 		_arrow(name_row, "▶", 0, 1)
 		fish_row.add_child(name_row)
 		_add_row(fish_row, null)
-		_value_row("Steering")
-		_value_row("Invert look")
-		_value_row("Look speed")
+		_value_row("Steering", ["Turn", "Point"])
+		_value_row("Invert look", ["Off", "On"])
+		_value_row("Look speed", Players.LOOK_SPEEDS.map(func(v: float) -> String: return "%s×" % str(v)))
 		if number == 1:
-			_value_row("Controls")
+			# The keyboard always works for player 1; Gamepad adds the first pad they use.
+			_value_row("Input", ["Keyboard", "Gamepad"])
 			_button_row("Back")
 		else:
 			_button_row("Leave")
@@ -255,19 +257,19 @@ class CoopColumn:
 		_rows.append(panel)
 		_values.append(value)
 
-	func _value_row(label: String) -> void:
-		var row := HBoxContainer.new()
-		var l := _text(label, 15, UiStyle.MUTED, 600)
-		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.add_child(l)
+	## A setting's ◀ value ▶ row (Stepper, as on the Settings page), lit by
+	## this column's cursor rather than by focus.
+	func _value_row(label: String, options: Array) -> void:
+		var stepper := Stepper.new(label, options, 0, 15, 84)
+		stepper.focus_mode = Control.FOCUS_NONE
+		stepper.accent = _color()
 		var i := _rows.size()
-		_arrow(row, "◀", i, -1)
-		var v := _text("", 15, UiStyle.TEXT, 700)
-		v.custom_minimum_size.x = 64
-		v.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		row.add_child(v)
-		_arrow(row, "▶", i, 1)
-		_add_row(row, v)
+		stepper.item_selected.connect(func(index: int) -> void:
+			page.set_cursor(number, i)
+			_apply(i, index))
+		_box.add_child(stepper)
+		_rows.append(stepper)
+		_values.append(null)
 
 	func _button_row(label: String) -> void:
 		var b := Button.new()
@@ -280,6 +282,7 @@ class CoopColumn:
 			activate(i))
 		_add_row(b, null)
 
+	## The fish carousel's arrows.
 	func _arrow(row: HBoxContainer, glyph: String, row_index: int, dir: int) -> void:
 		var b := Button.new()
 		b.text = glyph
@@ -291,23 +294,25 @@ class CoopColumn:
 			step(row_index, dir))
 		row.add_child(b)
 
-	## Left / right on a row.
+	## Left / right on a row: the fish carousel, or a setting's stepper.
 	func step(row: int, dir: int) -> void:
+		if row == 0:
+			page.players.set_variety(player, player.variety + dir)
+		elif _rows[row] is Stepper:
+			(_rows[row] as Stepper).step(dir)
+
+	## A stepper row's new choice, applied to the player.
+	func _apply(row: int, index: int) -> void:
 		var pl := page.players
 		match row:
-			0:
-				pl.set_variety(player, player.variety + dir)
 			1:
-				pl.set_steering(player, "camera" if player.steering == "fish" else "fish")
+				pl.set_steering(player, "camera" if index == 1 else "fish")
 			2:
-				pl.set_invert_y(player, not player.invert_y)
+				pl.set_invert_y(player, index == 1)
 			3:
-				var speeds: Array = Players.LOOK_SPEEDS
-				var i := clampi(speeds.find(player.look_speed) + dir, 0, speeds.size() - 1)
-				pl.set_look_speed(player, speeds[i])
+				pl.set_look_speed(player, Players.LOOK_SPEEDS[index])
 			4:
-				if number == 1:
-					pl.set_p1_uses_pad(not pl.p1_uses_pad)
+				pl.set_p1_uses_pad(index == 1)
 
 	## A (or Enter, or a click) on a row: buttons act, values step on.
 	func activate(row: int) -> void:
@@ -325,16 +330,19 @@ class CoopColumn:
 		_fish_name.text = FishModel.VARIETIES[player.variety]
 		if _preview:
 			_preview.set_variety(player.variety)
-		_values[1].text = "Point" if player.steering == "camera" else "Turn"
-		_values[2].text = "On" if player.invert_y else "Off"
-		_values[3].text = "%s×" % str(player.look_speed)
+		(_rows[1] as Stepper).select(1 if player.steering == "camera" else 0)
+		(_rows[2] as Stepper).select(1 if player.invert_y else 0)
+		(_rows[3] as Stepper).select(maxi(Players.LOOK_SPEEDS.find(player.look_speed), 0))
 		if number == 1:
-			_values[4].text = "Pad too" if page.players.p1_uses_pad else "Keys only"
+			(_rows[4] as Stepper).select(1 if page.players.p1_uses_pad else 0)
 		(_box.get_child(1) as Label).text = _device_text()
 
 	func update_cursor() -> void:
 		var at := page.cursor(number)
 		for i in _rows.size():
+			if _rows[i] is Stepper:
+				(_rows[i] as Stepper).lit = i == at
+				continue
 			var sb := StyleBoxFlat.new()
 			sb.set_corner_radius_all(10)
 			sb.content_margin_left = 8

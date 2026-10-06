@@ -133,9 +133,9 @@ func test_coop_page_columns() -> void:
 	var p1: Players.Player = players.list[0]
 	var p2 := players.join(9)
 	main.set_mode(main.Mode.MENU)
-	main.menu.show_coop()
+	main.menu.show_controls()
 	await tree.process_frame
-	var page: CoopPage = main.menu.find_children("CoopPage", "", true, false)[0]
+	var page: ControlsPage = main.menu.find_children("ControlsPage", "", true, false)[0]
 	check(page.get_child_count() == Players.MAX, "a column for every player slot")
 	check(not p2.choosing, "a player who joined here picks their fish here")
 	var p1_variety := p1.variety
@@ -162,6 +162,6 @@ func test_coop_page_columns() -> void:
 	# B from any player goes back.
 	_press(9, JOY_BUTTON_B)
 	await tree.process_frame
-	check(not main.menu.is_coop_shown(), "B goes back")
+	check(not main.menu.is_controls_shown(), "B goes back")
 	players.leave(p2)
 	main.queue_free()

@@ -116,3 +116,13 @@ func test_tank_cam_keypoints() -> void:
 	main.set_tracking(false, TrackingCam.Style.EARNEST)
 	main.queue_free()
 
+
+
+func test_settings_page_focus() -> void:
+	var main := await _main()
+	main.menu.show_settings()
+	await tree.process_frame
+	await tree.process_frame
+	var focused: Control = main.menu.get_viewport().gui_get_focus_owner()
+	check(focused is Stepper and focused.name == "QualityPicker", "the first setting has focus (%s)" % focused)
+	main.queue_free()

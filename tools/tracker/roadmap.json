@@ -625,7 +625,7 @@
           "status": "done"
         },
         {
-          "text": "Co-op page on the monitor: a column per player, each worked at once by its own player's pad (player 1's keyboard and mouse in theirs), with a turning fish carousel",
+          "text": "Controls page on the monitor: a column per player, each worked at once by its own player's pad (player 1's keyboard and mouse in theirs), with a turning fish carousel",
           "status": "done"
         },
         {
@@ -633,7 +633,11 @@
           "status": "done"
         },
         {
-          "text": "Monitor tidied: the home page keeps the hosts and Just swim / Edit tank / Co-op / Settings / Quit; graphics, mood, tank cam and volumes are on a Settings page; button art is in the tank editor",
+          "text": "Monitor tidied: the home page keeps the hosts and Just swim / Edit tank / Controls / Settings / Quit; graphics, mood, tank cam and volumes are on a Settings page; button art is in the tank editor",
+          "status": "done"
+        },
+        {
+          "text": "Settings page in sections (Display, Tank cam, Sound) of label \u25c0 value \u25b6 rows, the same Stepper as the Controls page's; Back at the bottom; no controls listing on the main menu",
           "status": "done"
         }
       ]

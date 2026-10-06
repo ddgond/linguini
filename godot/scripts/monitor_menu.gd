@@ -227,10 +227,9 @@ func show_home(message := "") -> void:
 	_spacer()
 	_button_row([["Just swim", func() -> void: swim_requested.emit()],
 			["Edit tank", func() -> void: edit_requested.emit()],
-			["Co-op", show_coop],
+			["Controls", show_controls],
 			["Settings", show_settings],
 			["Quit", func() -> void: get_tree().quit()]])
-	_controls_help()
 	_focus_first()
 
 
@@ -242,11 +241,10 @@ func show_in_stream() -> void:
 	_stats_label = _window_subtitle
 	_button_row([["Resume", func() -> void: resume_requested.emit()],
 			["Edit tank", func() -> void: edit_requested.emit()],
-			["Co-op", show_coop],
+			["Controls", show_controls],
 			["Settings", show_settings]])
 	_button_row([["Disconnect", func() -> void: client.stop_stream(false)],
 			["Quit game and disconnect", func() -> void: client.stop_stream(true)]])
-	_controls_help()
 	_focus_first()
 
 
@@ -321,15 +319,74 @@ func _show_launching() -> void:
 	_focus_first()
 
 
-## The Settings page: graphics, the room's mood, the tank cam window and its
-## style, and the volumes.
+## The Settings page, in sections: Display (graphics, the room's mood), Tank
+## cam (its window and overlay) and Sound (the volumes). Each setting is a
+## Stepper row, its label then ◀ value ▶, as in the Controls page's columns;
+## Back at the bottom.
 func show_settings() -> void:
 	_begin_page()
 	_title("Settings", "")
-	_settings_rows()
-	_volume_row()
+	var columns := HBoxContainer.new()
+	columns.add_theme_constant_override("separation", 40)
+	_page.add_child(columns)
+	var left := _section_column(columns)
+	_section(left, "Display")
+	var auto_name: String = Quality.NAMES[Quality.auto_level()]
+	var quality_values := ["auto", "low", "medium", "high"]
+	_setting(left, "QualityPicker", "Graphics", ["Auto (%s)" % auto_name, "Low", "Medium", "High"],
+		maxi(quality_values.find(Quality.setting), 0), func(i: int) -> void: Quality.set_setting(quality_values[i]))
+	_setting(left, "MoodPicker", "Mood", Mood.LABELS, Mood.NAMES.find(Mood.current),
+		func(i: int) -> void: Mood.set_mood(Mood.NAMES[i]))
+	_section(left, "Tank cam")
+	var window := _setting(left, "TankCamWindow", "Window", ["Off", "On"], 1 if Settings.tracking_enabled() else 0, Callable())
+	var style := _setting(left, "TankCamStyle", "Overlay", TrackingCam.STYLE_NAMES, Settings.tracking_style(), Callable())
+	var apply := func(_i: int) -> void:
+		Settings.set_tracking(window.selected == 1, style.selected)
+		tracking_changed.emit(window.selected == 1, style.selected)
+	window.item_selected.connect(apply)
+	style.item_selected.connect(apply)
+	var right := _section_column(columns)
+	_section(right, "Sound")
+	var levels := []
+	for i in 11:
+		levels.append("%d%%" % (i * 10))
+	for entry: Array in [["master", "Master"], ["game", "Game"], ["room", "Room & tank"], ["ui", "Menus"]]:
+		var key: String = entry[0]
+		var volume := _setting(right, "Volume_" + key, entry[1], levels, roundi(Sound.volume(key) * 10.0),
+			func(i: int) -> void: Sound.set_volume(key, i / 10.0))
+		volume.wrap = false
+	var push := Control.new()
+	push.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_page.add_child(push)
 	_button_row([["Back", back]])
 	_focus_first()
+
+
+func _section_column(parent: Control) -> VBoxContainer:
+	var column := VBoxContainer.new()
+	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.add_theme_constant_override("separation", 6)
+	parent.add_child(column)
+	return column
+
+
+func _section(column: VBoxContainer, title: String) -> void:
+	var heading := _plain_label(title.to_upper(), 16, UiStyle.MUTED, 800)
+	if column.get_child_count() > 0:
+		heading.custom_minimum_size.y = 44  # a gap above all but the first
+		heading.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	column.add_child(heading)
+
+
+## A setting's row: its label, then ◀ value ▶ (Stepper).
+func _setting(column: VBoxContainer, node_name: String, label: String, options: Array, selected: int, on_select: Callable) -> Stepper:
+	var stepper := Stepper.new(label, options, selected)
+	stepper.name = node_name
+	stepper.accent = UiStyle.accent(Mood.current)
+	if on_select.is_valid():
+		stepper.item_selected.connect(on_select)
+	column.add_child(stepper)
+	return stepper
 
 
 ## Back to the home page, or the in-stream page while streaming.
@@ -340,81 +397,17 @@ func back() -> void:
 		show_home()
 
 
-func _settings_rows() -> void:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 12)
-	_page.add_child(row)
-	var quality := OptionButton.new()
-	var auto_name: String = Quality.NAMES[Quality.auto_level()]
-	var values := ["auto", "low", "medium", "high"]
-	for label in ["Graphics: Auto (%s)" % auto_name, "Graphics: Low", "Graphics: Medium", "Graphics: High"]:
-		quality.add_item(label)
-	quality.selected = maxi(values.find(Quality.setting), 0)
-	quality.item_selected.connect(func(i: int) -> void: Quality.set_setting(values[i]))
-	row.add_child(quality)
-	var mood := OptionButton.new()
-	mood.name = "MoodPicker"
-	for label: String in Mood.LABELS:
-		mood.add_item("Mood: " + label)
-	mood.selected = Mood.NAMES.find(Mood.current)
-	mood.item_selected.connect(func(i: int) -> void: Mood.set_mood(Mood.NAMES[i]))
-	row.add_child(mood)
-	row = HBoxContainer.new()
-	row.add_theme_constant_override("separation", 12)
-	_page.add_child(row)
-	var toggle := Button.new()
-	toggle.toggle_mode = true
-	toggle.button_pressed = Settings.tracking_enabled()
-	toggle.text = "Tank cam window: " + ("on" if toggle.button_pressed else "off")
-	row.add_child(toggle)
-	var style := OptionButton.new()
-	for n in TrackingCam.STYLE_NAMES:
-		style.add_item(n)
-	style.selected = Settings.tracking_style()
-	row.add_child(style)
-	var apply := func() -> void:
-		toggle.text = "Tank cam window: " + ("on" if toggle.button_pressed else "off")
-		Settings.set_tracking(toggle.button_pressed, style.selected)
-		tracking_changed.emit(toggle.button_pressed, style.selected)
-	toggle.toggled.connect(func(_on: bool) -> void: apply.call())
-	style.item_selected.connect(func(_i: int) -> void: apply.call())
-
-
-## The Co-op page: a column per player, each worked by its own player
-## (CoopPage).
-func show_coop() -> void:
+## The Controls page: a column per player, each worked by its own player
+## (ControlsPage).
+func show_controls() -> void:
 	_begin_page()
-	_title("Co-op", "")
+	_title("Controls", "")
 	if players:
-		_page.add_child(CoopPage.new(players, back))
+		_page.add_child(ControlsPage.new(players, back))
 
 
-func is_coop_shown() -> bool:
-	return _page.get_node_or_null("CoopPage") != null and not (_page.get_node("CoopPage") as Node).is_queued_for_deletion()
-
-
-## Volume sliders: Master, Game (the stream), Room & tank, UI.
-func _volume_row() -> void:
-	var row := HBoxContainer.new()
-	row.name = "Volumes"
-	row.add_theme_constant_override("separation", 14)
-	_page.add_child(row)
-	for entry: Array in [["master", "Master"], ["game", "Game"], ["room", "Room & tank"], ["ui", "UI"]]:
-		var key: String = entry[0]
-		var box := VBoxContainer.new()
-		box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		box.add_theme_constant_override("separation", 2)
-		row.add_child(box)
-		box.add_child(_plain_label(entry[1], 18, UiStyle.MUTED, 700))
-		var slider := HSlider.new()
-		slider.name = "Volume_" + key
-		slider.min_value = 0.0
-		slider.max_value = 1.0
-		slider.step = 0.05
-		slider.value = Sound.volume(key)
-		slider.custom_minimum_size = Vector2(0, 28)
-		slider.value_changed.connect(func(v: float) -> void: Sound.set_volume(key, v))
-		box.add_child(slider)
+func is_controls_shown() -> bool:
+	return _page.get_node_or_null("ControlsPage") != null and not (_page.get_node("ControlsPage") as Node).is_queued_for_deletion()
 
 
 # --- actions ---
@@ -508,7 +501,10 @@ func _on_stream_ended(error_code: int, message: String) -> void:
 func _begin_page(message := "") -> void:
 	_stage_label = null
 	_stats_label = null
+	# Out of the page at once (not just queued to go), so focus can't land on
+	# the old page's controls.
 	for child in _page.get_children():
+		_page.remove_child(child)
 		child.queue_free()
 	_set_status(message)
 
@@ -521,27 +517,6 @@ func _set_status(message: String) -> void:
 func _title(text: String, subtitle: String) -> void:
 	_window_title.text = text
 	_window_subtitle.text = subtitle
-
-
-## The controls, named in the current button glyph set.
-func _controls_help() -> void:
-	var help := _label(_help_text(), 18, UiStyle.MUTED)
-	help.name = "ControlsHelp"
-
-
-func _refresh_help() -> void:
-	var help := _page.get_node_or_null("ControlsHelp") as Label
-	if help:
-		help.text = _help_text()
-
-
-func _help_text() -> String:
-	var g := func(id: String) -> String: return Glyphs.label(id)
-	var steer: String = players.list[0].steering if players and not players.list.is_empty() else "fish"
-	var swim := "Swim, turn" if steer == "fish" else "Swim where you point"
-	return ("%s  WASD / left stick      Rise / sink  Space, C / %s, %s      Dart  Shift / %s\n" +
-		"Look  mouse / right stick      Watch the monitor  hold right mouse / %s      Menu  Esc / %s      Edit tank  F2      Tank cam  F4") % [
-		swim, g.call("RB"), g.call("LB"), g.call("A"), g.call("LT"), g.call("START")]
 
 
 ## A little square icon for an app, coloured from its name.
@@ -610,9 +585,10 @@ func _spacer() -> void:
 
 func _focus_first() -> void:
 	(func() -> void:
-		for node in _page.find_children("*", "BaseButton", true, false):
-			if node.is_visible_in_tree():
-				node.grab_focus()
+		for node: Node in _page.find_children("*", "Control", true, false):
+			var c := node as Control
+			if c.focus_mode != Control.FOCUS_NONE and (c is BaseButton or c is Stepper or c is LineEdit) and c.is_visible_in_tree():
+				c.grab_focus()
 				return
 	).call_deferred()
 
