@@ -577,11 +577,35 @@
           "status": "done"
         },
         {
-          "text": "Players join and leave from the monitor: press a button on a new gamepad to drop a fish in; each picks a colour so the fish are told apart",
+          "text": "Decided: up to 4 fish; two side by side, three or four in quarters",
+          "status": "done"
+        },
+        {
+          "text": "Decided: pressing a button on an unused gamepad drops a new fish in; player 1 may use keyboard and mouse or a pad, everyone else a pad",
+          "status": "done"
+        },
+        {
+          "text": "Decided: each player picks their fish's colouring in their own view on joining (player 1 on the monitor), changeable later",
+          "status": "done"
+        },
+        {
+          "text": "Decided: opening the menu takes everyone to the monitor menu, full screen; any pad drives it",
+          "status": "done"
+        },
+        {
+          "text": "Decided: sound heard from the middle of the fish",
+          "status": "done"
+        },
+        {
+          "text": "Fish colourings to pick from: Tortellini, calico, red-cap white, black-and-orange",
           "status": "planned"
         },
         {
-          "text": "Split screen: two players side by side, three or four in quarters, each with their own follow camera, steering mode and look controls",
+          "text": "Players: each with its own fish, input device, follow camera, steering and look",
+          "status": "planned"
+        },
+        {
+          "text": "Split-screen views, and the join flow with its colouring chooser",
           "status": "planned"
         },
         {
@@ -589,11 +613,11 @@
           "status": "planned"
         },
         {
-          "text": "Fish bump each other and the moss ball; the tank cam tracks every fish, with an id per fish",
+          "text": "Fish bump each other and the moss ball; the tank cam tracks every fish",
           "status": "planned"
         },
         {
-          "text": "Sound heard from a sensible place with several fish (the screen's centre, or each fish's own ears in its half)",
+          "text": "Leaving: from the monitor, or by holding Back",
           "status": "planned"
         },
         {
