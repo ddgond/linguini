@@ -1,6 +1,6 @@
 {
   "project": "Linguini",
-  "now": "5b",
+  "now": "5d",
   "milestones": [
     {
       "id": "1",
@@ -643,42 +643,6 @@
       ]
     },
     {
-      "id": "5b",
-      "title": "Show the new fish",
-      "status": "in-progress",
-      "summary": "Bring the screenshots and the tank cam up to date with the Tortellini-shaped fish.",
-      "items": [
-        {
-          "text": "Retake the README and landing page screenshots (they predate the traced body and the eye fix)",
-          "status": "planned"
-        },
-        {
-          "text": "Tank cam keypoints placed on the new body (dorsal, fins and tail sit at bounding-box fractions chosen for the old shape)",
-          "status": "planned"
-        }
-      ]
-    },
-    {
-      "id": "5c",
-      "title": "Street sounds",
-      "status": "planned",
-      "summary": "Sound for the street outside, so it's heard as well as seen.",
-      "items": [
-        {
-          "text": "Cars passing, panned with the cars that drive by, and stopping and starting at the lights",
-          "status": "planned"
-        },
-        {
-          "text": "Rain on the window glass in the rainy mood, distinct from the rain outside",
-          "status": "planned"
-        },
-        {
-          "text": "Distant voices and footsteps with the people on the sidewalks; pigeons' wings with the flock",
-          "status": "planned"
-        }
-      ]
-    },
-    {
       "id": "5d",
       "title": "Low-end check",
       "status": "planned",
@@ -718,6 +682,42 @@
         },
         {
           "text": "Measure the editor's first-open cost, to settle runtime vs pre-rendered decor thumbnails",
+          "status": "planned"
+        },
+        {
+          "text": "Tank cam keypoints placed on the new body (dorsal, fins and tail sit at bounding-box fractions chosen for the old shape)",
+          "status": "planned"
+        }
+      ]
+    },
+    {
+      "id": "5b",
+      "title": "Show the new fish",
+      "status": "planned",
+      "summary": "Bring the screenshots up to date with the Tortellini-shaped fish.",
+      "items": [
+        {
+          "text": "Retake the README and landing page screenshots (they predate the traced body and the eye fix)",
+          "status": "planned"
+        }
+      ]
+    },
+    {
+      "id": "5c",
+      "title": "Street sounds",
+      "status": "planned",
+      "summary": "Sound for the street outside, so it's heard as well as seen.",
+      "items": [
+        {
+          "text": "Cars passing, panned with the cars that drive by, and stopping and starting at the lights",
+          "status": "planned"
+        },
+        {
+          "text": "Rain on the window glass in the rainy mood, distinct from the rain outside",
+          "status": "planned"
+        },
+        {
+          "text": "Distant voices and footsteps with the people on the sidewalks; pigeons' wings with the flock",
           "status": "planned"
         }
       ]
