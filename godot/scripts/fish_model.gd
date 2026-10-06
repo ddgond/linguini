@@ -9,10 +9,10 @@ const BODY_SHADER := preload("res://shaders/fish_body.gdshader")
 const FIN_SHADER := preload("res://shaders/fish_fin.gdshader")
 
 ## The colourings a fish can have (fish_variety.gdshaderinc), by number, named
-## for pasta, all in -i like Linguini: Tortellini (as painted), Fusilli
+## for pasta, all in -i: Linguini (as painted, after the real Tortellini), Fusilli
 ## (calico, as tricolour fusilli), Gnocchi (pale, with a red cap) and Ravioli
 ## (black and orange).
-const VARIETIES := ["Tortellini", "Fusilli", "Gnocchi", "Ravioli"]
+const VARIETIES := ["Linguini", "Fusilli", "Gnocchi", "Ravioli"]
 
 var fish: Fish
 var mesh_instance: MeshInstance3D

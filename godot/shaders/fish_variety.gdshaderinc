@@ -1,8 +1,8 @@
-// The fish's colouring: the model is painted as Tortellini (variety 0);
+// The fish's colouring: the model is painted after Tortellini (variety 0, Linguini);
 // other varieties repaint it here from that, by what each painted colour is
 // (orange body, red cap, silvery belly, pale fin edges) and where on the fish
 // it is, so several local players' fish can be told apart.
-//   0 Tortellini   as painted
+//   0 Linguini     as painted
 //   1 Fusilli      calico: pale blue-white, with orange patches and black specks
 //   2 Gnocchi      white all over but for the red cap
 //   3 Ravioli      orange, with black patches and black-edged fins
