@@ -239,6 +239,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		open_editor()
 		return
+	# Esc or B on the Settings page: back to the menu's main page.
+	if mode == Mode.MENU and menu.is_settings_shown() and (event.is_action_pressed("menu_toggle") or event.is_action_pressed("ui_cancel")):
+		get_viewport().set_input_as_handled()
+		menu.back()
+		return
 	if event.is_action_pressed("menu_toggle"):
 		get_viewport().set_input_as_handled()
 		if mode == Mode.SWIM:

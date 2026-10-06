@@ -327,6 +327,7 @@ func show_settings() -> void:
 	_begin_page()
 	_title("Settings", "")
 	var columns := HBoxContainer.new()
+	columns.name = "SettingsColumns"
 	columns.add_theme_constant_override("separation", 40)
 	_page.add_child(columns)
 	var left := _section_column(columns)
@@ -359,7 +360,25 @@ func show_settings() -> void:
 	push.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_page.add_child(push)
 	_button_row([["Back", back]])
+	# Up and down go down one column, then the other, then Back (by layout,
+	# Godot would hop across between the columns).
+	var order: Array[Control] = []
+	for n: Node in _page.find_children("*", "Stepper", true, false):
+		order.append(n as Control)
+	order.append(_page.get_child(_page.get_child_count() - 1).get_child(0) as Control)
+	for i in order.size():
+		var c := order[i]
+		var prev := order[maxi(i - 1, 0)]
+		var next := order[mini(i + 1, order.size() - 1)]
+		c.focus_neighbor_top = c.get_path_to(prev)
+		c.focus_neighbor_bottom = c.get_path_to(next)
+		c.focus_previous = c.get_path_to(prev)
+		c.focus_next = c.get_path_to(next)
 	_focus_first()
+
+
+func is_settings_shown() -> bool:
+	return _page.get_node_or_null("SettingsColumns") != null
 
 
 func _section_column(parent: Control) -> VBoxContainer:

@@ -35,6 +35,12 @@ func _enter_tree() -> void:
 				keys.append(ev.physical_keycode)
 		_bind("kb_" + action, keys, [], [])
 	_bind_mouse("kb_gaze", MOUSE_BUTTON_RIGHT)
+	# The menus answer WASD as well as the arrows, as the fish does. (A text
+	# field takes letters before they reach navigation, so typing still works.)
+	for pair in [["ui_up", KEY_W], ["ui_down", KEY_S], ["ui_left", KEY_A], ["ui_right", KEY_D]]:
+		var ev := InputEventKey.new()
+		ev.physical_keycode = pair[1]
+		InputMap.action_add_event(pair[0], ev)
 
 
 func _bind(action: StringName, keys: Array, buttons: Array, axes: Array) -> void:

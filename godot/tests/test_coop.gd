@@ -132,6 +132,9 @@ func test_coop_page_columns() -> void:
 	var players: Players = main.players
 	var p1: Players.Player = players.list[0]
 	var p2 := players.join(9)
+	var p1_steering := p1.steering
+	var p1_invert := p1.invert_y
+	players.set_steering(p1, "fish", false)
 	main.set_mode(main.Mode.MENU)
 	main.menu.show_controls()
 	await tree.process_frame
@@ -157,7 +160,8 @@ func test_coop_page_columns() -> void:
 	_key(KEY_RIGHT)
 	await tree.process_frame
 	check(p1.invert_y and main.camera.invert_y and not p2.invert_y, "player 1 inverts their own look")
-	players.set_invert_y(p1, false)
+	players.set_invert_y(p1, p1_invert)  # put back, saved as it was
+	players.set_steering(p1, p1_steering, false)
 	players.set_steering(p2, "fish")
 	# B from any player goes back.
 	_press(9, JOY_BUTTON_B)

@@ -126,3 +126,43 @@ func test_settings_page_focus() -> void:
 	var focused: Control = main.menu.get_viewport().gui_get_focus_owner()
 	check(focused is Stepper and focused.name == "QualityPicker", "the first setting has focus (%s)" % focused)
 	main.queue_free()
+
+
+func _key(code: Key) -> void:
+	var ev := InputEventKey.new()
+	ev.keycode = code
+	ev.physical_keycode = code
+	ev.pressed = true
+	Input.parse_input_event(ev)
+	var up := ev.duplicate() as InputEventKey
+	up.pressed = false
+	Input.parse_input_event(up)
+
+
+func test_settings_page_by_keyboard() -> void:
+	var main := await _main()
+	main.set_mode(main.Mode.MENU)
+	main.menu.show_settings()
+	await tree.process_frame
+	await tree.process_frame
+	var vp: Viewport = main.menu.get_viewport()
+	check(vp.gui_get_focus_owner() != null and vp.gui_get_focus_owner().name == "QualityPicker", "Graphics has focus first")
+	_key(KEY_DOWN)
+	await tree.process_frame
+	var focused: Control = vp.gui_get_focus_owner()
+	check(focused != null and focused.name == "MoodPicker", "down moves to Mood (%s)" % focused)
+	var mood: Stepper = main.menu.find_children("MoodPicker", "", true, false)[0]
+	var before := mood.selected
+	var original: String = Mood.current
+	_key(KEY_D)
+	await tree.process_frame
+	check(mood.selected != before, "D (or right) changes the mood")
+	Mood.set_mood(original, false)
+	_key(KEY_S)
+	await tree.process_frame
+	focused = vp.gui_get_focus_owner()
+	check(focused != null and focused.name == "TankCamWindow", "S goes down the same column, to the tank cam (%s)" % focused)
+	_key(KEY_ESCAPE)
+	await tree.process_frame
+	check(not main.menu.is_settings_shown() and main.mode == main.Mode.MENU, "Esc goes back to the menu's main page")
+	main.queue_free()
