@@ -37,6 +37,8 @@ const FISH_REACH := 0.06
 @export var dart_kick := 7.0 ## degrees of FOV punched out when the fish darts
 
 var fish: Fish
+## The player's controls; without one (tests) the global input actions.
+var input: PlayerInput
 var screen: Node3D
 var screen_size := Vector2(0.8, 0.45)
 ## Tank interior in global space.
@@ -65,6 +67,8 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if menu_view:
 		return
+	if input and not input.keyboard:
+		return  # the mouse belongs to the keyboard player
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		orbit_yaw -= event.relative.x * mouse_sensitivity
 		orbit_pitch = clampf(orbit_pitch - event.relative.y * mouse_sensitivity, MIN_PITCH, MAX_PITCH)
@@ -75,7 +79,9 @@ func _process(delta: float) -> void:
 	if fish == null:
 		return
 
-	var look := Input.get_vector("camera_left", "camera_right", "camera_down", "camera_up") if not menu_view else Vector2.ZERO
+	var look := Vector2.ZERO
+	if not menu_view:
+		look = input.look() if input else Input.get_vector("camera_left", "camera_right", "camera_down", "camera_up")
 	if look != Vector2.ZERO:
 		orbit_yaw -= look.x * stick_speed * delta
 		orbit_pitch = clampf(orbit_pitch + look.y * stick_speed * delta, MIN_PITCH, MAX_PITCH)
@@ -94,7 +100,8 @@ func _process(delta: float) -> void:
 
 	_pivot = _pivot.lerp(fish.global_position, 1.0 - exp(-12.0 * delta))
 
-	var gaze_target := 1.0 if (not menu_view and Input.is_action_pressed("gaze")) else 0.0
+	var gazing := (input.gazing() if input else Input.is_action_pressed("gaze")) and not menu_view
+	var gaze_target := 1.0 if gazing else 0.0
 	gaze = move_toward(gaze, gaze_target, delta / gaze_time)
 	_menu = move_toward(_menu, 1.0 if menu_view else 0.0, delta / 0.6)
 

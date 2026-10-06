@@ -8,8 +8,21 @@ const MODEL := preload("res://art/fish.glb")
 const BODY_SHADER := preload("res://shaders/fish_body.gdshader")
 const FIN_SHADER := preload("res://shaders/fish_fin.gdshader")
 
+## The colourings a fish can have (fish_variety.gdshaderinc), by number, named
+## for pasta, all in -i like Linguini: Tortellini (as painted), Fusilli
+## (calico, as tricolour fusilli), Gnocchi (pale, with a red cap) and Ravioli
+## (black and orange).
+const VARIETIES := ["Tortellini", "Fusilli", "Gnocchi", "Ravioli"]
+
 var fish: Fish
 var mesh_instance: MeshInstance3D
+## Which of VARIETIES this fish wears.
+var variety := 0:
+	set(value):
+		variety = value
+		for mat in _materials:
+			if mat.get_meta("recolour", false):
+				mat.set_shader_parameter("variety", variety)
 var _materials: Array[ShaderMaterial] = []
 
 
@@ -25,6 +38,7 @@ func _ready() -> void:
 	for i in mesh.get_surface_count():
 		var imported := mesh.surface_get_material(i)
 		var mat := ShaderMaterial.new()
+		mat.set_meta("recolour", imported == null or imported.resource_name != "FishEye")
 		match imported.resource_name if imported else "":
 			"FishFin":
 				mat.shader = FIN_SHADER
@@ -41,6 +55,8 @@ func _ready() -> void:
 					mat.set_shader_parameter("scale_strength", 0.0)
 		mesh_instance.set_surface_override_material(i, mat)
 		_materials.append(mat)
+		if mat.get_meta("recolour"):
+			mat.set_shader_parameter("variety", variety)
 
 
 ## The model's bounds in the fish's own space (for the tank cam's box).

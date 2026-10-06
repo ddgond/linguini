@@ -89,10 +89,16 @@ func _physics_process(delta: float) -> void:
 
 ## The fish nosing or bumping into the ball.
 func _fish_contact(r: float) -> void:
-	var fish := _fish()
-	if fish == null:
-		return
-	_query.exclude = [fish.get_rid()]
+	var all := piece.get_tree().get_nodes_in_group("fish")
+	var skip: Array[RID] = []
+	for f in all:
+		skip.append((f as CollisionObject3D).get_rid())
+	_query.exclude = skip
+	for f in all:
+		_one_fish_contact(f as Fish, r)
+
+
+func _one_fish_contact(fish: Fish, r: float) -> void:
 	var parent := piece.get_parent() as Node3D
 	var to_local := parent.global_transform.affine_inverse()
 	# The fish's capsule as a segment, in the tank's space.
@@ -160,6 +166,3 @@ func _bounce(r: float) -> void:
 			velocity -= n * into * (1.0 + BOUNCE)
 
 
-func _fish() -> Fish:
-	var fishes := piece.get_tree().get_nodes_in_group("fish")
-	return fishes[0] as Fish if not fishes.is_empty() else null

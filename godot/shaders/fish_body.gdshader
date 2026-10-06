@@ -4,6 +4,7 @@ shader_type spatial;
 render_mode cull_back;
 
 #include "res://shaders/fish_swim.gdshaderinc"
+#include "res://shaders/fish_variety.gdshaderinc"
 #include "res://shaders/caustics.gdshaderinc"
 
 uniform sampler2D scales : source_color, filter_linear_mipmap, repeat_enable;
@@ -14,7 +15,15 @@ uniform float clearcoat : hint_range(0.0, 1.0) = 0.4;
 varying vec3 world_pos;
 varying vec3 world_normal;
 
+varying vec3 model_pos;
+varying float fin_amount;
+
 void vertex() {
+	// Where on the fish, before it swims (for its colouring's patches), and
+	// how far out along a fin (UV2.y is 1 - v; v is 2 on the lower lip).
+	model_pos = VERTEX;
+	float v = 1.0 - UV2.y;
+	fin_amount = v < 1.5 ? clamp(v, 0.0, 1.0) : 0.0;
 	swim_vertex(VERTEX, NORMAL, UV2);
 	world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	world_normal = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
@@ -41,7 +50,7 @@ void fragment() {
 		discard;
 	}
 	float s = mix(1.0, scale_pattern(UV), scale_strength);
-	ALBEDO = COLOR.rgb * s;
+	ALBEDO = variety_colour(COLOR.rgb, model_pos, fin_amount) * s;
 	ROUGHNESS = roughness;
 	CLEARCOAT = clearcoat;
 	CLEARCOAT_ROUGHNESS = 0.2;

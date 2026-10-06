@@ -43,6 +43,10 @@ var style := Style.EARNEST:
 			_overlay.queue_redraw()
 
 var fish: Fish
+## The other local players' fish, if any (co-op): boxed too, with their own ids.
+var others: Callable
+## Their boxes on screen this frame.
+var other_boxes: Array[Rect2] = []
 var cards: CardSystem
 var camera: Camera3D
 
@@ -153,6 +157,11 @@ func _detect() -> void:
 	else:
 		box = Rect2(box.position.lerp(_raw_box.position + wobble, 0.35), box.size.lerp(_raw_box.size, 0.35))
 	_keypoints(xf, bounds)
+	other_boxes.clear()
+	for f: Fish in (others.call() if others.is_valid() else []):
+		var b := _screen_rect(f)
+		if b.size != Vector2.ZERO:
+			other_boxes.append(b.grow(6.0))
 	_predict()
 	occluded = _is_occluded()
 	var jitter := _noise.get_noise_1d(_time) * 0.02
@@ -182,6 +191,26 @@ func _predict() -> void:
 		var world := p + v * (i * 0.08)
 		if not camera.is_position_behind(world):
 			predicted.append(camera.unproject_position(world))
+
+
+## Where `f` is in the picture (an empty rect if it's out of sight).
+func _screen_rect(f: Fish) -> Rect2:
+	var bounds := AABB(Vector3(-0.018, -0.024, -0.045), Vector3(0.036, 0.048, 0.09))
+	for child in f.get_children():
+		if child is FishModel:
+			bounds = child.local_aabb()
+	var rect := Rect2()
+	var first := true
+	for i in 8:
+		var world := f.global_transform * bounds.get_endpoint(i)
+		if camera.is_position_behind(world):
+			continue
+		var p := camera.unproject_position(world)
+		rect = Rect2(p, Vector2.ZERO) if first else rect.expand(p)
+		first = false
+	if first or not Rect2(Vector2.ZERO, Vector2(SIZE)).intersects(rect):
+		return Rect2()
+	return rect
 
 
 ## The fish model's bounds in its own space.
@@ -304,7 +333,8 @@ class Overlay:
 		var status := "TRACKING" if cam.detected else "SEARCHING"
 		if cam.detected and cam.occluded:
 			status = "OCCLUDED"
-		_panel_text(Vector2(24, 70), "%s  ·  %d obj  ·  nms 0.45  ·  %s" % [status, 1 if cam.detected else 0, _clock()], 14, INK.darkened(0.2))
+		var objects := (1 if cam.detected else 0) + cam.other_boxes.size()
+		_panel_text(Vector2(24, 70), "%s  ·  %d obj  ·  nms 0.45  ·  %s" % [status, objects, _clock()], 14, INK.darkened(0.2))
 		var bottom := size.y - 30
 		_panel_text(Vector2(24, bottom - 32), "zone: %s" % cam.zone_text(), 18, AMBER)
 		_panel_text(Vector2(24, bottom), "held: %s" % cam.held_text(), 20, GREEN if cam.held_text() != "idle" else INK)
@@ -322,12 +352,20 @@ class Overlay:
 			draw_circle(Vector2(size.x - 40, 34), 8, Color(1, 0.2, 0.2))
 		_text(Vector2(size.x - 104, 40), "REC", 16, INK)
 
-	## Corner brackets rather than a full rectangle, with a class tag.
+	## Corner brackets rather than a full rectangle, with a class tag: for
+	## player 1's fish, then plainer ones for any others.
 	func _draw_box(with_details: bool) -> void:
+		for i in cam.other_boxes.size():
+			_brackets(cam.other_boxes[i], GREEN, "%s %.2f%s" % [TrackingCam.CLASS_NAME, 0.9 + 0.01 * ((i * 7) % 6),
+				"  #%d" % (cam.track_id + i + 1) if with_details else ""])
 		if not cam.detected:
 			return
-		var color := AMBER if cam.occluded else GREEN
-		var r := cam.box
+		var label := "%s %.2f" % [TrackingCam.CLASS_NAME, cam.confidence]
+		if with_details:
+			label += "  #%d" % cam.track_id
+		_brackets(cam.box, AMBER if cam.occluded else GREEN, label)
+
+	func _brackets(r: Rect2, color: Color, label: String) -> void:
 		var t := minf(18.0, minf(r.size.x, r.size.y) * 0.35)
 		for corner in [r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)]:
 			var sx := 1.0 if corner.x == r.position.x else -1.0
@@ -335,9 +373,6 @@ class Overlay:
 			draw_line(corner, corner + Vector2(t * sx, 0), color, 3.0)
 			draw_line(corner, corner + Vector2(0, t * sy), color, 3.0)
 		draw_rect(r, Color(color, 0.25), false, 1.0)
-		var label := "%s %.2f" % [TrackingCam.CLASS_NAME, cam.confidence]
-		if with_details:
-			label += "  #%d" % cam.track_id
 		var font_size := 14
 		var w := cam._font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + 12
 		var tag := Rect2(r.position + Vector2(0, -22), Vector2(w, 20))

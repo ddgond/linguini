@@ -90,6 +90,17 @@ Each mood has its own baked lightmap for the room. Live lights add the monitor's
 
 Outside the window is a real street, seen from the third floor: brick rowhouses with stoops and fire escapes, a deli, a café, a noodle bar and a laundromat on the corner of a cross street, taller blocks behind and downtown in the distance. Every window has a room behind it, some lit. Cars drive past and stop at the lights, and people walk the sidewalks. The street has its own render layer and lights, so it doesn't disturb the room's baked lighting.
 
+## Co-op
+
+Up to four fish can share the tank, each piloted by a local player, all pressing the same cards: they drive the one controller on the host.
+
+- **Joining:** press Start (MENU / OPTIONS / +) on another gamepad. A new fish drops in and the screen splits: two players side by side, three or four in quarters (with three, the fourth quarter shows the room camera). The new player picks their fish in their own view, left and right to browse and A to swim.
+- **Fish:** each fish wears one of four colourings, named for pasta: **Tortellini** (Linguini's own), **Fusilli** (calico), **Gnocchi** (white with a red cap) and **Ravioli** (black and orange).
+- **Player 1** plays with the keyboard and mouse, plus the first gamepad they use. Set **Keyboard only** on the Players page to leave every gamepad free to join.
+- **Leaving:** hold Back (VIEW / CREATE / −) on that pad, or press **Remove** on the Players page.
+- **Players** on the monitor's home page lists everyone, with each fish's colouring.
+- **The menu** is shared: opening it takes everyone to the monitor, full screen, and any pad can drive it. Sound is heard from between the fish.
+
 ## Graphics quality
 
 **Graphics** on the monitor's home page sets **Low**, **Medium** or **High**. It starts on **Auto**, which picks Low on integrated or software GPUs and High on dedicated ones.

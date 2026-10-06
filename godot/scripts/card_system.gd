@@ -16,6 +16,8 @@ extends Node3D
 ## What a card sends is its CardBinding. A HOLD card presses its inputs for as
 ## long as the fish stays; a SEQUENCE card plays its macro once when the fish
 ## arrives, finishing even if the fish swims off. Arriving again replays it.
+## In co-op every fish presses the same cards: a card is entered while any
+## fish is in front of it, and all of them drive the one controller.
 ## A TOGGLE card switches its inputs on when the fish arrives and keeps them
 ## held after it leaves, until it arrives again. Menus switch toggles off.
 
@@ -78,7 +80,9 @@ const SHORT_NAMES := {
 
 ## Receives send_controller_state(); normally the MoonlightClient.
 var client: Object
+## Player 1's fish, and every local player's (`fishes` wins when set).
 var fish: Node3D
+var fishes: Callable
 ## Z of the inside of the front glass, in this node's space.
 var front_z := 0.25
 ## When false (menus open), every card is released.
@@ -230,13 +234,20 @@ func set_enabled(value: bool) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if fish == null or not enabled:
+	if not enabled:
 		return
-	update(to_local(fish.global_position), delta)
+	var at: Array[Vector3] = []
+	var all: Array = fishes.call() if fishes.is_valid() else ([fish] if fish else [])
+	for f: Node3D in all:
+		at.append(to_local(f.global_position))
+	if not at.is_empty():
+		update(at, delta)
 
 
-## Advances the press/release logic for the fish's centre at `fish_pos` (this node's space).
-func update(fish_pos: Vector3, delta: float) -> void:
+## Advances the press/release logic for the fish's centre at `fish_pos` (this
+## node's space): one position, or an Array of them, one per fish.
+func update(fish_pos: Variant, delta: float) -> void:
+	var positions: Array = fish_pos if fish_pos is Array else [fish_pos]
 	for i in cards.size():
 		var card := cards[i]
 		var kind := card.binding.kind
@@ -249,7 +260,7 @@ func update(fish_pos: Vector3, delta: float) -> void:
 			if _play_ms[i] >= card.binding.duration_ms():
 				_play_ms[i] = -1.0
 		var zone := _zones[i].grow(HYSTERESIS) if card.active else _zones[i]
-		if zone.has_point(fish_pos):
+		if positions.any(func(at: Vector3) -> bool: return zone.has_point(at)):
 			if not card.active:
 				if kind == CardBinding.Kind.SEQUENCE or kind == CardBinding.Kind.TAP:
 					_play_ms[i] = 0.0

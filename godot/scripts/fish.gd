@@ -68,6 +68,8 @@ var dart_requested := false
 var player_control := false
 ## The camera the player sees through, for "Swim where you point" steering.
 var view: Node3D
+## The player's controls; without one (tests) the global input actions.
+var input: PlayerInput
 
 # Body state, readable by the model and camera.
 var yaw := 0.0
@@ -139,10 +141,18 @@ func forward() -> Vector3:
 
 
 func read_player_input() -> void:
-	var stick := Input.get_vector("fish_left", "fish_right", "fish_back", "fish_forward")
-	var vertical := Input.get_axis("fish_sink", "fish_rise")
-	if Input.is_action_just_pressed("fish_dart"):
-		request_dart()
+	var stick: Vector2
+	var vertical: float
+	if input:
+		stick = input.stick()
+		vertical = input.vertical()
+		if input.dart_pressed():
+			request_dart()
+	else:
+		stick = Input.get_vector("fish_left", "fish_right", "fish_back", "fish_forward")
+		vertical = Input.get_axis("fish_sink", "fish_rise")
+		if Input.is_action_just_pressed("fish_dart"):
+			request_dart()
 
 	if steering == "camera" and view:
 		_steer_by_view(stick, vertical)

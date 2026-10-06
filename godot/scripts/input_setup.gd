@@ -26,6 +26,15 @@ func _enter_tree() -> void:
 	_bind("debug_zones", [KEY_F3], [], [])
 	_bind("edit_tank", [KEY_F2], [], [])
 	_bind("tracking_cam", [KEY_F4], [], [])
+	# The keyboard and mouse alone, for the player who has them (PlayerInput):
+	# in co-op the global actions above would hear every pad too.
+	for action in ["fish_forward", "fish_back", "fish_left", "fish_right", "fish_rise", "fish_sink", "fish_dart", "gaze"]:
+		var keys: Array = []
+		for ev in InputMap.action_get_events(action):
+			if ev is InputEventKey:
+				keys.append(ev.physical_keycode)
+		_bind("kb_" + action, keys, [], [])
+	_bind_mouse("kb_gaze", MOUSE_BUTTON_RIGHT)
 
 
 func _bind(action: StringName, keys: Array, buttons: Array, axes: Array) -> void:

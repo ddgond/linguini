@@ -134,3 +134,15 @@ street_moon={
 "type": "float",
 "value": 1.0
 }
+fish_position_2={
+"type": "vec3",
+"value": Vector3(0, -100, 0)
+}
+fish_position_3={
+"type": "vec3",
+"value": Vector3(0, -100, 0)
+}
+fish_position_4={
+"type": "vec3",
+"value": Vector3(0, -100, 0)
+}

@@ -7,13 +7,22 @@ render_mode cull_disabled;
 
 #include "res://shaders/caustics.gdshaderinc"
 
+// Where each local player's fish is (unused ones far below the tank).
 global uniform vec3 fish_position;
+global uniform vec3 fish_position_2;
+global uniform vec3 fish_position_3;
+global uniform vec3 fish_position_4;
 
 uniform vec3 tint : source_color = vec3(0.37, 0.68, 0.3);
 uniform float sway = 0.012;
 uniform float push = 0.03;
 uniform float push_radius = 0.07;
 uniform float caustics = 1.0;
+
+vec3 lean_from(vec3 fish, vec3 at, float w) {
+	vec3 away = at - fish;
+	return normalize(away + vec3(0.0001)) * push * w * smoothstep(push_radius, 0.0, length(away));
+}
 
 varying vec3 world_pos;
 varying vec3 world_normal;
@@ -27,10 +36,9 @@ void vertex() {
 	vec3 current = vec3(sin(TIME * 0.9 + phase) + 0.35 * sin(TIME * 2.3 + phase * 1.7), 0.0,
 			0.6 * cos(TIME * 0.7 + phase * 1.3));
 	vec3 offset = current * sway * w;
-	// Lean away from the fish when it's close.
-	vec3 away = world_pos - fish_position;
-	float d = length(away);
-	offset += normalize(away + vec3(0.0001)) * push * w * smoothstep(push_radius, 0.0, d);
+	// Lean away from any fish that's close.
+	offset += lean_from(fish_position, world_pos, w) + lean_from(fish_position_2, world_pos, w)
+		+ lean_from(fish_position_3, world_pos, w) + lean_from(fish_position_4, world_pos, w);
 	offset.y = 0.0;
 	world_pos += offset;
 	VERTEX += (inverse(MODEL_MATRIX) * vec4(offset, 0.0)).xyz;

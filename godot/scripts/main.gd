@@ -16,6 +16,9 @@ extends Node3D
 ##   --fish-pose=EFFORT[,TURN]  hold the fish in place, swimming at EFFORT (0..1)
 ##                          and turning at TURN rad/s
 ##   --fish-drive=X,Y,Z     swim the fish that way on its own
+##   --fish-variety=N       player 1's fish colouring (FishModel.VARIETIES), just for this run
+##   --coop=N               N players (2-4), the others on made-up pads
+##   --coop-choosing        with --coop, the new players are still picking their fish
 ##   --steering=fish|camera turn the fish, or swim where you point, just for this run
 ##   --look=PITCH           aim the follow camera up or down (radians, negative looks down)
 ##   --gaze                 hold the gaze button
@@ -42,8 +45,10 @@ enum Mode { MENU, SWIM, EDIT }
 
 var client: Node
 var room: Dictionary
+## Player 1's fish and camera (every player's: `players`).
 var fish: Fish
 var camera: FishCamera
+var players: Players
 var cards: CardSystem
 var monitor: Monitor
 var menu: MonitorMenu
@@ -86,25 +91,23 @@ func _ready() -> void:
 		Vector3(inner.size.x, room.water_level - RoomBuilder.GRAVEL_TOP, inner.size.z))
 
 	_water = water
-	fish = _make_fish()
-	fish.bounds = water
-	tank.add_child(fish)
-	fish.position = Vector3(0.3, 0.3, 0.1)
-	fish.yaw = PI / 2
+	# The local players: player 1 now, more as gamepads join (Players).
 	ears = AudioListener3D.new()
 	ears.name = "Ears"
-	fish.add_child(ears)
-	var fish_sounds := FishSounds.new()
-	fish_sounds.name = "FishSounds"
-	fish.add_child(fish_sounds)
-
-	camera = FishCamera.new()
-	camera.fish = fish
-	fish.view = camera
-	camera.screen = room.screen
-	camera.screen_size = room.screen_size
-	camera.bounds = water
-	add_child(camera)
+	add_child(ears)
+	players = Players.new()
+	players.name = "Players"
+	players.make_fish = _make_fish
+	players.tank = tank
+	players.water = water
+	players.screen = room.screen
+	players.screen_size = room.screen_size
+	players.room_camera = room.room_camera
+	players.ears = ears
+	add_child(players)
+	var first := players.add_first()
+	fish = first.fish
+	camera = first.camera
 	camera.make_current()
 
 	cards = CardSystem.new()
@@ -112,6 +115,7 @@ func _ready() -> void:
 	tank.add_child(cards)
 	cards.client = client
 	cards.fish = fish
+	cards.fishes = func() -> Array: return players.list.map(func(pl: Players.Player) -> Fish: return pl.fish)
 	cards.front_z = inner.end.z
 
 	decor = TankDecor.new()
@@ -135,12 +139,15 @@ func _ready() -> void:
 
 	menu = MonitorMenu.new()
 	menu.client = client
+	menu.players = players
+	players.changed.connect(menu.refresh_players)
 	monitor = Monitor.new()
 	add_child(monitor)
 	monitor.setup(room.screen, room.screen_size, client, menu)
 
 	tracking = TrackingCam.new()
 	tracking.fish = fish
+	tracking.others = func() -> Array: return players.list.slice(1).map(func(pl: Players.Player) -> Fish: return pl.fish)
 	tracking.cards = cards
 	tracking.visible = false
 	add_child(tracking)
@@ -169,14 +176,12 @@ func set_mode(new_mode: Mode) -> void:
 	var swimming := mode == Mode.SWIM
 	var editing := mode == Mode.EDIT
 	_has_swum = _has_swum or swimming
-	fish.player_control = swimming
-	if not swimming:
-		fish.drive(Vector3.ZERO, 0.0)
-	# The fish holds still while its cards are rearranged around it, and the
-	# moss ball goes back where the layout has it.
-	fish.set_physics_process(not editing)
+	# Every fish swims only while swimming (and holds still while its cards
+	# are rearranged around it); player 1's camera frames the monitor in the
+	# menu, and the screen splits for two or more players.
+	players.set_mode(swimming, editing)
+	# The moss ball goes back where the layout has it.
 	decor.editing = editing
-	camera.menu_view = not swimming
 	# Sound is heard from the fish while piloting it, from the camera otherwise.
 	if swimming:
 		ears.make_current()
@@ -188,8 +193,6 @@ func set_mode(new_mode: Mode) -> void:
 		editor.open()
 	elif not editing and editor.is_open():
 		editor.close()
-	if not editing:
-		camera.make_current()
 	if DisplayServer.get_name() != "headless":
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if swimming else Input.MOUSE_MODE_VISIBLE
 
@@ -248,8 +251,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _process(_delta: float) -> void:
-	RenderingServer.global_shader_parameter_set("fish_position", fish.global_position)
-	var view := get_viewport().get_camera_3d()
+	var view := camera if players.is_split() else get_viewport().get_camera_3d()
 	var underwater := view != null and _water.has_point(view.global_position)
 	room.environment.fog_enabled = underwater
 	Sound.underwater = underwater or (mode == Mode.SWIM)
@@ -329,6 +331,15 @@ func _apply_args() -> void:
 			fish.yaw = deg_to_rad(v[3])
 		fish.global_basis = Basis.from_euler(Vector3(0, fish.yaw, 0))
 		camera.orbit_yaw = fish.yaw
+	if _args.has("fish-variety"):
+		players.set_variety(players.list[0], int(_args["fish-variety"]), false)
+	if _args.has("coop"):
+		# Extra players on made-up pads, already swimming (for screenshots).
+		for i in int(_args.coop) - 1:
+			var p := players.join(100 + i)
+			if p and not _args.has("coop-choosing"):
+				p.choosing = false
+		players.set_mode(mode == Mode.SWIM, mode == Mode.EDIT)
 	if _args.has("steering"):
 		Fish.set_steering(String(_args.steering), false)
 	if _args.has("look"):

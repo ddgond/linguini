@@ -1,6 +1,6 @@
 {
   "project": "Linguini",
-  "now": "5a",
+  "now": "5b",
   "milestones": [
     {
       "id": "1",
@@ -569,7 +569,7 @@
     {
       "id": "5a",
       "title": "Split-screen co-op",
-      "status": "planned",
+      "status": "done",
       "summary": "More fish in the same tank, each piloted by a local player, on a split screen. Every fish presses the same cards, which drive the one virtual controller on the host.",
       "items": [
         {
@@ -585,7 +585,7 @@
           "status": "done"
         },
         {
-          "text": "Decided: each player picks their fish's colouring in their own view on joining (player 1 on the monitor), changeable later",
+          "text": "Decided: each player picks their fish's colouring in their own view on joining; everyone's are on the monitor's Players page",
           "status": "done"
         },
         {
@@ -597,39 +597,43 @@
           "status": "done"
         },
         {
-          "text": "Fish colourings to pick from: Tortellini, calico, red-cap white, black-and-orange",
-          "status": "planned"
+          "text": "Fish colourings to pick from, named for pasta: Tortellini, Fusilli (calico), Gnocchi (red cap on white), Ravioli (black and orange)",
+          "status": "done"
         },
         {
           "text": "Players: each with its own fish, input device, follow camera, steering and look",
-          "status": "planned"
+          "status": "done"
         },
         {
           "text": "Split-screen views, and the join flow with its colouring chooser",
-          "status": "planned"
+          "status": "done"
         },
         {
           "text": "Shared cards: any fish in front of a card presses it (holds combine, toggles flip on any arrival, a sequence plays once while it's already playing)",
-          "status": "planned"
+          "status": "done"
         },
         {
           "text": "Fish bump each other and the moss ball; the tank cam tracks every fish",
-          "status": "planned"
+          "status": "done"
         },
         {
           "text": "Leaving: from the monitor, or by holding Back",
-          "status": "planned"
+          "status": "done"
         },
         {
-          "text": "Quality: what each extra view costs, and what the split screen drops on Low and Medium",
-          "status": "planned"
+          "text": "Quality: each extra view costs about 0.4 ms (four players on High: 3.2 ms a frame on an RTX 3080); views follow the quality level's anti-aliasing and scale",
+          "status": "done"
+        },
+        {
+          "text": "Players page on the monitor: each player's fish, player 1's controls (Keyboard & first pad, or Keyboard only), Remove",
+          "status": "done"
         }
       ]
     },
     {
       "id": "5b",
       "title": "Show the new fish",
-      "status": "planned",
+      "status": "in-progress",
       "summary": "Bring the screenshots and the tank cam up to date with the Tortellini-shaped fish.",
       "items": [
         {
