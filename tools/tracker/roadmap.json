@@ -1,6 +1,6 @@
 {
   "project": "Linguini",
-  "now": "4l",
+  "now": "5a",
   "milestones": [
     {
       "id": "1",
@@ -563,6 +563,122 @@
         {
           "text": "Saved in settings; controls hint and guide follow it; --steering for a single run",
           "status": "done"
+        }
+      ]
+    },
+    {
+      "id": "5a",
+      "title": "Split-screen co-op",
+      "status": "planned",
+      "summary": "More fish in the tank, each piloted by a local player with their own gamepad (or the keyboard), on a split screen.",
+      "items": [
+        {
+          "text": "Decide what a second fish's cards drive: its own controller on the host (a second player in co-op games, as Moonlight supports several gamepads) or the one shared controller",
+          "status": "planned"
+        },
+        {
+          "text": "Players join and leave from the monitor: press a button on a new gamepad to drop a fish in; each picks a colour so the fish are told apart",
+          "status": "planned"
+        },
+        {
+          "text": "Split screen: two players side by side, three or four in quarters, each with their own follow camera, steering mode and look controls",
+          "status": "planned"
+        },
+        {
+          "text": "Cards per player when each fish has its own controller: a card presses for whichever fish swims into it, tinted by that fish's colour while held",
+          "status": "planned"
+        },
+        {
+          "text": "Fish bump each other and the moss ball; the tank cam tracks every fish, with an id per fish",
+          "status": "planned"
+        },
+        {
+          "text": "Sound heard from a sensible place with several fish (the screen's centre, or each fish's own ears in its half)",
+          "status": "planned"
+        },
+        {
+          "text": "Quality: what each extra view costs, and what the split screen drops on Low and Medium",
+          "status": "planned"
+        }
+      ]
+    },
+    {
+      "id": "5b",
+      "title": "Show the new fish",
+      "status": "planned",
+      "summary": "Bring the screenshots and the tank cam up to date with the Tortellini-shaped fish.",
+      "items": [
+        {
+          "text": "Retake the README and landing page screenshots (they predate the traced body and the eye fix)",
+          "status": "planned"
+        },
+        {
+          "text": "Tank cam keypoints placed on the new body (dorsal, fins and tail sit at bounding-box fractions chosen for the old shape)",
+          "status": "planned"
+        }
+      ]
+    },
+    {
+      "id": "5c",
+      "title": "Street sounds",
+      "status": "planned",
+      "summary": "Sound for the street outside, so it's heard as well as seen.",
+      "items": [
+        {
+          "text": "Cars passing, panned with the cars that drive by, and stopping and starting at the lights",
+          "status": "planned"
+        },
+        {
+          "text": "Rain on the window glass in the rainy mood, distinct from the rain outside",
+          "status": "planned"
+        },
+        {
+          "text": "Distant voices and footsteps with the people on the sidewalks; pigeons' wings with the flock",
+          "status": "planned"
+        }
+      ]
+    },
+    {
+      "id": "5d",
+      "title": "Low-end check",
+      "status": "planned",
+      "summary": "Run on integrated graphics, which Auto puts on Low, and tune what Low and Medium keep.",
+      "items": [
+        {
+          "text": "Measure Low and Medium on an integrated GPU: the room, the street and the tank",
+          "status": "planned"
+        },
+        {
+          "text": "Trim the street on Low if needed: fewer lit windows, simpler water and rain, fewer people and cars",
+          "status": "planned"
+        }
+      ]
+    },
+    {
+      "id": "5e",
+      "title": "Loose ends",
+      "status": "planned",
+      "summary": "Small things noticed along the way, and questions left open.",
+      "items": [
+        {
+          "text": "--steering for one run isn't shown in the monitor's Steering picker",
+          "status": "planned"
+        },
+        {
+          "text": "Update the GitHub workflows' actions off Node 20 (deprecated on the runners)",
+          "status": "planned"
+        },
+        {
+          "text": "Decide: should the camera also stay where it's aimed in Turn the fish?",
+          "status": "planned"
+        },
+        {
+          "text": "Decide: should the moss ball reset to the last saved preset rather than the current layout?",
+          "status": "planned"
+        },
+        {
+          "text": "Measure the editor's first-open cost, to settle runtime vs pre-rendered decor thumbnails",
+          "status": "planned"
         }
       ]
     }
