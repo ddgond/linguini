@@ -570,11 +570,11 @@
       "id": "5a",
       "title": "Split-screen co-op",
       "status": "planned",
-      "summary": "More fish in the tank, each piloted by a local player with their own gamepad (or the keyboard), on a split screen.",
+      "summary": "More fish in the same tank, each piloted by a local player, on a split screen. Every fish presses the same cards, which drive the one virtual controller on the host.",
       "items": [
         {
-          "text": "Decide what a second fish's cards drive: its own controller on the host (a second player in co-op games, as Moonlight supports several gamepads) or the one shared controller",
-          "status": "planned"
+          "text": "Decided: all fish share the one virtual controller on the host, and live in the same tank",
+          "status": "done"
         },
         {
           "text": "Players join and leave from the monitor: press a button on a new gamepad to drop a fish in; each picks a colour so the fish are told apart",
@@ -585,7 +585,7 @@
           "status": "planned"
         },
         {
-          "text": "Cards per player when each fish has its own controller: a card presses for whichever fish swims into it, tinted by that fish's colour while held",
+          "text": "Shared cards: any fish in front of a card presses it (holds combine, toggles flip on any arrival, a sequence plays once while it's already playing)",
           "status": "planned"
         },
         {
