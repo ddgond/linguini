@@ -84,6 +84,10 @@ void MoonlightClient::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("send_controller_state", "buttons", "left_trigger", "right_trigger", "left_x",
 								 "left_y", "right_x", "right_y"),
 			&MoonlightClient::send_controller_state);
+	ClassDB::bind_method(D_METHOD("send_keyboard", "key_code", "pressed", "modifiers"), &MoonlightClient::send_keyboard);
+	ClassDB::bind_method(D_METHOD("send_mouse_move", "dx", "dy"), &MoonlightClient::send_mouse_move);
+	ClassDB::bind_method(D_METHOD("send_mouse_button", "button", "pressed"), &MoonlightClient::send_mouse_button);
+	ClassDB::bind_method(D_METHOD("send_scroll", "amount"), &MoonlightClient::send_scroll);
 	ClassDB::bind_method(D_METHOD("pop_audio", "max_frames"), &MoonlightClient::pop_audio);
 	ClassDB::bind_method(D_METHOD("get_y_texture"), &MoonlightClient::get_y_texture);
 	ClassDB::bind_method(D_METHOD("get_uv_texture"), &MoonlightClient::get_uv_texture);
@@ -423,6 +427,34 @@ void MoonlightClient::send_controller_state(int buttons, int left_trigger, int r
 			(unsigned char)CLAMP(right_trigger, 0, 255), (short)CLAMP(left_x, -32768, 32767),
 			(short)CLAMP(left_y, -32768, 32767), (short)CLAMP(right_x, -32768, 32767),
 			(short)CLAMP(right_y, -32768, 32767));
+}
+
+void MoonlightClient::send_keyboard(int key_code, bool pressed, int modifiers) {
+	if (!input_ready) {
+		return;
+	}
+	LiSendKeyboardEvent((short)key_code, pressed ? KEY_ACTION_DOWN : KEY_ACTION_UP, (char)modifiers);
+}
+
+void MoonlightClient::send_mouse_move(int dx, int dy) {
+	if (!input_ready || (dx == 0 && dy == 0)) {
+		return;
+	}
+	LiSendMouseMoveEvent((short)CLAMP(dx, -32768, 32767), (short)CLAMP(dy, -32768, 32767));
+}
+
+void MoonlightClient::send_mouse_button(int button, bool pressed) {
+	if (!input_ready || button < BUTTON_LEFT || button > BUTTON_X2) {
+		return;
+	}
+	LiSendMouseButtonEvent(pressed ? BUTTON_ACTION_PRESS : BUTTON_ACTION_RELEASE, button);
+}
+
+void MoonlightClient::send_scroll(int amount) {
+	if (!input_ready || amount == 0) {
+		return;
+	}
+	LiSendHighResScrollEvent((short)CLAMP(amount, -32768, 32767));
 }
 
 PackedVector2Array MoonlightClient::pop_audio(int max_frames) {

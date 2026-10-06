@@ -166,3 +166,42 @@ func test_settings_page_by_keyboard() -> void:
 	await tree.process_frame
 	check(not main.menu.is_settings_shown() and main.mode == main.Mode.MENU, "Esc goes back to the menu's main page")
 	main.queue_free()
+
+
+func test_direct_input_mode() -> void:
+	# Which key the host hears: where it is on the keyboard.
+	var k := InputEventKey.new()
+	k.physical_keycode = KEY_W
+	check(DirectInput.virtual_key(k) == 0x57, "W is VK 0x57")
+	k.physical_keycode = KEY_F5
+	check(DirectInput.virtual_key(k) == 0x74, "F5 is VK_F5")
+	k.physical_keycode = KEY_SHIFT
+	k.location = KEY_LOCATION_RIGHT
+	check(DirectInput.virtual_key(k) == 0xA1, "right Shift is VK_RSHIFT")
+	k.physical_keycode = KEY_ESCAPE
+	k.ctrl_pressed = true
+	k.alt_pressed = true
+	check(DirectInput.virtual_key(k) == 0x1B and DirectInput.modifiers(k) == 6, "Esc with Ctrl and Alt held")
+
+	var main := await _main()
+	main.set_mode(main.Mode.DIRECT)
+	check(main.direct.active and not main.monitor.menu_visible and not main.cards.enabled,
+		"direct input: the menu away, the cards released")
+	check(not main.direct.fullscreen and main.direct.get_child(0).visible == false, "on the room's monitor at first")
+	_key(KEY_F11)
+	await tree.process_frame
+	check(main.direct.fullscreen and main.get_viewport().disable_3d, "F11: the stream fills the window, the room isn't drawn")
+	_key(KEY_F11)
+	await tree.process_frame
+	check(not main.direct.fullscreen and not main.get_viewport().disable_3d, "F11 again: back on the monitor")
+	var quit := InputEventKey.new()
+	quit.physical_keycode = KEY_Q
+	quit.keycode = KEY_Q
+	quit.ctrl_pressed = true
+	quit.alt_pressed = true
+	quit.shift_pressed = true
+	quit.pressed = true
+	Input.parse_input_event(quit)
+	await tree.process_frame
+	check(main.mode == main.Mode.MENU and not main.direct.active, "Ctrl+Alt+Shift+Q leaves it")
+	main.queue_free()

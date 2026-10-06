@@ -42,6 +42,10 @@ Rise, sink and dart work the same either way.
 
 Your own keyboard and gamepad never reach the host. Only the cards do.
 
+### Direct input
+
+For debugging, or just using the host PC, choose **Direct input** on the monitor while connected. The fish and cards stop, and your keyboard and mouse go straight to the host: every key, including Esc and the Windows keys, mouse movement (captured), the buttons and the wheel. The stream stays on the room's monitor; **F11** toggles it filling the window, and isn't sent. To leave, press **Ctrl+Alt+Shift+Q**, or hold **Start + Back** on a gamepad for a second. Either returns to the monitor menu.
+
 The gamepad names above are Xbox's. **Button art** in the tank editor sets which controller's art the cards, menus and hints use: **Xbox**, **PlayStation** or **Nintendo**. It starts on **Auto**, which follows the controller you last used, going by its name. Only the art changes; the host always gets the same inputs. Nintendo's face letters swap by position, so the bottom button (A on Xbox) shows as B.
 
 ## Flash cards

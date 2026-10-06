@@ -53,6 +53,14 @@ public:
 	// Gamepad 0 on the host. Sticks are -32768..32767 (+Y is up), triggers 0..255.
 	void send_controller_state(int buttons, int left_trigger, int right_trigger, int left_x, int left_y,
 			int right_x, int right_y);
+	// Keyboard and mouse straight to the host (the direct input mode).
+	// key_code is a Windows virtual-key code; modifiers MODIFIER_* bits.
+	void send_keyboard(int key_code, bool pressed, int modifiers);
+	void send_mouse_move(int dx, int dy);
+	// button: 1 left, 2 middle, 3 right, 4 and 5 the side buttons.
+	void send_mouse_button(int button, bool pressed);
+	// amount: 120 per wheel notch, positive away from the user.
+	void send_scroll(int amount);
 
 	godot::PackedVector2Array pop_audio(int max_frames);
 

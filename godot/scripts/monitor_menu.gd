@@ -13,6 +13,7 @@ extends Control
 signal swim_requested
 signal resume_requested
 signal edit_requested
+signal direct_requested
 signal tracking_changed(enabled: bool, style: int)
 
 const FONT_SIZE := 26
@@ -243,7 +244,8 @@ func show_in_stream() -> void:
 			["Edit tank", func() -> void: edit_requested.emit()],
 			["Controls", show_controls],
 			["Settings", show_settings]])
-	_button_row([["Disconnect", func() -> void: client.stop_stream(false)],
+	_button_row([["Direct input", func() -> void: direct_requested.emit()],
+			["Disconnect", func() -> void: client.stop_stream(false)],
 			["Quit game and disconnect", func() -> void: client.stop_stream(true)]])
 	_focus_first()
 

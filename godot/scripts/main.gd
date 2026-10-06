@@ -8,6 +8,9 @@ extends Node3D
 ## - SWIM: the player is the fish; cards press buttons on the host.
 ## - EDIT: the tank editor (F2, or Edit tank on the monitor); the fish waits
 ##   and cards are released while they're rearranged.
+## - DIRECT: direct input (Direct input on the in-stream menu): the keyboard
+##   and mouse go straight to the host while the stream shows on the monitor
+##   (F11: full screen); the fish rest and cards are released (DirectInput).
 ##
 ## Command-line options (after `--`), mostly for testing and screenshots:
 ##   --swim                 start swimming instead of in the menu
@@ -42,7 +45,7 @@ extends Node3D
 ##                          helpers such as pair and stream_check; this also works
 ##                          in exported builds, which ignore `-s`)
 
-enum Mode { MENU, SWIM, EDIT }
+enum Mode { MENU, SWIM, EDIT, DIRECT }
 
 var client: Node
 var room: Dictionary
@@ -50,6 +53,7 @@ var room: Dictionary
 var fish: Fish
 var camera: FishCamera
 var players: Players
+var direct: DirectInput
 var cards: CardSystem
 var monitor: Monitor
 var menu: MonitorMenu
@@ -160,6 +164,16 @@ func _ready() -> void:
 	add_child(audio)
 	audio.setup(room.speakers)
 
+	# After Players, so it hears input first while it's on.
+	direct = DirectInput.new()
+	direct.name = "DirectInput"
+	direct.client = client
+	add_child(direct)
+	direct.exit_requested.connect(func() -> void:
+		set_mode(Mode.MENU)
+		menu.show_in_stream())
+	menu.direct_requested.connect(set_mode.bind(Mode.DIRECT))
+
 	menu.swim_requested.connect(set_mode.bind(Mode.SWIM))
 	menu.resume_requested.connect(set_mode.bind(Mode.SWIM))
 	menu.edit_requested.connect(open_editor)
@@ -187,7 +201,8 @@ func set_mode(new_mode: Mode) -> void:
 		ears.make_current()
 	else:
 		ears.clear_current()
-	monitor.menu_visible = not swimming
+	var direct_input := mode == Mode.DIRECT
+	monitor.menu_visible = not swimming and not direct_input
 	cards.enabled = swimming
 	if editing and not editor.is_open():
 		editor.open()
@@ -195,6 +210,7 @@ func set_mode(new_mode: Mode) -> void:
 		editor.close()
 	if DisplayServer.get_name() != "headless":
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED if swimming else Input.MOUSE_MODE_VISIBLE
+	direct.active = direct_input  # captures the mouse itself while on
 
 
 func set_tracking(enabled: bool, style: int) -> void:
@@ -266,7 +282,8 @@ func _process(_delta: float) -> void:
 	var view := camera if players.is_split() else get_viewport().get_camera_3d()
 	var underwater := view != null and _water.has_point(view.global_position)
 	room.environment.fog_enabled = underwater
-	Sound.underwater = underwater or (mode == Mode.SWIM)
+	# Muffled underwater, but never while using the PC directly.
+	Sound.underwater = (underwater or mode == Mode.SWIM) and mode != Mode.DIRECT
 	# No HUD: the camera's tally light and the monitor say whether we're live.
 	room.moods.live = client != null and client.is_streaming()
 	_pump_audio()
