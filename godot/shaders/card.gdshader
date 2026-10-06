@@ -10,6 +10,9 @@ uniform float radius = 0.007;
 uniform float edge = 0.0032;  // the clear laminated border
 uniform vec3 edge_color : source_color = vec3(1.0);
 uniform float glow = 0.0;
+// 0..1: the card is pressing (held, playing or toggled on): light glows in
+// from the edge and the whole face brightens a little.
+uniform float lit = 0.0;
 uniform float progress = -1.0;  // below 0: no bar
 // The chip of the step a playing sequence is on, in face UV (x, y, w, h);
 // zero size: none.
@@ -28,8 +31,12 @@ void fragment() {
 	float rim = smoothstep(-edge - 0.0003, -edge + 0.0003, d);
 	vec3 laminate = vec3(0.9, 0.92, 0.93);
 	vec3 col = mix(paper, laminate, rim);
-	vec3 light = edge_color * glow * rim * 2.5;
-	col = mix(col, edge_color, rim * clamp(glow, 0.0, 1.0) * 0.6);
+	vec3 light = edge_color * glow * rim * 3.5;
+	col = mix(col, edge_color, rim * clamp(glow, 0.0, 1.0) * 0.8);
+	// Lit: a glow from the edge inward, and the paper brighter.
+	float inner = (1.0 - smoothstep(edge, edge + 0.014, -d)) * step(d, 0.0);
+	col = mix(col, edge_color, inner * lit * 0.35);
+	light += edge_color * inner * lit * 1.4 + paper * lit * 0.18;
 
 	if (progress >= 0.0) {
 		// UV runs down the face (as the face texture does), so the bottom edge

@@ -10,6 +10,8 @@ extends Node3D
 ## macro plays. Toggle cards say TOGGLE, and stay lit while they're switched on.
 
 const SEQUENCE_COLOR := Color(0.1, 0.62, 0.6)
+## What the dark grey cards light up in.
+const LIT_COLOR := Color(1.0, 0.78, 0.3)
 const SELECTED_COLOR := Color(1.0, 0.85, 0.2)
 const THICKNESS := 0.003
 const CORNER := 0.007
@@ -159,9 +161,20 @@ func set_progress(value: float) -> void:
 
 func _update_highlight() -> void:
 	var lit := active or playing or latched
-	_face_mat.set_shader_parameter("edge_color", SELECTED_COLOR if _selected else card_color())
+	_face_mat.set_shader_parameter("edge_color", SELECTED_COLOR if _selected else light_color())
 	var glow := 1.0 if lit else (0.6 if _selected else 0.0)
 	_face_mat.set_shader_parameter("glow", glow + 1.2 * _pulse * _pulse)
+	_face_mat.set_shader_parameter("lit", 1.0 if lit else 0.0)
+
+
+## The colour a card lights up in when it presses: its own, brightened, or,
+## for the dark grey cards (bumpers, triggers, sticks, the D-pad, Start and
+## Back), a warm amber that shows up against them.
+func light_color() -> Color:
+	var c := card_color()
+	if c.s < 0.35 or c.v < 0.55:
+		return LIT_COLOR
+	return Color.from_hsv(c.h, minf(c.s * 1.1, 1.0), maxf(c.v, 0.95))
 
 
 ## Selection outline for the tank editor.
