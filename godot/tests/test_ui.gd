@@ -113,6 +113,16 @@ func test_tank_cam_keypoints() -> void:
 		if cam.box.grow(12.0).has_point(p):
 			inside += 1
 	check(inside == cam.keypoints.size(), "keypoints sit on the fish (%d of %d in its box)" % [inside, cam.keypoints.size()])
+	var model: FishModel = main.fish.get_children().filter(func(c: Node) -> bool: return c is FishModel)[0]
+	var k := model.keypoints()
+	check(k.size() == TrackingCam.KEYPOINTS.size(), "every keypoint is found on the model (%d)" % k.size())
+	if k.size() == TrackingCam.KEYPOINTS.size():
+		check(k.nose.z < k.eye_l.z and k.eye_l.z < k.tail_base.z and k.tail_base.z < k.tail_tip.z,
+			"nose, eyes, tail base and tail tip run front to back")
+		check(k.eye_l.x < 0.0 and k.eye_r.x > 0.0 and k.fin_l.x < k.eye_l.x and k.fin_r.x > k.eye_r.x,
+			"eyes either side, pectorals reaching out past them")
+		check(k.dorsal.y > k.eye_l.y and k.dorsal.y > k.tail_base.y, "the dorsal's tip is the top of the fish")
+		check(k.fin_l.z < k.tail_base.z and k.fin_r.z < k.tail_base.z, "the pectorals are in the front half")
 	main.set_tracking(false, TrackingCam.Style.EARNEST)
 	main.queue_free()
 

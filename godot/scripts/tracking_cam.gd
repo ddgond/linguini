@@ -27,7 +27,9 @@ const HEAT_CELLS := Vector2i(48, 27)
 const MODEL := "finnet-s v3.2"
 const MODEL_XL := "FINNET-XL // research build 0xF15H"
 const CLASS_NAME := "goldfish"
-## Keypoints, as fractions of the fish's bounds (x across, y up, z nose -1 .. tail +1).
+## Keypoints. They sit on the model's own nose, eyes, fins and tail
+## (FishModel.keypoints()); these fractions of the fish's bounds (x across,
+## y up, z nose -1 .. tail +1) are for a fish without its model.
 const KEYPOINTS := {
 	"nose": Vector3(0, 0, -1), "eye_l": Vector3(-0.45, 0.25, -0.6), "eye_r": Vector3(0.45, 0.25, -0.6),
 	"dorsal": Vector3(0, 1, -0.05), "fin_l": Vector3(-1, -0.35, -0.2), "fin_r": Vector3(1, -0.35, -0.2),
@@ -173,9 +175,14 @@ func _keypoints(xf: Transform3D, bounds: AABB) -> void:
 	keypoints.clear()
 	var c := bounds.get_center()
 	var h := bounds.size / 2.0
+	var on_model := {}
+	for child in fish.get_children():
+		if child is FishModel:
+			on_model = child.keypoints()
 	for key: String in KEYPOINTS:
 		var f: Vector3 = KEYPOINTS[key]
-		var world := xf * (c + f * h)
+		var local: Vector3 = on_model[key] if on_model.has(key) else c + f * h
+		var world := xf * local
 		if not camera.is_position_behind(world):
 			var jitter := Vector2(_noise.get_noise_2d(_time * 6.0, key.hash() % 97), _noise.get_noise_2d(key.hash() % 89, _time * 6.0)) * 2.0
 			keypoints[key] = camera.unproject_position(world) + jitter

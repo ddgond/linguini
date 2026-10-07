@@ -14,7 +14,7 @@ jobs:
   linux:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
       - name: Install dependencies
@@ -36,7 +36,7 @@ jobs:
           mkdir -p godot/.godot && echo "res://linguini.gdextension" > godot/.godot/extension_list.cfg
           "$godot" --headless --path godot --import
           "$godot" --headless --path godot -s res://tests/run_tests.gd
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: linguini-linux
           path: godot/bin/
@@ -44,7 +44,7 @@ jobs:
   macos:
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
       - name: Install dependencies
@@ -64,7 +64,7 @@ jobs:
           mkdir -p godot/.godot && echo "res://linguini.gdextension" > godot/.godot/extension_list.cfg
           "$godot" --headless --path godot --import
           "$godot" --headless --path godot -s res://tests/run_tests.gd
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: linguini-macos
           path: godot/bin/
@@ -72,7 +72,7 @@ jobs:
   windows:
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
       - name: Install SCons and FFmpeg
@@ -83,7 +83,7 @@ jobs:
           choco install ffmpeg -y --no-progress
       # vcpkg's binary cache: FFmpeg and friends take a while to build and
       # change only with the manifest or the script that pins vcpkg.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: dist/windows/vcpkg-cache
           key: windows-deps-${{ hashFiles('packaging/windows/vcpkg.json', 'packaging/windows/build-deps.ps1') }}
@@ -105,7 +105,7 @@ jobs:
           & $godot --headless --path godot --import
           & $godot --headless --path godot -s res://tests/run_tests.gd
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: linguini-windows
           path: godot/bin/*.dll

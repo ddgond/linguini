@@ -125,26 +125,20 @@ func test_fish_fades_in_front_of_the_monitor() -> void:
 	main.queue_free()
 
 
-func test_camera_stays_aimed_when_swimming_where_you_point() -> void:
+func test_camera_stays_aimed() -> void:
 	var main := await _main()
 	var cam: FishCamera = main.camera
 	var fish: Fish = main.fish
 	var before := fish.steering
 	cam.menu_view = false
-	cam._manual_timer = 0.0
 	cam.orbit_yaw = 0.0
 	fish.pose_effort = 0.5
 	fish.yaw = PI / 2
-	fish.velocity = Vector3(-0.3, 0, 0)  # swimming hard, facing another way
-	fish.steering = "camera"
-	for i in 30:
-		fish.velocity = Vector3(-0.3, 0, 0)
-		await tree.process_frame
-	check(absf(cam.orbit_yaw) < 0.001, "the camera stays where it was aimed (%.3f)" % cam.orbit_yaw)
-	fish.steering = "fish"
-	for i in 30:
-		fish.velocity = Vector3(-0.3, 0, 0)
-		await tree.process_frame
-	check(cam.orbit_yaw > 0.2, "turning the fish, it swings round behind it (%.3f)" % cam.orbit_yaw)
+	for steering: String in ["camera", "fish"]:
+		fish.steering = steering
+		for i in 30:
+			fish.velocity = Vector3(-0.3, 0, 0)  # swimming hard, facing another way
+			await tree.process_frame
+		check(absf(cam.orbit_yaw) < 0.001, "steering by %s, the camera stays where it was aimed (%.3f)" % [steering, cam.orbit_yaw])
 	fish.steering = before
 	main.queue_free()

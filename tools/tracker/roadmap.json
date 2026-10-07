@@ -1,6 +1,6 @@
 {
   "project": "Linguini",
-  "now": "5e",
+  "now": "5b",
   "milestones": [
     {
       "id": "1",
@@ -685,32 +685,32 @@
     {
       "id": "5e",
       "title": "Loose ends",
-      "status": "planned",
+      "status": "done",
       "summary": "Small things noticed along the way, and questions left open.",
       "items": [
         {
-          "text": "--steering for one run isn't shown in the monitor's Steering picker",
-          "status": "planned"
+          "text": "--steering for one run shows in the Steering picker (fixed when steering moved to the Controls page); a test keeps it so",
+          "status": "done"
         },
         {
-          "text": "Update the GitHub workflows' actions off Node 20 (deprecated on the runners)",
-          "status": "planned"
+          "text": "GitHub workflows on the Node 24 actions: checkout v7, upload-artifact v7, download-artifact v8, cache v6, upload-pages-artifact v5, deploy-pages v5",
+          "status": "done"
         },
         {
-          "text": "Decide: should the camera also stay where it's aimed in Turn the fish?",
-          "status": "planned"
+          "text": "Decided: the camera stays where it's aimed in Turn the fish too; it no longer swings round behind the fish on its own",
+          "status": "done"
         },
         {
-          "text": "Decide: should the moss ball reset to the last saved preset rather than the current layout?",
-          "status": "planned"
+          "text": "Decided: the moss ball keeps going back to the current layout (saved or not) when the editor opens or closes",
+          "status": "done"
         },
         {
-          "text": "Measure the editor's first-open cost, to settle runtime vs pre-rendered decor thumbnails",
-          "status": "planned"
+          "text": "Measured the editor's first open: 14 thumbnails in one go, a single 80 ms frame on Low (190 on Medium) on the N150, once a session; decided to keep runtime thumbnails. The bench times it",
+          "status": "done"
         },
         {
-          "text": "Tank cam keypoints placed on the new body (dorsal, fins and tail sit at bounding-box fractions chosen for the old shape)",
-          "status": "planned"
+          "text": "Tank cam keypoints read from the fish model: the nose, the eyes, the dorsal's tip, the pectorals' tips, the tail's base and tip",
+          "status": "done"
         }
       ]
     },

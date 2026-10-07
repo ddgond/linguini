@@ -36,7 +36,9 @@ Playing, building and working on Linguini. The original vision is in [core.md](c
 **Steering**, in each player's column on the Controls page, sets how the stick (or WASD) steers:
 
 - **Turn the fish** (the default): from the fish's point of view. Forward swims the way the fish faces, back backs it up on its fins, and left and right turn it, as in the table above.
-- **Swim where you point:** from the camera's. Push the way you want to go on screen: up swims straight away from the camera, left to the left of the view, down back toward it. It follows the camera's tilt too, so with the camera looking down, up dives toward what you see, and looking up it climbs. The fish turns and arcs round toward that direction at its own pace. The camera stays where you aim it; it doesn't swing round behind the fish.
+- **Swim where you point:** from the camera's. Push the way you want to go on screen: up swims straight away from the camera, left to the left of the view, down back toward it. It follows the camera's tilt too, so with the camera looking down, up dives toward what you see, and looking up it climbs. The fish turns and arcs round toward that direction at its own pace.
+
+Either way, the camera stays where you aim it; it doesn't swing round behind the fish on its own.
 
 Rise, sink and dart work the same either way.
 
@@ -220,7 +222,7 @@ tools/bench.sh swim.md -- --bench=swim,split --bench-stream=on
 tools/bench.sh street.md -- --quality=low --bench-off=street   # what the street costs
 ```
 
-`--bench` holds a fixed set of views (the menu, swimming, the tank editor, two-player split screen, the room from the doorway and the street from the window) in each mood at each quality level. It does this without and then with a stream on the monitor: a 1080p60 H.264 clip looped through the real decoder. It prints frame and GPU milliseconds for each as a Markdown table. `--bench-off=PARTS` leaves parts out to see what they cost: `street`, `rain`, `lights`, `shadows`, `glass`, `tank` and more, a node's name, or `plain:MATERIAL` to swap a material for plain grey (see `godot/scripts/bench.gd`).
+`--bench` holds a fixed set of views (the menu, swimming, the tank editor, two-player split screen, the room from the doorway and the street from the window) in each mood at each quality level. It does this without and then with a stream on the monitor: a 1080p60 H.264 clip looped through the real decoder. It prints frame and GPU milliseconds for each as a Markdown table. When the tour includes the editor, it first opens the editor once to time the first open, when every decor thumbnail is rendered. `--bench-off=PARTS` leaves parts out to see what they cost: `street`, `rain`, `lights`, `shadows`, `glass`, `tank` and more, a node's name, or `plain:MATERIAL` to swap a material for plain grey (see `godot/scripts/bench.gd`).
 
 Without a desktop session (over SSH, say), `tools/bench.sh` starts a headless Sway so Godot renders on the real GPU; Xvfb would only give software rendering. It needs the default dev shell (`nix develop`).
 

@@ -34,8 +34,6 @@ const FISH_REACH := 0.06
 var look_speed := 1.0
 var invert_y := false
 @export var stick_speed := 2.5 ## rad/s
-@export var recenter_delay := 1.2 ## s after the last manual look
-@export var recenter_rate := 1.6
 @export var gaze_time := 0.35 ## s to swing into / out of gaze
 @export var glass_leeway := 0.35 ## m the follow camera may back out through the glass walls
 @export var dart_kick := 7.0 ## degrees of FOV punched out when the fish darts
@@ -53,7 +51,6 @@ var orbit_yaw := 0.0
 var orbit_pitch := -0.25
 var gaze := 0.0 ## 0 = follow, 1 = gaze at monitor
 var _menu := 0.0
-var _manual_timer := 0.0
 var _pivot := Vector3.ZERO
 ## 1 right after a dart, easing back to 0.
 var kick := 0.0
@@ -77,7 +74,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		var k := mouse_sensitivity * look_speed
 		orbit_yaw -= event.relative.x * k
 		orbit_pitch = clampf(orbit_pitch - event.relative.y * k * (-1.0 if invert_y else 1.0), MIN_PITCH, MAX_PITCH)
-		_manual_timer = recenter_delay
 
 
 func _process(delta: float) -> void:
@@ -91,18 +87,8 @@ func _process(delta: float) -> void:
 		orbit_yaw -= look.x * stick_speed * look_speed * delta
 		var up := look.y * (-1.0 if invert_y else 1.0)
 		orbit_pitch = clampf(orbit_pitch + up * stick_speed * look_speed * delta, MIN_PITCH, MAX_PITCH)
-		_manual_timer = recenter_delay
-	_manual_timer = maxf(_manual_timer - delta, 0.0)
-
-	# Drift back behind the fish once it's swimming and the player has let go.
-	var speed := fish.velocity.length()
-	# Steering by the camera ("Swim where you point") it stays where the player
-	# aims it: swinging round behind the fish would change what "up" means.
-	var recenter := fish.steering == "fish"
-	if recenter and _manual_timer <= 0.0 and speed > 0.04:
-		var k := 1.0 - exp(-recenter_rate * clampf(speed / fish.cruise_speed, 0.0, 1.0) * delta)
-		orbit_yaw = lerp_angle(orbit_yaw, fish.yaw, k)
-		orbit_pitch = lerpf(orbit_pitch, -0.25 - fish.pitch * 0.5, k)
+	# The camera stays where the player aims it, whichever way the fish
+	# steers; it never swings round behind the fish on its own.
 
 	_pivot = _pivot.lerp(fish.global_position, 1.0 - exp(-12.0 * delta))
 

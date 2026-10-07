@@ -383,7 +383,6 @@ func _apply_args() -> void:
 		players.set_steering(players.list[0], String(_args.steering), false)
 	if _args.has("look"):
 		camera.orbit_pitch = clampf(float(_args.look), FishCamera.MIN_PITCH, FishCamera.MAX_PITCH)
-		camera._manual_timer = 999.0
 	if _args.has("fish-drive"):
 		var d: PackedFloat64Array = String(_args["fish-drive"]).split_floats(",")
 		fish.autopilot = Vector3(d[0], d[1], d[2])

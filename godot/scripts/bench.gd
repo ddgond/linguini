@@ -54,6 +54,8 @@ func _run() -> void:
 	print("Averages over %.0f s per view after %.1f s to settle; worst = the slowest 5%% of frames.\n" % [MEASURE, WARM_UP])
 	if not off.is_empty():
 		print("Left out: %s\n" % ", ".join(off))
+	if "editor" in views:
+		await _first_open()
 	_header()
 	for stream: bool in streams:
 		if stream and not _start_stream():
@@ -78,6 +80,34 @@ func _run() -> void:
 		OS.delay_msec(5000)
 		OS.kill(OS.get_process_id()))
 	get_tree().quit()
+
+
+## Opening the tank editor for the first time builds its panels and renders
+## a thumbnail of every decor piece: how long until they're all in, and how
+## the frames meanwhile fare.
+func _first_open() -> void:
+	Quality.set_setting(levels[0], false)
+	main.set_mode(main.Mode.MENU)
+	await get_tree().create_timer(WARM_UP).timeout
+	await RenderingServer.frame_post_draw
+	var start := Time.get_ticks_usec()
+	var last := start
+	main.open_editor()
+	var frames: Array[float] = []
+	while not DecorThumbnails._waiting.is_empty() or frames.size() < 2:
+		await RenderingServer.frame_post_draw
+		var now := Time.get_ticks_usec()
+		frames.append((now - last) / 1000.0)
+		last = now
+		if now - start > 20_000_000:
+			break
+	var thumbnails := DecorThumbnails._cache.size()
+	var total := (last - start) / 1_000_000.0
+	await get_tree().create_timer(WARM_UP).timeout
+	main.set_mode(main.Mode.MENU)
+	var slow := frames.filter(func(f: float) -> bool: return f > 33.4).size()
+	print("Opening the tank editor (%s): %d thumbnails in %.2f s over %d frames; the slowest %.0f ms, %d over 33 ms.\n" % [
+		levels[0], thumbnails, total, frames.size(), frames.max(), slow])
 
 
 func _header() -> void:

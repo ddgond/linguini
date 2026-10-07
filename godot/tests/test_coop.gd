@@ -169,3 +169,25 @@ func test_coop_page_columns() -> void:
 	check(not main.menu.is_controls_shown(), "B goes back")
 	players.leave(p2)
 	main.queue_free()
+
+
+func test_steering_for_one_run_shows_on_the_controls_page() -> void:
+	var main := await _main()
+	var players: Players = main.players
+	var p1: Players.Player = players.list[0]
+	var saved: String = Settings.get_value("controls", "steering", "fish")
+	var other := "fish" if saved == "camera" else "camera"
+	# As --steering does: for this run only, before the page is open.
+	players.set_steering(p1, other, false)
+	main.set_mode(main.Mode.MENU)
+	main.menu.show_controls()
+	await tree.process_frame
+	var page: ControlsPage = main.menu.find_children("ControlsPage", "", true, false)[0]
+	var picker: Stepper = page._columns[0]._rows[1]
+	check(picker.selected == (1 if other == "camera" else 0), "the Steering picker shows this run's steering")
+	# And while it's open.
+	players.set_steering(p1, saved, false)
+	await tree.process_frame
+	check(picker.selected == (1 if saved == "camera" else 0), "the picker follows a change made while it's open")
+	check(Settings.get_value("controls", "steering", "fish") == saved, "steering for one run isn't saved")
+	main.queue_free()

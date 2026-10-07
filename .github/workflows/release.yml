@@ -14,7 +14,7 @@ jobs:
   linux:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
 
@@ -30,7 +30,7 @@ jobs:
       - name: Package Linux
         run: packaging/linux/package.sh
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: build-linux
           path: dist/builds/*
@@ -38,7 +38,7 @@ jobs:
   macos:
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
 
@@ -56,7 +56,7 @@ jobs:
           echo "GODOT_TEMPLATES=$RUNNER_TEMP/templates" >> "$GITHUB_ENV"
 
       # The static dependencies take a while to build and change only with the script.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: dist/macos/deps-*
           key: macos-deps-${{ hashFiles('packaging/macos/build-deps.sh') }}
@@ -64,7 +64,7 @@ jobs:
       - name: Package macOS
         run: packaging/macos/package.sh
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: build-macos
           path: dist/builds/*
@@ -72,7 +72,7 @@ jobs:
   windows:
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
 
@@ -90,7 +90,7 @@ jobs:
           "GODOT_TEMPLATES=$env:RUNNER_TEMP\templates" >> $env:GITHUB_ENV
 
       # vcpkg's binary cache, shared with build.yml.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: dist/windows/vcpkg-cache
           key: windows-deps-${{ hashFiles('packaging/windows/vcpkg.json', 'packaging/windows/build-deps.ps1') }}
@@ -98,7 +98,7 @@ jobs:
       - name: Package Windows
         run: packaging/windows/package.ps1
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: build-windows
           path: dist/builds/*
@@ -109,11 +109,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: build-*
           path: dist/builds

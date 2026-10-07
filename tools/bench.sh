@@ -20,7 +20,7 @@ shift || true
 [[ ${1:-} == -- ]] && shift
 
 run() {
-	godot --path "$root/godot" "$@" -- --bench "${bench_args[@]}" 2>&1 | grep --line-buffered -E '^(\||Linguini bench|Averages|Done|\(no stream)' | tee "$out"
+	godot --path "$root/godot" "$@" -- --bench "${bench_args[@]}" 2>&1 | grep --line-buffered -E '^(\||Linguini bench|Averages|Opening|Left out|Done|\(no stream)' | tee "$out"
 }
 bench_args=("$@")
 
