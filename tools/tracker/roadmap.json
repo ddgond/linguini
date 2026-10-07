@@ -771,6 +771,30 @@
       ]
     },
     {
+      "id": "5h",
+      "title": "Random Grid",
+      "status": "done",
+      "summary": "A built-in layout that tiles the back of the tank with shuffled buttons, as in Tortellini's own tank.",
+      "items": [
+        {
+          "text": "Random Grid: 9 by 5 cards over the back wall, each a face button, bumper, stick click or trigger from a shuffled bag so all ten turn up; reshuffled each time it's loaded; light decor kept to the front",
+          "status": "done"
+        },
+        {
+          "text": "The editor's input buttons follow the button art when it changes (Nintendo shows +, \u2212, L, ZR...)",
+          "status": "done"
+        },
+        {
+          "text": "Fixed: a card could keep its old button art after a quick change of set, when an earlier face finished drawing last",
+          "status": "done"
+        },
+        {
+          "text": "--layout=NAME starts with a preset for one run",
+          "status": "done"
+        }
+      ]
+    },
+    {
       "id": "5c",
       "title": "Street sounds",
       "status": "planned",

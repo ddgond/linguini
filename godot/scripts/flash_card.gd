@@ -39,6 +39,7 @@ var step := -1:
 	set = set_step
 
 var _face_mat: ShaderMaterial
+var _face_ticket := 0
 var _face: Node3D
 var _selected := false
 var _pulse := 0.0
@@ -97,8 +98,13 @@ func _ready() -> void:
 
 func _request_face() -> void:
 	var mat := _face_mat
+	# Faces draw a frame or two later, and not always in the order asked for:
+	# only the latest request's (say, after the button art changed) counts.
+	_face_ticket += 1
+	var ticket := _face_ticket
 	CardFace.request(binding, card_color(), size, func(tex: Texture2D) -> void:
-		mat.set_shader_parameter("face", tex))
+		if ticket == _face_ticket:
+			mat.set_shader_parameter("face", tex))
 
 
 func set_active(value: bool) -> void:

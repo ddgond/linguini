@@ -60,6 +60,8 @@ func _ready() -> void:
 	_layer.visible = false
 	add_child(_layer)
 	_build_panel()
+	# The input buttons are named in the button art in use.
+	Glyphs.changed.connect(func(_set: String) -> void: _rebuild_card_panel())
 	set_process_unhandled_input(false)
 
 

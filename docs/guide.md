@@ -8,7 +8,7 @@ Playing, building and working on Linguini. The original vision is in [core.md](c
 - **Real Fishy Movement:** the stick or WASD steers from the fish's point of view, not the camera's. Forward swims along its heading, left and right turn it, and back makes it back up slowly. Input is an urge, not a velocity: the fish turns at a limited rate and moves in tail-beat pulses, so it swims in arcs. With no input it drifts.
 - Third-person camera. Hold the gaze button to look past the fish at the monitor.
 - Flash cards cover the whole controller. Cards can hold several inputs at once (combos), tap briefly on arrival (taps), stay on until the fish comes back (toggles), or play a timed macro (sequences).
-- A tank editor (F2) places, rebinds, duplicates and deletes cards, and saves named presets.
+- A tank editor (F2) places, rebinds, duplicates and deletes cards, and saves named presets. A Random Grid preset tiles the back wall with shuffled buttons, as in Tortellini's tank.
 - A **tank cam** window (F4) shows the room camera's view with a fake ML fish-tracking overlay, ready for OBS to capture.
 - Game audio plays from the speakers next to the monitor. While you pilot the fish you hear from the fish, lightly muffled by the water. Cards tap, the tank bubbles and hums, the fish swishes, and the room has its own tone in each mood.
 - **Art, so far:** a fancy fantail goldfish that swims by vertex shader, a modelled tank and stand, glass with a hint of algae, a rippling water surface, and caustic light. The tank has editable decor: plants, rocks, driftwood, an air stone, a filter and ornaments. The tank sits under the window of a cosy streamer's bedroom, with lighting baked in Blender for three moods, and outside the window is a neighbourhood street with traffic and people. Every model comes from a Blender script.
@@ -54,6 +54,8 @@ The gamepad names above are Xbox's. **Button art** in the tank editor sets which
 
 The built-in Default layout is `godot/data/layouts/default.json`: one card for each input, on the back wall of the tank. Every card faces the front glass, where the room camera is. A card's trigger zone is the middle 90% of its footprint, extruded forward to the glass. From the room camera's point of view, the fish covering a card presses it.
 
+The built-in **Random Grid** layout (`godot/data/layouts/random_grid.json`) tiles the whole back wall with a 9 × 5 grid of cards, as in Tortellini's own tank. Each is a face button, bumper, stick click or trigger, shuffled so every one of them turns up four or five times. It's shuffled afresh each time it's loaded, at startup or with **Load**; **Save as** keeps a grid you like.
+
 - **Pressing:** a card presses as soon as the centre of the fish enters its zone. Fins, tail and the rest of the body don't count. It stays held while the fish stays there.
 - **Releasing:** a card releases once the fish has been out of the zone for 150 ms. The zone also has a 1.5 cm margin while held, so a fish drifting along an edge doesn't make the button flicker.
 - **Combos:** a card can hold several inputs together, such as RB + A, or L↑ + L→ for a stick diagonal.
@@ -72,7 +74,7 @@ Press F2, or choose **Edit tank** on the monitor. The fish waits and nothing is 
 - **Editing a card:** choose **Hold**, **Tap** or **Toggle** and pick one or more inputs, or choose **Sequence** and edit its steps. You can give it a name, which is shown on the card.
 - **Editing decor:** set its colour variant and size (S, M or L), and turn it with the slider. Cards always face the glass, so only decor turns.
 - **Actions:** **+ Card**, **Duplicate** and **Delete**. To add decor, click its picture in the **Add decor** palette. The selected card shows how it's printed, and selected decor shows its picture.
-- **Presets:** **Load**, **Save**, **Save as** and **Delete**. A preset holds both the cards and the decor. Default is built in and read-only. Your presets are saved as JSON in the app's user folder under `layouts/`. The preset in use is remembered between sessions.
+- **Presets:** **Load**, **Save**, **Save as** and **Delete**. A preset holds both the cards and the decor. Default and Random Grid are built in and read-only. Your presets are saved as JSON in the app's user folder under `layouts/`. The preset in use is remembered between sessions.
 
 ### Decor
 

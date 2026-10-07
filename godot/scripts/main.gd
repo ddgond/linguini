@@ -37,6 +37,7 @@ extends Node3D
 ##   --fov=DEGREES          with --overview, the camera's field of view (default 75)
 ##   --mood=NAME            night, rainy or golden, just for this run
 ##   --glyphs=SET           xbox, playstation or nintendo button art, just for this run
+##   --layout=NAME          start with this card layout preset, just for this run
 ##   --quality=LEVEL        low, medium or high graphics, just for this run
 ##   --edit                 open the tank editor
 ##   --tracking=STYLE       open the tank cam window (minimal, earnest, over-the-top, off)
@@ -146,7 +147,7 @@ func _ready() -> void:
 	editor.focus = tank.global_position + Vector3(0, 0.28, 0)
 	add_child(editor)
 	editor.closed.connect(_on_editor_closed)
-	if not editor.load_preset(Settings.layout_preset()):
+	if not editor.load_preset(String(_args.get("layout", Settings.layout_preset()))):
 		editor.load_preset(LayoutPresets.DEFAULT)
 	editor.preset_changed.connect(func(p: String) -> void: Settings.set_layout_preset(p))
 

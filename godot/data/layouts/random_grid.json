@@ -1,0 +1,12 @@
+{
+	"name": "Random Grid",
+	"comment": "Tiles the back wall with a grid of cards, each a random face button, bumper, stick click or trigger, like Tortellini's own tank. \"generate\" makes LayoutPresets.read() lay the cards out afresh each time the preset is loaded (see LayoutPresets.random_grid()); save it under another name to keep one. Decor is kept to the front, clear of the grid.",
+	"generate": "random_grid",
+	"decor": [
+		{ "type": "airstone", "position": [-0.508, 0.03, 0.19], "yaw": 0, "size": "M", "variant": 0 },
+		{ "type": "sign", "position": [-0.031, 0.03, 0.192], "yaw": 15, "size": "S", "variant": 0 },
+		{ "type": "bonfire", "position": [0.05, 0.03, 0.198], "yaw": 0, "size": "S", "variant": 0 },
+		{ "type": "filter", "position": [0.6, 0.6, 0.13], "yaw": 270, "size": "M", "variant": 0 },
+		{ "type": "lily_pad", "position": [-0.186, 0.56, 0.189], "yaw": 30, "size": "M", "variant": 0 }
+	]
+}

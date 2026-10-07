@@ -109,3 +109,29 @@ func test_preset_cycle() -> void:
 	LayoutPresets.delete(PRESET)
 	Settings.set_layout_preset(original)
 	main.queue_free()
+
+
+## The card panel names its inputs in the button art in use, and follows it
+## when the art changes with the panel open.
+func test_inputs_named_in_the_button_art() -> void:
+	var main := await _main()
+	main.open_editor()
+	var editor: TankEditor = main.editor
+	var was: String = Glyphs.setting
+	Glyphs.set_setting("xbox", false)
+	editor._select(main.cards.cards[0])
+	var names := func() -> Dictionary:
+		var out := {}
+		for b: Button in editor._card_box.find_children("*", "Button", true, false):
+			if CardSystem.INPUTS.has(b.tooltip_text):
+				out[b.tooltip_text] = b.text
+		return out
+	var xbox: Dictionary = names.call()
+	check(xbox.get("BACK") == "VIEW" and xbox.get("START") == "MENU" and xbox.get("LB") == "LB", "Xbox names: %s" % xbox)
+	Glyphs.set_setting("nintendo", false)
+	await tree.process_frame
+	var nintendo: Dictionary = names.call()
+	check(nintendo.get("BACK") == "−" and nintendo.get("START") == "+", "Nintendo uses − and + (%s, %s)" % [nintendo.get("BACK"), nintendo.get("START")])
+	check(nintendo.get("LB") == "L" and nintendo.get("RT") == "ZR" and nintendo.get("A") == "B", "and L, ZR, and its own face letters")
+	Glyphs.set_setting(was, false)
+	main.queue_free()

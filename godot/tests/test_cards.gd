@@ -419,3 +419,33 @@ func test_chips_fit_without_overlapping() -> void:
 				if i > 0:
 					ok = ok and r.position.x - (rects[i - 1] as Rect2).end.x > 4.0  # room for the separator
 			check(ok, "%s chips fit with room between them (%s)" % [set_name, ids])
+
+
+func test_random_grid_preset() -> void:
+	check(LayoutPresets.is_builtin("Random Grid"), "Random Grid is a built-in preset")
+	var data := LayoutPresets.load_data("Random Grid")
+	var entries: Array = data.get("cards", [])
+	check(entries.size() == LayoutPresets.GRID_COLUMNS * LayoutPresets.GRID_ROWS, "a full grid of cards (%d)" % entries.size())
+	var seen := {}
+	var rects: Array[Rect2] = []
+	var half := CardSystem.CARD_SIZE * 0.5
+	for e: Dictionary in entries:
+		check(e.inputs.size() == 1 and e.inputs[0] in LayoutPresets.GRID_INPUTS, "one face button, bumper, stick click or trigger each (%s)" % [e.inputs])
+		seen[e.inputs[0]] = true
+		var p: Array = e.position
+		check(p[0] - half.x >= -0.6 and p[0] + half.x <= 0.6 and p[1] - half.y >= 0.03 and p[1] + half.y <= 0.56, "inside the water (%s)" % [p])
+		var r := Rect2(p[0] - half.x, p[1] - half.y, half.x * 2.0, half.y * 2.0)
+		for other in rects:
+			check(not r.intersects(other), "no two cards overlap (%s)" % [p])
+		rects.append(r)
+	check(seen.size() == LayoutPresets.GRID_INPUTS.size(), "every input turns up (%d of %d)" % [seen.size(), LayoutPresets.GRID_INPUTS.size()])
+	check(data.get("decor", []).size() > 0, "with its decor")
+	var a := RandomNumberGenerator.new()
+	a.seed = 7
+	var b := RandomNumberGenerator.new()
+	b.seed = 7
+	check(LayoutPresets.random_grid(a) == LayoutPresets.random_grid(b), "a seeded shuffle repeats")
+	var shuffles := {}
+	for i in 5:
+		shuffles[JSON.stringify(LayoutPresets.random_grid())] = true
+	check(shuffles.size() > 1, "and each load is a new shuffle")
