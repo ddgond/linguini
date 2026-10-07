@@ -187,7 +187,12 @@ func _add_bubbles(at: Vector3, rate: float) -> void:
 	process.spread = 6.0
 	process.initial_velocity_min = BUBBLE_SPEED * 0.85
 	process.initial_velocity_max = BUBBLE_SPEED * 1.15
-	process.gravity = Vector3.ZERO
+	# Buoyancy: turbulence turns each bubble's velocity toward the noise a
+	# little every frame, so on its own a bubble soon forgets it was rising.
+	# A steady lift (damped, so it can't build up) keeps them heading up.
+	process.gravity = Vector3(0, BUBBLE_SPEED * 3.0, 0)
+	process.damping_min = BUBBLE_SPEED * 1.0
+	process.damping_max = BUBBLE_SPEED * 1.5
 	process.collision_mode = ParticleProcessMaterial.COLLISION_HIDE_ON_CONTACT
 	process.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
 	process.emission_sphere_radius = 0.006
