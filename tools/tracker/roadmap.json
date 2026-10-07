@@ -735,6 +735,34 @@
       ]
     },
     {
+      "id": "5g",
+      "title": "Find hosts on the network",
+      "status": "done",
+      "summary": "Sunshine and GeForce Experience hosts on the local network show up on the monitor by themselves, found over mDNS without Avahi or Bonjour.",
+      "items": [
+        {
+          "text": "HostDiscovery asks for _nvstream._tcp over multicast DNS from each IPv4 interface while the host page is open, and reads the answers that come back to it, so port 5353 is never needed",
+          "status": "done"
+        },
+        {
+          "text": "The host page lists found hosts under On your network, by name and address, and names the saved hosts that answer; a host with several addresses gets the one on our network; this PC's own host is left out",
+          "status": "done"
+        },
+        {
+          "text": "--tool=discover lists the hosts found; the macOS build declares NSBonjourServices for _nvstream._tcp",
+          "status": "done"
+        },
+        {
+          "text": "Fixed: bubbles from the air stone, chest and campfire could drift out through the glass and hang in the room; they now pop at the water line and the glass",
+          "status": "done"
+        },
+        {
+          "text": "Fixed: the tests read and saved the player's own settings, so one run could break the next; they now keep their own, emptied each run",
+          "status": "done"
+        }
+      ]
+    },
+    {
       "id": "5c",
       "title": "Street sounds",
       "status": "planned",

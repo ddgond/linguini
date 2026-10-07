@@ -4,7 +4,7 @@ Playing, building and working on Linguini. The original vision is in [core.md](c
 
 ## Features
 
-- Pair with a Sunshine or GeForce Experience host, pick an app and stream it. Video and audio go to the monitor in the room. All of this happens on the monitor itself.
+- Pair with a Sunshine or GeForce Experience host, pick an app and stream it. Video and audio go to the monitor in the room. All of this happens on the monitor itself. Hosts on your local network show up there on their own (they announce themselves over mDNS); others can be added by IP address or name.
 - **Real Fishy Movement:** the stick or WASD steers from the fish's point of view, not the camera's. Forward swims along its heading, left and right turn it, and back makes it back up slowly. Input is an urge, not a velocity: the fish turns at a limited rate and moves in tail-beat pulses, so it swims in arcs. With no input it drifts.
 - Third-person camera. Hold the gaze button to look past the fish at the monitor.
 - Flash cards cover the whole controller. Cards can hold several inputs at once (combos), tap briefly on arrival (taps), stay on until the fish comes back (toggles), or play a timed macro (sequences).
@@ -196,6 +196,9 @@ The tests cover:
 - Art: that the tank and fish models match the game's dimensions, and that the quality presets switch their effects, including what Low turns off.
 - The bedroom: that it lands around the tank, uses its lightmaps, and switches lightmap, view and rain with the mood picker.
 - The look: button glyph sets and their detection, the card slab's orientation, the idle monitor and tally lights, the editor's decor palette and the tank cam's keypoints.
+- Host discovery: the mDNS query, reading answers (name compression included), and which address a host gets.
+
+The tests keep their own settings in `user://test_settings.cfg`, emptied at the start of every run, so they start from the defaults and never change yours.
 - Feel and sound: the mixer buses and volumes, hearing from the fish while piloting, card taps, tank and room sounds, the dart kick, and motes and shafts by quality.
 - The decode path, from an H.264 test stream to the Y/UV planes.
 - Host requests.
@@ -204,12 +207,13 @@ The tests cover:
 Two headless tools help on machines without a display:
 
 ```sh
+godot --headless --path godot -- --tool=discover                       # lists the hosts on the local network
 godot --headless --path godot -- --tool=pair HOST                     # prints a PIN, waits for it to be entered
 godot --headless --path godot -- --tool=stream_check HOST Desktop 15 frame.png
 ./Linguini.x86_64 --headless -- --tool=pair HOST                      # the same from a packaged build
 ```
 
-`pair` pairs with a host. `stream_check` launches an app on a paired host and streams for the given number of seconds. It then reports decoded video, audio received and input, saves the last frame's luma plane, and quits the app.
+`discover` lists the hosts that answer on the local network, as the monitor finds them. `pair` pairs with a host. `stream_check` launches an app on a paired host and streams for the given number of seconds. It then reports decoded video, audio received and input, saves the last frame's luma plane, and quits the app.
 
 `main.tscn` also accepts `-- --swim --test-video=PATH --gaze --zones --room-camera --screenshot=PATH` for manual checks without a host. The full list is in `godot/scripts/main.gd`.
 
@@ -249,7 +253,7 @@ packaging/macos/package.sh     # -> dist/builds/linguini-macos-universal.zip
 The macOS build is made natively on a Mac, Apple Silicon or Intel. It produces one universal app that runs on both, on macOS 11 or later.
 - **Static dependencies:** `packaging/macos/build-deps.sh` builds the same versions of OpenSSL, Opus, expat, curl and FFmpeg as the Linux Dockerfile, once for each architecture, into `dist/macos/deps-*`. FFmpeg decodes H.264 and HEVC with VideoToolbox. AV1 decodes in software, because FFmpeg 7.1 has no VideoToolbox AV1. The builds are reused until the script changes.
 - **Universal extension:** the extension is built for arm64 and x86_64 and joined with `lipo` into `liblinguini.macos.template_release.framework`. The script fails if either half links anything outside `/usr/lib` and the system frameworks, or targets a macOS other than 11.0.
-- **Export:** the `macOS` preset in `godot/export_presets.cfg` is universal, ad-hoc signed with the hardened runtime, and includes an `NSLocalNetworkUsageDescription`, because macOS asks permission before the app can reach hosts on the LAN. `rendering/textures/vram_compression/import_etc2_astc` is on, because Godot refuses arm64 or universal exports without it.
+- **Export:** the `macOS` preset in `godot/export_presets.cfg` is universal, ad-hoc signed with the hardened runtime, and includes an `NSLocalNetworkUsageDescription`, because macOS asks permission before the app can reach hosts on the LAN, and `NSBonjourServices` for `_nvstream._tcp`, the service hosts are found by. `rendering/textures/vram_compression/import_etc2_astc` is on, because Godot refuses arm64 or universal exports without it.
 - **Checks:** the zip holds `Linguini.app`, a README and the licences. The script finishes by running `packaging/macos/validate.py` on it, which checks both architectures, the signatures, the linked libraries, the game data and the licences.
 
 It needs the Xcode command line tools, SCons, nasm (for x86_64 FFmpeg), and a Godot editor with the matching macOS export template. Set `GODOT` and `GODOT_TEMPLATES`, or let it use `godot` and Godot's own export templates directory. To set up a Mac:
@@ -401,7 +405,7 @@ third_party/           submodules
 
 ## Known limitations
 
-- Hosts are added by IP or hostname. There's no mDNS discovery yet.
+- Host discovery is IPv4 only, and only reaches the local network: a host on another subnet or over a VPN has to be added by address.
 - Frames are decoded on the GPU where possible and copied back to system memory for upload. Zero-copy rendering is future work.
 - The Windows build isn't code-signed, so SmartScreen warns on first launch.
 - The macOS build isn't notarized, so first launch needs a trip to System Settings.

@@ -41,6 +41,12 @@ var _notice := "" ## shown on the apps page once they've reloaded
 var _stage_label: Label
 var _stats_label: Label
 var _idle := false
+## Hosts announcing themselves on the LAN, looked for while the home page shows.
+var _discovery: HostDiscovery
+## On the home page: saved hosts' buttons by address, and found hosts' by name.
+var _saved_buttons := {}
+var _found_box: VBoxContainer
+var _found_buttons := {}
 ## An app to start as soon as the apps load (play_on), "" for whatever's
 ## running; null when nothing is waiting to start.
 var _autoplay: Variant = null
@@ -117,6 +123,10 @@ func _ready() -> void:
 		theme = UiStyle.make_theme(FONT_SIZE)
 		_desktop.queue_redraw())
 	if client:
+		_discovery = HostDiscovery.new()
+		_discovery.name = "HostDiscovery"
+		add_child(_discovery)
+		_discovery.found.connect(func(_host: Dictionary) -> void: _show_found())
 		client.host_ready.connect(_on_host_ready)
 		client.paired.connect(_on_paired)
 		client.apps_ready.connect(_on_apps_ready)
@@ -202,7 +212,8 @@ func show_home(message := "") -> void:
 
 	var hosts: PackedStringArray = Settings.hosts()
 	if hosts.is_empty():
-		_label("No hosts yet. Add your Sunshine or GeForce Experience PC:", 24, UiStyle.MUTED)
+		_label("No hosts yet. Pick your Sunshine or GeForce Experience PC below, or add it by address:", 24, UiStyle.MUTED)
+	_saved_buttons.clear()
 	for address in hosts:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 10)
@@ -210,9 +221,18 @@ func show_home(message := "") -> void:
 		var connect_button := _button("🖥  " + address, _connect.bind(address), row)
 		connect_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		connect_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_saved_buttons[address] = connect_button
 		_button("Remove", func() -> void:
 			Settings.remove_host(address)
 			show_home(), row)
+
+	_found_box = VBoxContainer.new()
+	_found_box.add_theme_constant_override("separation", 10)
+	_page.add_child(_found_box)
+	_found_box.add_child(_plain_label("", 22, UiStyle.MUTED, 700))
+	_found_buttons.clear()
+	_show_found()
+	_discovery.active = true
 
 	var add_row := HBoxContainer.new()
 	_page.add_child(add_row)
@@ -235,6 +255,38 @@ func show_home(message := "") -> void:
 			["Settings", show_settings],
 			["Quit", func() -> void: get_tree().quit()]])
 	_focus_first()
+
+
+## Brings the home page's hosts up to date with what discovery has found:
+## saved hosts get their names, and the others are listed to pick from.
+func _show_found() -> void:
+	if _found_box == null or not is_instance_valid(_found_box):
+		return
+	var unsaved := 0
+	for host: Dictionary in _discovery.hosts.values():
+		var saved := ""
+		for address: String in host.addresses:
+			if _saved_buttons.has(address):
+				saved = address
+		if saved != "":
+			(_saved_buttons[saved] as Button).text = "🖥  %s · %s" % [host.name, saved]
+			continue
+		unsaved += 1
+		var b: Button = _found_buttons.get(host.name)
+		if b == null:
+			b = _button("", _connect_found.bind(host.name), _found_box)
+			b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+			_found_buttons[host.name] = b
+		b.text = "🖥  %s · %s" % [host.name, host.address]
+	var heading := _found_box.get_child(0) as Label
+	heading.text = "On your network" if unsaved > 0 else "Looking on your network…"
+	heading.visible = unsaved > 0 or Settings.hosts().is_empty()
+
+
+func _connect_found(host_name: String) -> void:
+	var address: String = _discovery.hosts[host_name].address
+	Settings.add_host(address)
+	_connect(address)
 
 
 ## Kept to fit the window: the taskbar already says we're live, so the title
@@ -543,6 +595,9 @@ func _on_stream_ended(error_code: int, message: String) -> void:
 func _begin_page(message := "") -> void:
 	_stage_label = null
 	_stats_label = null
+	_found_box = null
+	if _discovery:
+		_discovery.active = false
 	# Out of the page at once (not just queued to go), so focus can't land on
 	# the old page's controls.
 	for child in _page.get_children():
