@@ -8,7 +8,7 @@ extends Window
 ## projected into the camera, dressed up with a jittering confidence score that
 ## drops when a card hides the fish from the camera.
 ##
-## Styles (all label the fish plainly, "goldfish 0.97"):
+## Styles (all but OFF label the fish plainly, "goldfish 0.97"):
 ## - MINIMAL: corner-bracket box with its tag, and the held inputs.
 ## - EARNEST: a straight-faced research tool. Adds a keypoint skeleton (nose,
 ##   eyes, fins, tail), the trail and heatmap, labelled card zones, inference
@@ -16,10 +16,14 @@ extends Window
 ## - OVER_THE_TOP: everything in EARNEST, plus a model banner, a track ID,
 ##   trajectory prediction, neural activations, intent guesses, a scrolling
 ##   log, scanlines and the occasional "recalibrating" flicker.
+## - OFF: no overlay, just the camera's view. Last in the enum, as the style
+##   is saved by number, but first in STYLE_ORDER.
 
-enum Style { MINIMAL, EARNEST, OVER_THE_TOP }
+enum Style { MINIMAL, EARNEST, OVER_THE_TOP, OFF }
 
-const STYLE_NAMES := ["Minimal", "Earnest", "Over-the-top"]
+const STYLE_NAMES := ["Minimal", "Earnest", "Over-the-top", "Off"]
+## The order the Settings page offers them in.
+const STYLE_ORDER := [Style.OFF, Style.MINIMAL, Style.EARNEST, Style.OVER_THE_TOP]
 const SIZE := Vector2i(1280, 720)
 const TITLE := "Linguini Tank Cam"
 const TRAIL_SECONDS := 2.5
@@ -329,6 +333,7 @@ class Overlay:
 			TrackingCam.Style.OVER_THE_TOP:
 				_draw_earnest()
 				_draw_over_the_top()
+			# OFF draws nothing.
 
 	func _draw_earnest() -> void:
 		_draw_heat()

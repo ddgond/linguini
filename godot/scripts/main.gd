@@ -39,7 +39,7 @@ extends Node3D
 ##   --glyphs=SET           xbox, playstation or nintendo button art, just for this run
 ##   --quality=LEVEL        low, medium or high graphics, just for this run
 ##   --edit                 open the tank editor
-##   --tracking=STYLE       open the tank cam window (minimal, earnest, over-the-top)
+##   --tracking=STYLE       open the tank cam window (minimal, earnest, over-the-top, off)
 ##   --tracking-shot=PATH   with --screenshot, also save the tank cam window
 ##   --select=N             select card N in the editor
 ##   --screenshot=PATH      save a screenshot after --delay seconds (default 2) and quit
@@ -437,7 +437,7 @@ func _apply_args() -> void:
 		eye.look_at_from_position(from + shift, at + shift)
 		eye.make_current()
 	if _args.has("tracking"):
-		var i := ["minimal", "earnest", "over-the-top"].find(String(_args.tracking))
+		var i := ["minimal", "earnest", "over-the-top", "off"].find(String(_args.tracking))
 		set_tracking(true, i if i >= 0 else TrackingCam.Style.EARNEST)
 	if _args.has("edit"):
 		open_editor()

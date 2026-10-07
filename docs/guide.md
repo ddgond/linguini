@@ -137,11 +137,12 @@ Low is tuned for integrated graphics, where every live light costs every pixel i
 
 The tank cam is a second window, titled "Linguini Tank Cam" and 1280×720, showing the room camera's view of the tank. To stream it, add a **Window Capture** source in OBS and pick that window. Turn it on with F4, or with **Tank cam window** on the monitor menu, which also sets the overlay style.
 
-Nothing in it is machine learning. The "detector" is the fish's real position projected into the camera. Its confidence score drops when a card hides the fish from the camera. There are three styles:
-The fish is always labelled plainly, as "goldfish 0.97".
+Nothing in it is machine learning. The "detector" is the fish's real position projected into the camera. Its confidence score drops when a card hides the fish from the camera. There are four overlay styles:
+In all but Off, the fish is labelled plainly, as "goldfish 0.97".
 - **Earnest** (default): a straight-faced research tool. It shows the box and its track number, and a keypoint skeleton (nose, eyes, fins, tail). It adds a motion trail, a heatmap of where the fish spends its time, and dashed outlines on the card zones it's engaging. It also has inference rate and latency readouts, the inputs held, and a short detection log.
 - **Minimal:** corner brackets around the fish, its label and the held inputs.
 - **Over-the-top:** everything in Earnest, plus a model banner and a predicted trajectory. It also has fake layer activations, an "INTENT" guess, a scrolling log, scanlines and the odd "RECALIBRATING…" flicker.
+- **Off:** no overlay at all, just the camera's view of the tank.
 
 ## Sound
 

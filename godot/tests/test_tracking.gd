@@ -61,3 +61,24 @@ func test_window_toggle_is_remembered() -> void:
 	check(not main.tracking.visible, "and can hide it")
 	Settings.set_tracking(was_enabled, was_style)
 	main.queue_free()
+
+
+func test_overlay_off() -> void:
+	var main: Node3D = load("res://scenes/main.tscn").instantiate()
+	add(main)
+	await tree.process_frame
+	var was_enabled := Settings.tracking_enabled()
+	var was_style := Settings.tracking_style()
+	main.menu.show_settings()
+	var picker := main.menu.find_child("TankCamStyle", true, false) as Stepper
+	check(picker != null and picker.selected == TrackingCam.STYLE_ORDER.find(Settings.tracking_style()), "the picker shows the saved style")
+	check(TrackingCam.STYLE_ORDER[0] == TrackingCam.Style.OFF, "Off comes first")
+	(main.menu.find_child("TankCamWindow", true, false) as Stepper).select(1)
+	picker.select(1)
+	picker.step(-1) # to Off, as the player would
+	check(Settings.tracking_style() == TrackingCam.Style.OFF, "Off is saved")
+	check(main.tracking.visible and main.tracking.style == TrackingCam.Style.OFF, "the window stays open with no overlay")
+	# The picker saved them; put them back for the tests after this one.
+	Settings.set_tracking(was_enabled, was_style)
+	main.set_tracking(false, TrackingCam.Style.EARNEST)
+	main.queue_free()

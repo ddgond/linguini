@@ -405,10 +405,12 @@ func show_settings() -> void:
 		func(i: int) -> void: Mood.set_mood(Mood.NAMES[i]))
 	_section(left, "Tank cam")
 	var window := _setting(left, "TankCamWindow", "Window", ["Off", "On"], 1 if Settings.tracking_enabled() else 0, Callable())
-	var style := _setting(left, "TankCamStyle", "Overlay", TrackingCam.STYLE_NAMES, Settings.tracking_style(), Callable())
+	var styles := TrackingCam.STYLE_ORDER
+	var style := _setting(left, "TankCamStyle", "Overlay", styles.map(func(s: int) -> String: return TrackingCam.STYLE_NAMES[s]),
+		maxi(styles.find(Settings.tracking_style()), 0), Callable())
 	var apply := func(_i: int) -> void:
-		Settings.set_tracking(window.selected == 1, style.selected)
-		tracking_changed.emit(window.selected == 1, style.selected)
+		Settings.set_tracking(window.selected == 1, styles[style.selected])
+		tracking_changed.emit(window.selected == 1, styles[style.selected])
 	window.item_selected.connect(apply)
 	style.item_selected.connect(apply)
 	var right := _section_column(columns)

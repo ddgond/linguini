@@ -763,6 +763,10 @@
         {
           "text": "Fixed: the tests read and saved the player's own settings, so one run could break the next; they now keep their own, emptied each run",
           "status": "done"
+        },
+        {
+          "text": "Tank cam overlay: Off, first on the Settings page, shows the camera's view with no tracking UI at all (--tracking=off)",
+          "status": "done"
         }
       ]
     },
