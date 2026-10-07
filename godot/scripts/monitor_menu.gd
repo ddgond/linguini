@@ -47,6 +47,9 @@ var _discovery: HostDiscovery
 var _saved_buttons := {}
 var _found_box: VBoxContainer
 var _found_buttons := {}
+## A found host being connected to: saved once it's paired, so backing out of
+## pairing doesn't keep it.
+var _unsaved := ""
 ## An app to start as soon as the apps load (play_on), "" for whatever's
 ## running; null when nothing is waiting to start.
 var _autoplay: Variant = null
@@ -284,9 +287,14 @@ func _show_found() -> void:
 
 
 func _connect_found(host_name: String) -> void:
-	var address: String = _discovery.hosts[host_name].address
-	Settings.add_host(address)
-	_connect(address)
+	_connect(_discovery.hosts[host_name].address)
+	_unsaved = _host
+
+
+func _keep_found() -> void:
+	if _unsaved != "" and _unsaved == _host:
+		Settings.add_host(_host)
+	_unsaved = ""
 
 
 ## Kept to fit the window: the taskbar already says we're live, so the title
@@ -489,6 +497,7 @@ func is_controls_shown() -> bool:
 # --- actions ---
 
 func _connect(address: String) -> void:
+	_unsaved = ""
 	_host = address
 	_pending = "connect"
 	_show_connecting("Connecting…")
@@ -511,8 +520,12 @@ func _launch(app: Dictionary) -> void:
 
 
 func _cancel() -> void:
-	# libgamestream requests can't be aborted; just stop listening for this one.
+	# Pairing waits for the PIN until it's stopped; other requests can't be
+	# aborted, so just stop listening for them.
+	if _pending == "pair":
+		client.cancel_pairing()
 	_pending = ""
+	_unsaved = ""
 	show_home()
 
 
@@ -523,6 +536,7 @@ func _on_host_ready(info: Dictionary) -> void:
 		return
 	_host_info = info
 	if info.paired:
+		_keep_found()
 		_pending = "apps"
 		_show_connecting("Loading apps…")
 		client.fetch_apps()
@@ -536,6 +550,7 @@ func _on_host_ready(info: Dictionary) -> void:
 func _on_paired() -> void:
 	if _pending != "pair":
 		return
+	_keep_found()
 	_pending = "apps"
 	_show_connecting("Paired! Loading apps…")
 	client.fetch_apps()

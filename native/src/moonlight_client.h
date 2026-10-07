@@ -42,6 +42,9 @@ public:
 	void connect_host(const godot::String &address);
 	void pair(const godot::String &pin);
 	void unpair();
+	/// Stops waiting for the PIN: the pairing in progress fails at once
+	/// (request_failed "pair"), and the host's PIN prompt closes.
+	void cancel_pairing();
 	void fetch_apps();
 	void start_stream(int app_id, const godot::Dictionary &options);
 	void stop_stream(bool quit_app);
@@ -116,6 +119,7 @@ private:
 	std::deque<std::function<void()>> jobs;
 	bool quitting = false;
 	std::atomic<bool> worker_busy{ false };
+	std::atomic<bool> pairing{ false }; // gs_pair is waiting for the PIN (cancel_pairing)
 
 	// Host state (worker thread only).
 	SERVER_DATA server = {};

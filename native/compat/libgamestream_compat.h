@@ -61,15 +61,34 @@ static inline int linguini_mkdir(const char* path) {
 // whose kept-alive connection then stalls the host's next TLS handshake with us:
 // reconnecting timed out over HTTPS and fell back to HTTP, which always reports
 // "not paired". Free the old handle first.
+//
+// And a pairing request waits for the PIN with no way to stop it, holding up
+// every request after it. MoonlightClient::cancel_pairing() sets this flag;
+// the request in flight then aborts within a second (curl calls the progress
+// function about once a second while waiting). It's one-shot, so the unpair
+// gs_pair() sends on failure, which closes the host's PIN prompt, still goes.
 #include <curl/curl.h>
+
+extern volatile int linguini_cancel_request;
+
+static inline int linguini_curl_progress(void* p, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) {
+  (void)p; (void)dltotal; (void)dlnow; (void)ultotal; (void)ulnow;
+  if (!linguini_cancel_request)
+    return 0;
+  linguini_cancel_request = 0;
+  return 1;
+}
 
 static inline CURL* linguini_curl_easy_init(void) {
   static CURL* previous = NULL;
   if (previous)
     curl_easy_cleanup(previous);
   CURL* curl = curl_easy_init();
-  if (curl)
+  if (curl) {
     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 5L);
+    curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+    curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, linguini_curl_progress);
+  }
   previous = curl;
   return curl;
 }

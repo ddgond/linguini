@@ -64,6 +64,11 @@ static int hw_failures = 0;
 static bool session_hw = true;
 static std::string last_stage_error;
 
+// Aborts libgamestream's request in flight (see native/compat/libgamestream_compat.h).
+extern "C" {
+volatile int linguini_cancel_request = 0;
+}
+
 MoonlightClient::MoonlightClient() {
 	y_texture.instantiate();
 	uv_texture.instantiate();
@@ -77,6 +82,7 @@ void MoonlightClient::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("connect_host", "address"), &MoonlightClient::connect_host);
 	ClassDB::bind_method(D_METHOD("pair", "pin"), &MoonlightClient::pair);
 	ClassDB::bind_method(D_METHOD("unpair"), &MoonlightClient::unpair);
+	ClassDB::bind_method(D_METHOD("cancel_pairing"), &MoonlightClient::cancel_pairing);
 	ClassDB::bind_method(D_METHOD("fetch_apps"), &MoonlightClient::fetch_apps);
 	ClassDB::bind_method(D_METHOD("start_stream", "app_id", "options"), &MoonlightClient::start_stream);
 	ClassDB::bind_method(D_METHOD("stop_stream", "quit_app"), &MoonlightClient::stop_stream);
@@ -259,13 +265,22 @@ void MoonlightClient::pair(const String &pin) {
 		}
 		gs_error = nullptr;
 		std::string pin_copy = p;
+		linguini_cancel_request = 0; // a cancel from before this pairing doesn't count
+		pairing = true;
 		int ret = gs_pair(&server, pin_copy.data());
+		pairing = false;
 		if (ret != GS_OK) {
 			emit_deferred("request_failed", "pair", gs_message(ret));
 			return;
 		}
 		emit_deferred("paired");
 	});
+}
+
+void MoonlightClient::cancel_pairing() {
+	if (pairing) {
+		linguini_cancel_request = 1;
+	}
 }
 
 void MoonlightClient::unpair() {

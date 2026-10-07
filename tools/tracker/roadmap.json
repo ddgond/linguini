@@ -753,7 +753,11 @@
           "status": "done"
         },
         {
-          "text": "Fixed: bubbles from the air stone, chest and campfire could drift out through the glass and hang in the room; they now pop at the water line and the glass",
+          "text": "A found host is saved once it's paired, not when it's picked; Back on the PIN page cancels the pairing (and closes the host's prompt) instead of leaving it to block the next connect",
+          "status": "done"
+        },
+        {
+          "text": "Fixed: bubbles from the air stone, chest and campfire could drift out through the glass and hang in the room; they now pop at the water line and the glass, and buoyancy keeps them rising through the turbulence",
           "status": "done"
         },
         {

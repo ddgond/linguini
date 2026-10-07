@@ -410,5 +410,5 @@ third_party/           submodules
 - The Windows build isn't code-signed, so SmartScreen warns on first launch.
 - The macOS build isn't notarized, so first launch needs a trip to System Settings.
 - The macOS build has been tested with the test stream (VideoToolbox decoding, both architectures) but hasn't streamed from a real host yet, so the local network permission prompt is also untested.
-- libgamestream requests can't be cancelled. "Back" during pairing stops waiting, but the host keeps the PIN prompt open until it's entered or times out.
+- Of libgamestream's requests, only pairing can be cancelled ("Back" on the PIN page, which also closes the host's PIN prompt). "Back" while connecting or loading apps stops waiting, but the request runs on until the host answers or the 5-second connect timeout.
 - libgamestream names the client "roth" on the host's paired-devices list.

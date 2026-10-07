@@ -107,3 +107,35 @@ func test_real_host() -> void:
 		print("         host: ", info)
 		check(info.app_version != "", "host reports its version")
 	client.queue_free()
+
+
+## Backing out of pairing: the PIN wait stops, and the next connect goes
+## through instead of queueing behind it.
+func test_real_host_cancel_pairing() -> void:
+	var address := OS.get_environment("LINGUINI_TEST_HOST")
+	if address == "":
+		print("         (skipped: set LINGUINI_TEST_HOST to test against a real host)")
+		return
+	var client := _client()
+	var events := []
+	client.request_failed.connect(func(req: String, msg: String) -> void: events.append([req, msg]))
+	client.host_ready.connect(func(info: Dictionary) -> void: events.append(["ready", info]))
+	client.connect_host(address)
+	await _wait_for(func() -> bool: return not events.is_empty(), 10.0)
+	if events.is_empty() or events[0][0] != "ready" or events[0][1].paired:
+		print("         (skipped: needs a host this test identity isn't paired with)")
+		client.queue_free()
+		return
+	events.clear()
+	client.pair("%04d" % randi_range(0, 9999))
+	await tree.create_timer(2.0).timeout
+	var cancelled_at := Time.get_ticks_msec()
+	client.cancel_pairing()
+	await _wait_for(func() -> bool: return not events.is_empty(), 5.0)
+	check(not events.is_empty() and events[0][0] == "pair", "the pairing fails once cancelled (%s)" % [events])
+	check(Time.get_ticks_msec() - cancelled_at < 3000, "within a few seconds")
+	events.clear()
+	client.connect_host(address)
+	await _wait_for(func() -> bool: return not events.is_empty(), 10.0)
+	check(not events.is_empty() and events[0][0] == "ready", "connecting again works (%s)" % [events])
+	client.queue_free()
