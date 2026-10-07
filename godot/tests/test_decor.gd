@@ -201,3 +201,23 @@ func test_editor_title_fits_when_unsaved() -> void:
 	check(panel.size.x <= clean + 0.5, "the panel keeps its width with 'unsaved' showing (%.0f, was %.0f)" % [panel.size.x, clean])
 	check(editor._title.text.contains("unsaved changes"), "and says so (%s)" % editor._title.text)
 	main.queue_free()
+
+
+func test_bubbles_stay_in_the_water() -> void:
+	var main := await _main()
+	var decor: TankDecor = main.decor
+	var walls := decor.find_children("BubbleWall*", "GPUParticlesCollisionBox3D", false, false)
+	check(walls.size() == 5, "a lid and four walls of glass for the bubbles, got %d" % walls.size())
+	var lid := decor.get_node_or_null("BubbleWallLid") as GPUParticlesCollisionBox3D
+	check(lid != null and is_equal_approx(lid.position.y - lid.size.y / 2.0, decor.water.end.y), "the lid sits on the water line")
+	var stone := decor.add_piece("airstone", Vector3(decor.water.position.x, 0.0, 0.0))
+	var bubbles := stone.find_children("Bubbles", "GPUParticles3D", false, false)
+	check(bubbles.size() == 1, "the air stone bubbles")
+	if bubbles.size() == 1:
+		var p := bubbles[0] as GPUParticles3D
+		var process := p.process_material as ParticleProcessMaterial
+		check(process.collision_mode == ParticleProcessMaterial.COLLISION_HIDE_ON_CONTACT, "bubbles pop on the walls and the surface")
+		var height := decor.water.end.y - stone.position.y
+		check(p.lifetime * DecorPiece.BUBBLE_SPEED * 0.85 >= height, "the slowest bubble lives to reach the surface")
+	main.queue_free()
+

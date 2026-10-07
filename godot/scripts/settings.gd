@@ -3,6 +3,9 @@ extends Node
 ## (user://settings.cfg).
 
 const PATH := "user://settings.cfg"
+## The test runner's (run_tests.gd): emptied each run, so tests start from the
+## defaults and never change the player's own settings.
+const TEST_PATH := "user://test_settings.cfg"
 
 const RESOLUTIONS := [Vector2i(1280, 720), Vector2i(1920, 1080), Vector2i(2560, 1440), Vector2i(3840, 2160)]
 const FRAME_RATES := [30, 60, 120]
@@ -10,10 +13,15 @@ const BITRATES_KBPS := [5000, 10000, 20000, 40000, 80000]
 const CODECS := ["auto", "h264", "hevc", "av1"]
 
 var _cfg := ConfigFile.new()
+var _path := PATH
 
 
 func _ready() -> void:
-	_cfg.load(PATH)
+	# Before the other autoloads read their settings.
+	if OS.get_cmdline_args().has("res://tests/run_tests.gd"):
+		_path = TEST_PATH
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_PATH))
+	_cfg.load(_path)
 
 
 func hosts() -> PackedStringArray:
@@ -92,4 +100,4 @@ func set_tracking(enabled: bool, style: int) -> void:
 
 
 func save() -> void:
-	_cfg.save(PATH)
+	_cfg.save(_path)

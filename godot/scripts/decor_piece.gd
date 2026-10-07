@@ -173,9 +173,12 @@ func _add_bubbles(at: Vector3, rate: float) -> void:
 	var p := GPUParticles3D.new()
 	p.name = "Bubbles"
 	p.position = at
-	# Rise to the surface: lifetime from how far below it the emitter is.
+	# Long enough for the slowest bubble to reach the surface. Turbulence may
+	# carry bubbles anywhere; the tank's walls (TankDecor) pop them at the water
+	# line and the glass, so none get out of the water.
 	var height := maxf(water_level - (position.y + at.y * scale.y), 0.05)
-	p.lifetime = height / BUBBLE_SPEED
+	p.lifetime = height / (BUBBLE_SPEED * 0.85) + 0.5
+	p.collision_base_size = 0.004
 	p.amount = maxi(1, int(rate * p.lifetime * Quality.particle_scale()))
 	p.local_coords = false
 	p.visibility_aabb = AABB(Vector3(-0.1, -0.05, -0.1), Vector3(0.2, height + 0.1, 0.2))
@@ -185,6 +188,7 @@ func _add_bubbles(at: Vector3, rate: float) -> void:
 	process.initial_velocity_min = BUBBLE_SPEED * 0.85
 	process.initial_velocity_max = BUBBLE_SPEED * 1.15
 	process.gravity = Vector3.ZERO
+	process.collision_mode = ParticleProcessMaterial.COLLISION_HIDE_ON_CONTACT
 	process.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
 	process.emission_sphere_radius = 0.006
 	process.scale_min = 0.6

@@ -24,6 +24,33 @@ var editing := false:
 				p.ball.place(p.ball.home)
 
 
+func _ready() -> void:
+	_add_bubble_walls()
+
+
+## Invisible walls for the bubbles: a lid at the water line and boxes outside
+## the glass. Bubbles vanish on touching one (DecorPiece), so they pop at the
+## surface rather than rising on into the air, and can't drift out through
+## the glass from a piece near it.
+func _add_bubble_walls() -> void:
+	var t := 0.2
+	var c := water.get_center()
+	var outer := water.size + Vector3.ONE * 2.0 * t
+	var walls := {
+		"Lid": [Vector3(c.x, water.end.y + t / 2.0, c.z), Vector3(outer.x, t, outer.z)],
+		"Left": [Vector3(water.position.x - t / 2.0, c.y, c.z), Vector3(t, outer.y, outer.z)],
+		"Right": [Vector3(water.end.x + t / 2.0, c.y, c.z), Vector3(t, outer.y, outer.z)],
+		"Back": [Vector3(c.x, c.y, water.position.z - t / 2.0), Vector3(outer.x, outer.y, t)],
+		"Front": [Vector3(c.x, c.y, water.end.z + t / 2.0), Vector3(outer.x, outer.y, t)],
+	}
+	for wall: String in walls:
+		var box := GPUParticlesCollisionBox3D.new()
+		box.name = "BubbleWall" + wall
+		box.position = walls[wall][0]
+		box.size = walls[wall][1]
+		add_child(box)
+
+
 func load_data(entries: Array) -> void:
 	clear()
 	for e: Dictionary in entries:
