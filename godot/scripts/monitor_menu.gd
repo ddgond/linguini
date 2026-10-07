@@ -41,6 +41,9 @@ var _notice := "" ## shown on the apps page once they've reloaded
 var _stage_label: Label
 var _stats_label: Label
 var _idle := false
+## An app to start as soon as the apps load (play_on), "" for whatever's
+## running; null when nothing is waiting to start.
+var _autoplay: Variant = null
 
 
 func _ready() -> void:
@@ -440,6 +443,14 @@ func _connect(address: String) -> void:
 	client.connect_host(address)
 
 
+## Connects to `address` and starts `app_name` there, or resumes the game
+## already running (--connect, to put a game on the monitor for screenshots).
+## Fails with request_failed("launch") if there's no such app.
+func play_on(address: String, app_name := "") -> void:
+	_autoplay = app_name
+	_connect(address)
+
+
 func _launch(app: Dictionary) -> void:
 	_app_name = app.name
 	_pending = "launch"
@@ -483,6 +494,16 @@ func _on_apps_ready(apps: Array) -> void:
 		return
 	_pending = ""
 	_apps = apps
+	if _autoplay != null:
+		var wanted: String = _autoplay
+		_autoplay = null
+		var running: int = _host_info.get("current_game", 0)
+		for app: Dictionary in apps:
+			if (wanted == "" and app.id == running) or (wanted != "" and app.name == wanted):
+				_launch(app)
+				return
+		client.request_failed.emit("launch", "nothing running" if wanted == "" else "no app named " + wanted)
+		return
 	_show_apps(_notice)
 	_notice = ""
 

@@ -334,7 +334,7 @@ Put the packaged builds in `dist/builds/`. Each file is matched to a platform by
 
 For example: `linguini-linux-x86_64.zip`, `linguini-windows-x86_64.zip`, `linguini-macos.zip`.
 
-The script copies the builds into the site and writes `SHA256SUMS`. The page lists each build with its size; platforms without a build are left off. The output is plain HTML and CSS, so any static host works. Its screenshots in `site/assets/` come from the tracker's snapshots (see [Progress tracker](#progress-tracker)).
+The script copies the builds into the site and writes `SHA256SUMS`. The page lists each build with its size; platforms without a build are left off. The output is plain HTML and CSS, so any static host works. Its screenshots in `site/assets/` (also used by the README) are taken with a game on the monitor: `-- --connect=HOST` resumes whatever's running on a paired host, or starts an app with `--connect=HOST;APP`, before the other options apply, and closing leaves the game running. Keep the fish out of the cards' zones in these, since they press buttons on the host.
 
 ## Art pipeline
 

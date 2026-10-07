@@ -14,6 +14,10 @@ extends Node3D
 ##
 ## Command-line options (after `--`), mostly for testing and screenshots:
 ##   --swim                 start swimming instead of in the menu
+##   --connect=HOST[;APP]   stream APP from a paired host, or resume the game
+##                          running there, before the other options apply (for
+##                          screenshots with a game on the monitor; the game is
+##                          left running at the end)
 ##   --test-video=PATH      loop an H.264/HEVC elementary stream on the monitor
 ##   --fish=X,Y,Z[,YAW]     place the fish (tank space, yaw in degrees)
 ##   --fish-pose=EFFORT[,TURN]  hold the fish in place, swimming at EFFORT (0..1)
@@ -357,6 +361,16 @@ func _run_tool(tool_name: String) -> void:
 
 
 func _apply_args() -> void:
+	if _args.has("connect") and client:
+		var spec := String(_args.connect)
+		client.request_failed.connect(func(request: String, message: String) -> void:
+			printerr("--connect: %s failed: %s" % [request, message])
+			get_tree().quit(1))
+		menu.play_on(spec.get_slice(";", 0), spec.get_slice(";", 1) if spec.contains(";") else "")
+		await client.stream_started
+		while not client.has_video():
+			await get_tree().process_frame
+		print("Streaming %dx%d from %s" % [client.get_video_size().x, client.get_video_size().y, spec])
 	if _args.has("fish"):
 		var v: PackedFloat64Array = _args.fish.split_floats(",")
 		fish.position = Vector3(v[0], v[1], v[2])

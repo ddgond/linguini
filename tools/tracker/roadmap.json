@@ -1,6 +1,6 @@
 {
   "project": "Linguini",
-  "now": "5b",
+  "now": "5c",
   "milestones": [
     {
       "id": "1",
@@ -717,12 +717,20 @@
     {
       "id": "5b",
       "title": "Show the new fish",
-      "status": "planned",
-      "summary": "Bring the screenshots up to date with the Tortellini-shaped fish.",
+      "status": "done",
+      "summary": "Bring the screenshots up to date with the Tortellini-shaped fish, with a game on the monitor.",
       "items": [
         {
-          "text": "Retake the README and landing page screenshots (they predate the traced body and the eye fix)",
-          "status": "planned"
+          "text": "Retook the README and landing page screenshots (the bedroom, your view and the tank cam) at 1080p, scaled to 1280\u00d7720",
+          "status": "done"
+        },
+        {
+          "text": "--connect=HOST[;APP] streams from a paired host, resuming the game already running there, before the other options apply, so shots show it on the monitor; Final Fantasy VII in these",
+          "status": "done"
+        },
+        {
+          "text": "The bedroom shot moves along the bed so the chair no longer hides the monitor; your view looks past the fish at the desk",
+          "status": "done"
         }
       ]
     },
