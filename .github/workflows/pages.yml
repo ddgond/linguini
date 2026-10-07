@@ -5,6 +5,10 @@ name: Pages
 # when release.yml publishes a tag (linking that release), or by hand from the
 # Actions tab.
 #
+# A push to main that's also tagged for release is left to the release's run:
+# Pages keys deployments by commit, so a second deploy of the same commit is
+# ignored and the page would keep linking the previous release.
+#
 # One-time setup: Settings > Pages > Build and deployment > Source: GitHub Actions.
 on:
   push:
@@ -23,10 +27,23 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
+    outputs:
+      tagged: ${{ steps.tagged.outputs.tagged }}
     steps:
       - uses: actions/checkout@v7
 
+      - name: Leave tagged commits to the release
+        id: tagged
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          # Annotated tags list the commit on their ^{} line.
+          if git ls-remote --tags origin 'v*' | grep -q "^$GITHUB_SHA"; then
+            echo "This commit is tagged for release; release.yml deploys the page."
+            echo "tagged=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Download the release's builds
+        if: steps.tagged.outputs.tagged != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -43,6 +60,7 @@ jobs:
           fi
 
       - name: Build the landing page
+        if: steps.tagged.outputs.tagged != 'true'
         env:
           REPO: ${{ github.server_url }}/${{ github.repository }}
         run: |
@@ -54,11 +72,13 @@ jobs:
           fi
 
       - uses: actions/upload-pages-artifact@v5
+        if: steps.tagged.outputs.tagged != 'true'
         with:
           path: dist/site
 
   deploy:
     needs: build
+    if: needs.build.outputs.tagged != 'true'
     runs-on: ubuntu-24.04
     permissions:
       pages: write

@@ -298,10 +298,10 @@ SCons finds Visual Studio itself, so a plain PowerShell works; you don't need a 
 Releases are made by GitHub Actions (`.github/workflows/release.yml`) when a version tag is pushed:
 
 ```sh
-git tag v0.0.1 && git push origin v0.0.1
+git tag v0.1.0 && git push origin main v0.1.0
 ```
 
-Until 0.1.0, releases are numbered 0.0.x.
+Releases were numbered 0.0.x until 0.1.0. Push main and the tag together, as above: when the tagged commit changes `site/`, the Pages run for main skips it if the tag is already there, and leaves the deploy to the release. Pages ignores a second deploy of the same commit, so otherwise the page keeps linking the previous release.
 
 That tag push does three things:
 - **Package:** builds `linguini-linux-x86_64.tar.gz` with `packaging/linux/package.sh`, `linguini-macos-universal.zip` with `packaging/macos/package.sh` (on a `macos-14` runner) and `linguini-windows-x86_64.zip` with `packaging/windows/package.ps1` (on a `windows-2022` runner). The macOS and Windows static dependencies are cached.
