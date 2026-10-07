@@ -745,6 +745,30 @@
           "status": "planned"
         }
       ]
+    },
+    {
+      "id": "5f",
+      "title": "Medium on integrated graphics",
+      "status": "planned",
+      "summary": "Measure Medium on integrated GPUs and tune what it keeps, so stronger ones can run it; on the N150 it's 49-117 ms a frame at 1080p.",
+      "items": [
+        {
+          "text": "Bench Medium on the N150 and on the main PC's integrated GPU, if it has one, with tools/bench.sh",
+          "status": "planned"
+        },
+        {
+          "text": "Price Medium's extras on an iGPU: the screen-reading window rain and water, glow, caustics, MSAA, the room's live lights and shadows",
+          "status": "planned"
+        },
+        {
+          "text": "Tune Medium so a stronger iGPU (Radeon 780M, Arc) holds 60 in the menu and swimming, without changing how it looks on a dedicated GPU",
+          "status": "planned"
+        },
+        {
+          "text": "Decide: should Auto pick Medium on integrated GPUs that can hold it?",
+          "status": "planned"
+        }
+      ]
     }
   ]
 }
