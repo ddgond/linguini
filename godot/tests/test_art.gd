@@ -57,6 +57,7 @@ func test_fish_model() -> void:
 
 func test_quality_presets() -> void:
 	var original: String = Quality.setting
+	var original_mood: String = Mood.current
 	var main := await _main()
 	var gravel_mat: Material = null
 	for mi: MeshInstance3D in main.room.tank.get_node("TankModel").find_children("*", "MeshInstance3D", true, false):
@@ -72,6 +73,38 @@ func test_quality_presets() -> void:
 	check((surface.material_override as ShaderMaterial).shader == RoomBuilder.WATER_LOW_SHADER, "the water skips screen refraction on Low")
 	check(not env.ssao_enabled and not env.glow_enabled, "no SSAO or glow on Low")
 	check(main.get_viewport().scaling_3d_scale < 1.0, "Low renders at a lower scale")
+	var moods: RoomMoods = main.room.moods
+	check(moods.tank_glass.shader == RoomBuilder.GLASS_LOW_SHADER, "the tank glass is unshaded on Low")
+	check(not moods.tank_light.shadow_enabled, "the tank lamp casts no shadow on Low")
+	var accents: Array = moods.lamps + [moods.fairy_light, moods.accent_light, moods.screen_light]
+	check(accents.all(func(l: Light3D) -> bool: return not l.visible), "lamps, fairy lights, RGB strip and screen glow off on Low")
+	Mood.set_mood("rainy", false)
+	check(not moods.window_light.visible, "no faint window light on Low")
+	Mood.set_mood("golden", false)
+	check(moods.window_light.visible, "the golden hour's sun still comes in on Low")
+	var wall: ShaderMaterial = moods.materials.get("Wall")
+	check(wall.shader == RoomBuilder.ROOM_LOW_SHADER, "the room is unshaded on Low")
+	check(moods.glass_material.shader == RoomBuilder.WINDOW_LOW_SHADER, "the window doesn't read the screen on Low")
+	var street: Street = main.room.street
+	var lamps: Array = street._lamps
+	check(not lamps.is_empty() and lamps.all(func(l: OmniLight3D) -> bool:
+		return l.position.distance_to(Street._closest(street.room_box, l.position)) > l.omni_range),
+		"street lamps stop short of the room on Low")
+	check(street._leaves.shader == Street.LEAVES_LOW, "plainer street leaves on Low")
+
+	Quality.set_setting("medium")
+	Mood.set_mood("rainy", false)
+	check(moods.window_light.visible, "the window's light from Medium")
+	check(wall.shader == RoomBuilder.ROOM_SHADER, "the room is lit from Medium")
+	check(moods.glass_material.shader == RoomBuilder.WINDOW_SHADER, "the window bends the view from Medium")
+	check(moods.tank_glass.shader == RoomBuilder.GLASS_SHADER, "lit tank glass from Medium")
+	check(lamps.all(func(l: OmniLight3D) -> bool: return l.omni_range == Street.LAMP_REACH), "street lamps reach in full from Medium")
+	check(street._leaves.shader == Street.LEAVES, "street leaves lit through from Medium")
+	check(moods.tank_light.shadow_enabled, "the tank lamp casts shadows from Medium")
+	check([moods.fairy_light, moods.accent_light, moods.screen_light].all(func(l: Light3D) -> bool: return l.visible),
+		"the room's live lights are back from Medium")
+	check(moods.lamps.all(func(l: Light3D) -> bool: return l.visible == (RoomMoods.MOODS[Mood.current].lamps > 0.0)),
+		"the lamps follow the mood from Medium")
 
 	Quality.set_setting("high")
 	check(gravel_mat.next_pass != null, "caustics on High")
@@ -80,5 +113,6 @@ func test_quality_presets() -> void:
 	check(main.get_viewport().msaa_3d == Viewport.MSAA_4X, "4x MSAA on High")
 
 	Quality.set_setting(original)
+	Mood.set_mood(original_mood, false)
 	check(Quality.setting == original, "the setting is restored")
 	main.queue_free()

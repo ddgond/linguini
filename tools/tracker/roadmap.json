@@ -1,6 +1,6 @@
 {
   "project": "Linguini",
-  "now": "5d",
+  "now": "5e",
   "milestones": [
     {
       "id": "1",
@@ -645,16 +645,40 @@
     {
       "id": "5d",
       "title": "Low-end check",
-      "status": "planned",
-      "summary": "Run on integrated graphics, which Auto puts on Low, and tune what Low and Medium keep.",
+      "status": "done",
+      "summary": "Run on integrated graphics, which Auto puts on Low, and tune what Low keeps. On an Intel N150 at 1080p, Low now holds 60 fps in the menu and swimming, with a stream on the monitor; the tank editor and split screen hold 30.",
       "items": [
         {
-          "text": "Measure Low and Medium on an integrated GPU: the room, the street and the tank",
-          "status": "planned"
+          "text": "--bench and tools/bench.sh: a fixed tour of views (menu, swimming, tank editor, split screen, room, window) in every mood and quality level, with and without a 1080p60 stream, timing frame and GPU ms; a headless Sway reaches the real GPU without a desktop",
+          "status": "done"
         },
         {
-          "text": "Trim the street on Low if needed: fewer lit windows, simpler water and rain, fewer people and cars",
-          "status": "planned"
+          "text": "Measured on an Intel N150 (1080p): Low was 33-41 ms a frame in the menu and swimming, 45-64 ms in the editor, 43-54 ms split; Medium 49-117 ms and High 75-155 ms, left as they are",
+          "status": "done"
+        },
+        {
+          "text": "Low: the room drawn from its bake alone (unshaded); no live lamps, fairy lights, LED strip or screen glow; the window's light only at golden hour; no tank lamp shadow",
+          "status": "done"
+        },
+        {
+          "text": "Low: unshaded tank glass; rain on the window drawn over the view instead of bending it (no copy of the screen each frame)",
+          "status": "done"
+        },
+        {
+          "text": "Low street: lamps stop short of the room, no light through the tree leaves; people and cars keep moving",
+          "status": "done"
+        },
+        {
+          "text": "Stream uploads in 512 px regions instead of 64 (a 1080p60 stream cost up to 3 ms a frame, now about 0.5-1.5); algae on the tank glass skips its noise where there is none",
+          "status": "done"
+        },
+        {
+          "text": "Low now: menu 12-15 ms, swimming 15.6-16.3 ms (16.9 at golden hour with a stream), room 13-16 ms, editor 25-32 ms and split 24-26 ms (target 30 fps there), street from the window 15-19.5 ms",
+          "status": "done"
+        },
+        {
+          "text": "Tank cuts (water surface, bubbles, motes, plant sway) measured at under 0.5 ms together on this GPU, so left as they are",
+          "status": "done"
         }
       ]
     },

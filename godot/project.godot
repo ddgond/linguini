@@ -35,6 +35,8 @@ theme/custom_font="res://fonts/Nunito.ttf"
 
 textures/vram_compression/import_etc2_astc=true
 anti_aliasing/quality/msaa_3d=2
+rendering_device/staging_buffer/block_size_kb=1024
+rendering_device/staging_buffer/texture_upload_region_size_px=512
 
 [shader_globals]
 

@@ -17,6 +17,7 @@ const MOODS := {
 		"ambient": [Color(0.42, 0.45, 0.7), 0.22],
 		"window": [Color(0.55, 0.65, 1.0), 0.12, Vector3(0.0, -0.5, 1.0)],
 		"lamps": 0.9, "fairy": 0.35, "accent": 0.9, "tank": 1.7, "screen": 0.6,
+		"glass": Color(0.16, 0.17, 0.24), "low_fill": 0.2,
 		"tone": {"fan": -13.0, "city": -20.5},
 	},
 	"rainy": {
@@ -27,6 +28,7 @@ const MOODS := {
 		"ambient": [Color(0.6, 0.66, 0.78), 0.35],
 		"window": [Color(0.7, 0.78, 0.92), 0.35, Vector3(0.0, -0.4, 1.0)],
 		"lamps": 0.9, "fairy": 0.35, "accent": 0.35, "tank": 1.4, "screen": 0.45,
+		"glass": Color(0.22, 0.24, 0.28), "low_fill": 0.18,
 		"tone": {"fan": -17.0, "rain": -27.0},
 	},
 	"golden": {
@@ -37,6 +39,7 @@ const MOODS := {
 		"ambient": [Color(1.0, 0.82, 0.66), 0.35],
 		"window": [Color(1.0, 0.72, 0.45), 1.6, Vector3(-0.3, -0.75, 1.0)],
 		"lamps": 0.0, "fairy": 0.1, "accent": 0.15, "tank": 0.9, "screen": 0.35,
+		"glass": Color(0.45, 0.36, 0.28), "low_fill": 0.08,
 		"tone": {"fan": -19.0, "birds": -25.5, "breeze": -19.5},
 	},
 }
@@ -55,6 +58,8 @@ var materials := {}
 ## The street outside, which has its own light for each mood.
 var street: Street
 var glass_material: ShaderMaterial
+## The tank's glass, whose Low shader takes its light from the mood.
+var tank_glass: ShaderMaterial
 var tank_light: Light3D
 var screen_light: Light3D
 var window_light: DirectionalLight3D
@@ -81,7 +86,7 @@ var _lightmaps := {}
 func _ready() -> void:
 	apply(Mood.current)
 	Mood.changed.connect(apply)
-	Quality.changed.connect(func(_level: int) -> void: _shadows())
+	Quality.changed.connect(func(_level: int) -> void: _quality())
 
 
 func apply(mood_name: String) -> void:
@@ -119,7 +124,6 @@ func apply(mood_name: String) -> void:
 		window_light.basis = Basis.looking_at(dir, Vector3.UP if absf(dir.y) < 0.99 else Vector3.FORWARD)
 	for lamp in lamps:
 		lamp.light_energy = m.lamps
-		lamp.visible = m.lamps > 0.0
 	if fairy_light:
 		fairy_light.light_energy = m.fairy
 	if accent_light:
@@ -129,7 +133,9 @@ func apply(mood_name: String) -> void:
 		tank_light.light_energy = m.tank
 	if screen_light:
 		screen_light.light_energy = m.screen
-	_shadows()
+	if tank_glass:
+		tank_glass.set_shader_parameter("light", m.glass)
+	_quality()
 
 
 ## Fades each room-tone loop to its level in this mood (silent if absent).
@@ -167,11 +173,34 @@ func _tally() -> void:
 		webcam_tally.visible = live
 
 
-## Only the golden hour's sun casts shadows (through the window frame), and
-## only when the graphics level can afford it.
-func _shadows() -> void:
+## What the graphics level can afford. Only the golden hour's sun casts
+## shadows (through the window frame), from Medium. On Low the tank lamp casts
+## none, and the lamps, fairy lights, RGB strip and screen glow are off: on an
+## integrated GPU every light in reach costs every pixel, and the room has
+## them baked anyway. With no live light left for it, the room is drawn
+## unshaded. The fish and tank make do with the tank lamp, the golden hour's
+## sun and a little more ambient light.
+func _quality() -> void:
+	var low := Quality.level == Quality.Level.LOW
+	for mat: ShaderMaterial in materials.values():
+		mat.shader = RoomBuilder.ROOM_LOW_SHADER if low else RoomBuilder.ROOM_SHADER
 	if window_light:
-		window_light.shadow_enabled = mood == "golden" and Quality.level >= Quality.Level.MEDIUM
+		window_light.shadow_enabled = mood == "golden" and not low
+		# On Low only a strong light comes in at the window (the golden hour's
+		# sun); the faint night and rain light goes into the ambient fill.
+		window_light.visible = not low or (mood != "" and MOODS[mood].window[1] >= 1.0)
+	if tank_light:
+		tank_light.shadow_enabled = not low
+	if mood == "":
+		return
+	var m: Dictionary = MOODS[mood]
+	for lamp in lamps:
+		lamp.visible = m.lamps > 0.0 and not low
+	for light: Light3D in [fairy_light, accent_light, screen_light]:
+		if light:
+			light.visible = not low
+	if environment:
+		environment.ambient_light_energy = m.ambient[1] + (m.low_fill if low else 0.0)
 
 
 func _lightmap(mood_name: String) -> Texture2D:

@@ -16,6 +16,9 @@
     {"id": "street-down", "title": "At the window, looking down at the street", "args": ["--overview=-0.15,2.2,-1.72;-0.15,-3.5,-8.0", "--mood=golden", "--fov=80"]},
     {"id": "rain-glass", "title": "Rain on the glass, up close", "args": ["--overview=-0.4,1.9,-1.55;-0.4,1.85,-1.9", "--mood=rainy", "--fov=40"]},
     {"id": "street-level", "title": "Down on the street at night", "args": ["--overview=6.0,-4.6,-8.0;14.0,-3.5,-20.0", "--mood=night", "--fov=70"]},
-    {"id": "fish-face", "title": "The fish, three-quarter front", "args": ["--swim", "--fish=0,0.3,0.1,140", "--fish-pose=0.05", "--overview=-0.05,1.13,-1.1;-0.15,1.1,-1.34", "--fov=24"]}
+    {"id": "fish-face", "title": "The fish, three-quarter front", "args": ["--swim", "--fish=0,0.3,0.1,140", "--fish-pose=0.05", "--overview=-0.05,1.13,-1.1;-0.15,1.1,-1.34", "--fov=24"]},
+    {"id": "low-swimming", "title": "Low: swimming at night", "args": ["--swim", "--fish=0.1,0.22,0.12,160", "--mood=night", "--quality=low"]},
+    {"id": "low-window", "title": "Low: the window at night", "args": ["--overview=-0.15,1.45,0.3;-0.15,1.5,-1.8", "--mood=night", "--quality=low"]},
+    {"id": "low-editor", "title": "Low: the tank editor in the rain", "args": ["--edit", "--mood=rainy", "--quality=low"]}
   ]
 }

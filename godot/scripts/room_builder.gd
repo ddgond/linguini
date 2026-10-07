@@ -31,9 +31,12 @@ const ACCENT_MASK := 1
 const LAYOUT_PATH := "res://art/room/layout.json"
 const ROOM_MODEL := preload("res://art/room/room.glb")
 const ROOM_SHADER := preload("res://shaders/room.gdshader")
+const ROOM_LOW_SHADER := preload("res://shaders/room_low.gdshader")
 const WINDOW_SHADER := preload("res://shaders/window_glass.gdshader")
+const WINDOW_LOW_SHADER := preload("res://shaders/window_glass_low.gdshader")
 const TANK_MODEL := preload("res://art/tank.glb")
 const GLASS_SHADER := preload("res://shaders/tank_glass.gdshader")
+const GLASS_LOW_SHADER := preload("res://shaders/tank_glass_low.gdshader")
 const WATER_SHADER := preload("res://shaders/water_surface.gdshader")
 const WATER_LOW_SHADER := preload("res://shaders/water_surface_low.gdshader")
 
@@ -112,7 +115,11 @@ func _room() -> void:
 		match mi.name:
 			"WindowGlass":
 				moods.glass_material = ShaderMaterial.new()
-				moods.glass_material.shader = WINDOW_SHADER
+				var glass: ShaderMaterial = moods.glass_material
+				var use_quality := func(level: int) -> void:
+					glass.shader = WINDOW_LOW_SHADER if level == Quality.Level.LOW else WINDOW_SHADER
+				use_quality.call(Quality.level)
+				Quality.changed.connect(use_quality)
 				var w: Array = layout.window  # centre x, sill, top, width
 				moods.glass_material.set_shader_parameter("size", Vector2(w[3], w[2] - w[1]))
 				mi.material_override = moods.glass_material
@@ -128,6 +135,8 @@ func _street() -> void:
 	var street := Street.new()
 	street.name = "Street"
 	street.position = offset
+	var lo := _vec(layout.room_min)
+	street.room_box = AABB(lo, _vec(layout.room_max) - lo)
 	root.add_child(street)
 	moods.street = street
 	result.street = street
@@ -165,6 +174,8 @@ func _tank() -> void:
 
 	# The glass, trim, hood, gravel and stand (art/models/tank.py). A few of its
 	# materials get Godot's own versions by name.
+	var glass := ShaderMaterial.new()
+	moods.tank_glass = glass
 	var model: Node3D = TANK_MODEL.instantiate()
 	model.name = "TankModel"
 	tank.add_child(model)
@@ -173,8 +184,6 @@ func _tank() -> void:
 			var imported := mi.mesh.surface_get_material(i)
 			match imported.resource_name if imported else "":
 				"Glass":
-					var glass := ShaderMaterial.new()
-					glass.shader = GLASS_SHADER
 					mi.set_surface_override_material(i, glass)
 				"Lamp":
 					var lamp := StandardMaterial3D.new()
@@ -216,7 +225,8 @@ func _tank() -> void:
 	surface.position = Vector3(0, WATER_LEVEL, 0)
 	tank.add_child(surface)
 	var use_quality := func(level: int) -> void:
-		surface_mat.shader = WATER_LOW_SHADER if level == 0 else WATER_SHADER
+		surface_mat.shader = WATER_LOW_SHADER if level == Quality.Level.LOW else WATER_SHADER
+		glass.shader = GLASS_LOW_SHADER if level == Quality.Level.LOW else GLASS_SHADER
 	use_quality.call(Quality.level)
 	Quality.changed.connect(use_quality)
 	result.water_surface = surface

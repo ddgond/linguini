@@ -33,6 +33,8 @@
             ffmpeg
             xvfb-run
             mesa
+            # tools/bench.sh without a desktop: a headless Sway on the real GPU
+            sway
           ];
         };
       });

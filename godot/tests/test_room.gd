@@ -47,7 +47,7 @@ func test_room_is_lightmapped() -> void:
 	for s: Array in surfaces:
 		var mi: MeshInstance3D = s[0]
 		var mat := mi.get_surface_override_material(s[1]) as ShaderMaterial
-		if mat == null or mat.shader != RoomBuilder.ROOM_SHADER:
+		if mat == null or mat.shader not in [RoomBuilder.ROOM_SHADER, RoomBuilder.ROOM_LOW_SHADER]:
 			wrong.append(mi.mesh.surface_get_material(s[1]).resource_name)
 		if mi.mesh.surface_get_arrays(s[1])[Mesh.ARRAY_TEX_UV2] == null:
 			no_uv2.append(mi.mesh.surface_get_material(s[1]).resource_name)

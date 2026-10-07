@@ -119,7 +119,17 @@ Up to four fish can share the tank, each piloted by a local player, all pressing
 | Shadow atlas | 1024 | 2048 | 4096 |
 | Street: sun shadows, shop, neon and headlight lights | off | on | on |
 | Street: people | half | all | all |
+| Street: lamps reach into the room | no | yes | yes |
+| Street: light through the tree leaves | off | on | on |
 | Bubbles | 40% | 75% | 100% |
+| Room: live lamps, fairy lights, LED strip and screen glow | off (baked only) | on | on |
+| Room: lit by live lights | no (bake only) | yes | yes |
+| Window light on the fish and tank at night and in the rain | off | on | on |
+| Tank lamp shadows | off | on | on |
+| Tank glass | unshaded | lit | lit |
+| Rain on the window | drawn over the view | drops bend the view | drops bend the view |
+
+Low is tuned for integrated graphics, where every live light costs every pixel in its reach and reading the screen costs a copy of the frame. The room's lamps are in its baked lightmaps anyway, so on Low the fish and tank get a little more ambient light in their place. On an Intel N150 at 1080p, Low runs at 60 fps in the menu and while swimming, stream included, and at 30 to 40 in the tank editor and split screen.
 
 ## Tank cam
 
@@ -181,7 +191,7 @@ The tests cover:
 - The tank cam's detector: tracking, occlusion and what it reports.
 - Game audio: channel routing, the light underwater muffle, and Stereo skipping it.
 - Decor: placement by anchor, solid versus soft, saving with presets, and the editor.
-- Art: that the tank and fish models match the game's dimensions, and that the quality presets switch their effects.
+- Art: that the tank and fish models match the game's dimensions, and that the quality presets switch their effects, including what Low turns off.
 - The bedroom: that it lands around the tank, uses its lightmaps, and switches lightmap, view and rain with the mood picker.
 - The look: button glyph sets and their detection, the card slab's orientation, the idle monitor and tally lights, the editor's decor palette and the tank cam's keypoints.
 - Feel and sound: the mixer buses and volumes, hearing from the fish while piloting, card taps, tank and room sounds, the dart kick, and motes and shafts by quality.
@@ -200,6 +210,19 @@ godot --headless --path godot -- --tool=stream_check HOST Desktop 15 frame.png
 `pair` pairs with a host. `stream_check` launches an app on a paired host and streams for the given number of seconds. It then reports decoded video, audio received and input, saves the last frame's luma plane, and quits the app.
 
 `main.tscn` also accepts `-- --swim --test-video=PATH --gaze --zones --room-camera --screenshot=PATH` for manual checks without a host. The full list is in `godot/scripts/main.gd`.
+
+### Performance
+
+```sh
+tools/bench.sh bench.md                                   # the whole tour, about 10 minutes
+tools/bench.sh low.md -- --quality=low --mood=rainy       # one level and mood
+tools/bench.sh swim.md -- --bench=swim,split --bench-stream=on
+tools/bench.sh street.md -- --quality=low --bench-off=street   # what the street costs
+```
+
+`--bench` holds a fixed set of views (the menu, swimming, the tank editor, two-player split screen, the room from the doorway and the street from the window) in each mood at each quality level. It does this without and then with a stream on the monitor: a 1080p60 H.264 clip looped through the real decoder. It prints frame and GPU milliseconds for each as a Markdown table. `--bench-off=PARTS` leaves parts out to see what they cost: `street`, `rain`, `lights`, `shadows`, `glass`, `tank` and more, a node's name, or `plain:MATERIAL` to swap a material for plain grey (see `godot/scripts/bench.gd`).
+
+Without a desktop session (over SSH, say), `tools/bench.sh` starts a headless Sway so Godot renders on the real GPU; Xvfb would only give software rendering. It needs the default dev shell (`nix develop`).
 
 ## Packaging
 
@@ -370,6 +393,7 @@ godot/shaders/         fish, glass, water, caustics, plants, bubbles, monitor sc
 godot/data/            card layouts and the decor catalogue
 godot/tests/           headless tests
 tools/tracker/         the progress tracker
+tools/bench.sh         the performance tour (see Performance)
 third_party/           submodules
 ```
 

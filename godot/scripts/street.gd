@@ -19,6 +19,7 @@ const SURFACE := preload("res://shaders/street_surface.gdshader")
 const WINDOW := preload("res://shaders/street_window.gdshader")
 const GLOW := preload("res://shaders/street_glow.gdshader")
 const LEAVES := preload("res://shaders/street_leaves.gdshader")
+const LEAVES_LOW := preload("res://shaders/street_leaves_low.gdshader")
 const SKYLINE := preload("res://shaders/street_skyline.gdshader")
 const SKY := preload("res://shaders/street_sky.gdshader")
 const RAILING := preload("res://shaders/street_railing.gdshader")
@@ -76,6 +77,9 @@ const MOODS := {
 	},
 }
 
+## How far a street lamp reaches.
+const LAMP_REACH := 18.0
+
 ## Signal timing (seconds): main street green, amber, all red, cross street
 ## green, amber, all red.
 const CYCLE := [22.0, 3.5, 1.5, 14.0, 3.5, 1.5]
@@ -85,6 +89,8 @@ var mood := ""
 ## The street_* shader globals as last set (the renderer can't be asked).
 var globals := {}
 var sun: DirectionalLight3D
+## The room, in the street's coordinates: on Low the lamps stop short of it.
+var room_box := AABB()
 var _surfaces := {}
 var _glows := {}
 var _moving_glows := {}
@@ -247,7 +253,7 @@ func _lights() -> void:
 	sun.shadow_blur = 1.5
 	add_child(sun)
 	for p: Array in layout.lamps:
-		var lamp := _light(Vector3(p[0], p[1], p[2]), Color(1.0, 0.76, 0.48), 18.0)
+		var lamp := _light(Vector3(p[0], p[1], p[2]), Color(1.0, 0.76, 0.48), LAMP_REACH)
 		lamp.omni_attenuation = 1.3
 		_lamps.append(lamp)
 	for p: Array in layout.shops:
@@ -333,6 +339,22 @@ func _apply_quality(level: int) -> void:
 	sun.shadow_enabled = golden and level >= Quality.Level.MEDIUM
 	for light in _shop_lights + _neon_lights:
 		light.visible = level >= Quality.Level.MEDIUM and light.light_energy > 0.0
+	# Plainer leaves on Low: no light through them, no highlights.
+	if _leaves:
+		_leaves.shader = LEAVES_LOW if level == Quality.Level.LOW else LEAVES
+	# A light costs every pixel in its reach, even ones it can't light (the
+	# fish and tank are on other layers), so on Low the lamps near the window
+	# stop short of the room. Their pools below are the same; the far
+	# facades get a little less of their light.
+	for lamp in _lamps:
+		lamp.omni_range = LAMP_REACH
+		if level == Quality.Level.LOW and room_box.has_volume():
+			var to_room := lamp.position.distance_to(_closest(room_box, lamp.position))
+			lamp.omni_range = clampf(to_room - 0.3, 1.0, LAMP_REACH)
+
+
+static func _closest(box: AABB, p: Vector3) -> Vector3:
+	return p.clamp(box.position, box.end)
 
 
 func _process(delta: float) -> void:

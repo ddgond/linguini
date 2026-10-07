@@ -41,6 +41,10 @@ extends Node3D
 ##   --screenshot=PATH      save a screenshot after --delay seconds (default 2) and quit
 ##   --frames=N             with --screenshot, save N frames --frame-step seconds apart
 ##                          (default 0.1), as PATH, PATH_01, PATH_02...
+##   --bench[=VIEWS]        time a tour of views, moods and quality levels, print
+##                          a table and quit (Bench; --quality and --mood limit it,
+##                          --bench-stream=off|on, --bench-size=WxH, and
+##                          --bench-off=PARTS leaves parts out to see their cost)
 ##   --tool=NAME [ARGS...]  run res://tools/NAME.gd instead of the room (headless
 ##                          helpers such as pair and stream_check; this also works
 ##                          in exported builds, which ignore `-s`)
@@ -428,6 +432,9 @@ func _apply_args() -> void:
 			var i := int(_args.select)
 			if i >= 0 and i < cards.cards.size():
 				editor._select(cards.cards[i])
+	if _args.has("bench"):
+		_bench()
+		return
 	if _args.has("screenshot"):
 		await get_tree().create_timer(float(_args.get("delay", "2"))).timeout
 		await RenderingServer.frame_post_draw
@@ -446,3 +453,23 @@ func _apply_args() -> void:
 			tracking.get_texture().get_image().save_png(_args["tracking-shot"])
 			print("Saved tank cam screenshot to ", _args["tracking-shot"])
 		get_tree().quit()
+
+
+func _bench() -> void:
+	var bench := Bench.new()
+	bench.name = "Bench"
+	bench.main = self
+	if String(_args.bench) != "":
+		bench.views = Array(String(_args.bench).split(","))
+	if _args.has("quality"):
+		bench.levels = [String(_args.quality)]
+	if _args.has("mood"):
+		bench.moods = [String(_args.mood)]
+	if _args.has("bench-stream"):
+		bench.streams = [String(_args["bench-stream"]) == "on"]
+	if _args.has("bench-off"):
+		bench.off = Array(String(_args["bench-off"]).split(","))
+	if _args.has("bench-size"):
+		var wh := String(_args["bench-size"]).split_floats("x")
+		bench.size = Vector2i(int(wh[0]), int(wh[1]))
+	add_child(bench)
