@@ -1,6 +1,6 @@
 {
   "project": "Linguini",
-  "now": "5c",
+  "now": "5f",
   "milestones": [
     {
       "id": "1",
@@ -795,26 +795,6 @@
       ]
     },
     {
-      "id": "5c",
-      "title": "Street sounds",
-      "status": "planned",
-      "summary": "Sound for the street outside, so it's heard as well as seen.",
-      "items": [
-        {
-          "text": "Cars passing, panned with the cars that drive by, and stopping and starting at the lights",
-          "status": "planned"
-        },
-        {
-          "text": "Rain on the window glass in the rainy mood, distinct from the rain outside",
-          "status": "planned"
-        },
-        {
-          "text": "Distant voices and footsteps with the people on the sidewalks; pigeons' wings with the flock",
-          "status": "planned"
-        }
-      ]
-    },
-    {
       "id": "5f",
       "title": "Medium on integrated graphics",
       "status": "planned",
@@ -834,6 +814,26 @@
         },
         {
           "text": "Decide: should Auto pick Medium on integrated GPUs that can hold it?",
+          "status": "planned"
+        }
+      ]
+    },
+    {
+      "id": "6a",
+      "title": "Street sounds",
+      "status": "planned",
+      "summary": "Post-release polish: sound for the street outside, so it's heard as well as seen.",
+      "items": [
+        {
+          "text": "Cars passing, panned with the cars that drive by, and stopping and starting at the lights",
+          "status": "planned"
+        },
+        {
+          "text": "Rain on the window glass in the rainy mood, distinct from the rain outside",
+          "status": "planned"
+        },
+        {
+          "text": "Distant voices and footsteps with the people on the sidewalks; pigeons' wings with the flock",
           "status": "planned"
         }
       ]
