@@ -7,7 +7,8 @@ extends Node
 ## HIGH    adds SSAO, softer shadows, 4x MSAA and denser particles.
 ##
 ## The setting is "auto" until the player picks one: auto chooses LOW on
-## integrated or software GPUs and HIGH on dedicated ones.
+## integrated or software GPUs, MEDIUM on Apple's Pro, Max and Ultra chips, and
+## HIGH on dedicated ones.
 
 signal changed(level: Level)
 
@@ -41,10 +42,20 @@ func _resolve(value: String) -> Level:
 
 
 static func auto_level() -> Level:
-	match RenderingServer.get_video_adapter_type():
+	return level_for(RenderingServer.get_video_adapter_type(), RenderingServer.get_video_adapter_name())
+
+
+## Auto's level for a GPU type and adapter name. Apple's Pro, Max and Ultra
+## chips count as integrated but hold Medium (an M3 Pro: 4-7 ms a frame in the
+## menu and swimming at 1080p); the base chips are unmeasured, so stay on Low.
+static func level_for(type: RenderingDevice.DeviceType, adapter: String) -> Level:
+	match type:
 		RenderingDevice.DEVICE_TYPE_DISCRETE_GPU:
 			return Level.HIGH
-		RenderingDevice.DEVICE_TYPE_INTEGRATED_GPU, RenderingDevice.DEVICE_TYPE_CPU:
+		RenderingDevice.DEVICE_TYPE_INTEGRATED_GPU:
+			var apple := RegEx.create_from_string("^Apple M\\d+ (Pro|Max|Ultra)\\b")
+			return Level.MEDIUM if apple.search(adapter) else Level.LOW
+		RenderingDevice.DEVICE_TYPE_CPU:
 			return Level.LOW
 		_:
 			return Level.MEDIUM

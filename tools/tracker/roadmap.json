@@ -797,15 +797,27 @@
     {
       "id": "5f",
       "title": "Medium on integrated graphics",
-      "status": "planned",
-      "summary": "Measure Medium on integrated GPUs and tune what it keeps, so stronger ones can run it; on the N150 it's 49-117 ms a frame at 1080p.",
+      "status": "in-progress",
+      "summary": "Measure Medium on integrated GPUs and tune what it keeps, so stronger ones can run it; on the N150 it's 49-117 ms a frame at 1080p. On an M3 Pro, Medium holds 60 everywhere, so Auto now picks it on Apple's Pro, Max and Ultra chips.",
       "items": [
         {
-          "text": "Bench Medium on the N150 and on the main PC's integrated GPU, if it has one, with tools/bench.sh",
-          "status": "planned"
+          "text": "Benched an Apple M3 Pro (18-core GPU, 1080p, Metal): Low 1.5-3.3 ms a frame, Medium 3.9-6.1 ms in the menu, swimming, room and window and 7.7-9.9 in the editor and split, High 5.1-7.7 and 9.8-11.9; a 1080p60 stream adds under 1 ms. Vulkan (MoltenVK) within a millisecond or so, and gives the GPU times Metal doesn't",
+          "status": "done"
         },
         {
-          "text": "Price Medium's extras on an iGPU: the screen-reading window rain and water, glow, caustics, MSAA, the room's live lights and shadows",
+          "text": "Priced Medium's extras on the M3 Pro at golden hour, the costliest mood: the room's live lights 2-3.4 ms, shadows 1.6-3.4, the street 0.7-3.1, 2x MSAA up to 2; glow, caustics and the screen-reading water and window about 1 ms or less each. --bench-off gains msaa, caustics, water-low and window-low",
+          "status": "done"
+        },
+        {
+          "text": "Decided: Auto picks Medium on Apple's Pro, Max and Ultra chips, which Godot reports as integrated; base M-series chips stay on Low until one is measured",
+          "status": "done"
+        },
+        {
+          "text": "tools/bench.sh runs on macOS (its bash 3.2, no Sway); the editor's first open is a 2.2 s hitch on a cold shader cache, 50-63 ms after",
+          "status": "done"
+        },
+        {
+          "text": "Bench Medium on a base M-series chip and on a Radeon 780M or Arc iGPU",
           "status": "planned"
         },
         {
@@ -813,7 +825,7 @@
           "status": "planned"
         },
         {
-          "text": "Decide: should Auto pick Medium on integrated GPUs that can hold it?",
+          "text": "Decide: should Auto pick Medium on base M-series chips and on x86 iGPUs that can hold it?",
           "status": "planned"
         }
       ]

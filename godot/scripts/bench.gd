@@ -269,6 +269,18 @@ func _leave_out() -> void:
 				room.environment.fog_enabled = false
 			"half":
 				get_viewport().scaling_3d_scale = 0.5
+			"msaa":
+				get_viewport().msaa_3d = Viewport.MSAA_DISABLED
+			"caustics":
+				for m: Material in Quality._caustic_hosts:
+					m.next_pass = null
+				RenderingServer.global_shader_parameter_set("caustics_strength", 0.0)
+			"water-low", "window-low":
+				# Low's screen-free water surface or window rain, at this level.
+				if part == "water-low":
+					(room.water_surface.material_override as ShaderMaterial).shader = RoomBuilder.WATER_LOW_SHADER
+				else:
+					(room.room_model.find_child("WindowGlass", true, false).material_override as ShaderMaterial).shader = RoomBuilder.WINDOW_LOW_SHADER
 			"street-flat", "street-lit":
 				# The street's own shaders swapped for flat colour, unshaded or
 				# lit: geometry, Godot's lighting or the shaders themselves?

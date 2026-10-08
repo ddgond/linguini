@@ -110,7 +110,7 @@ Up to four fish can share the tank, each piloted by a local player, all pressing
 
 ## Graphics quality
 
-**Graphics** on the monitor's Settings page sets **Low**, **Medium** or **High**. It starts on **Auto**, which picks Low on integrated or software GPUs and High on dedicated ones.
+**Graphics** on the monitor's Settings page sets **Low**, **Medium** or **High**. It starts on **Auto**, which picks Low on integrated or software GPUs, Medium on Apple's Pro, Max and Ultra chips, and High on dedicated ones.
 
 | | Low | Medium | High |
 |---|---|---|---|
@@ -229,9 +229,11 @@ tools/bench.sh swim.md -- --bench=swim,split --bench-stream=on
 tools/bench.sh street.md -- --quality=low --bench-off=street   # what the street costs
 ```
 
-`--bench` holds a fixed set of views (the menu, swimming, the tank editor, two-player split screen, the room from the doorway and the street from the window) in each mood at each quality level. It does this without and then with a stream on the monitor: a 1080p60 H.264 clip looped through the real decoder. It prints frame and GPU milliseconds for each as a Markdown table. When the tour includes the editor, it first opens the editor once to time the first open, when every decor thumbnail is rendered. `--bench-off=PARTS` leaves parts out to see what they cost: `street`, `rain`, `lights`, `shadows`, `glass`, `tank` and more, a node's name, or `plain:MATERIAL` to swap a material for plain grey (see `godot/scripts/bench.gd`).
+`--bench` holds a fixed set of views (the menu, swimming, the tank editor, two-player split screen, the room from the doorway and the street from the window) in each mood at each quality level. It does this without and then with a stream on the monitor: a 1080p60 H.264 clip looped through the real decoder. It prints frame and GPU milliseconds for each as a Markdown table. When the tour includes the editor, it first opens the editor once to time the first open, when every decor thumbnail is rendered. `--bench-off=PARTS` leaves parts out to see what they cost: `street`, `rain`, `lights`, `shadows`, `glass`, `glow`, `msaa`, `caustics`, `tank` and more, Low's water or window at the current level (`water-low`, `window-low`), a node's name, or `plain:MATERIAL` to swap a material for plain grey (see `godot/scripts/bench.gd`).
 
 Without a desktop session (over SSH, say), `tools/bench.sh` starts a headless Sway so Godot renders on the real GPU; Xvfb would only give software rendering. It needs the default dev shell (`nix develop`).
+
+On macOS it opens a window as usual; turn off any tiling window manager first, or the window won't be 1920x1080. Godot's Metal renderer reports no GPU times, so the GPU column reads 0.0 there. For GPU times, run the same tour on Vulkan (MoltenVK): `godot --path godot --rendering-driver vulkan -- --bench`. Frame times match Metal's to within a millisecond or so.
 
 ## Packaging
 

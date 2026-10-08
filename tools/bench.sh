@@ -9,7 +9,7 @@
 # --bench=VIEWS, --quality, --mood, --bench-stream, --bench-size and
 # --bench-off=PARTS, which leaves parts out to see what they cost.
 #
-# With a desktop session it opens a window there. Without one (over SSH, say)
+# On macOS, or with a desktop session, it opens a window there. Without one (over SSH, say)
 # it starts a headless Sway on the machine's own GPU: Xvfb would only give
 # software rendering. Run it from the default dev shell (nix develop).
 set -euo pipefail
@@ -20,11 +20,11 @@ shift || true
 [[ ${1:-} == -- ]] && shift
 
 run() {
-	godot --path "$root/godot" "$@" -- --bench "${bench_args[@]}" 2>&1 | grep --line-buffered -E '^(\||Linguini bench|Averages|Opening|Left out|Done|\(no stream)' | tee "$out"
+	godot --path "$root/godot" "$@" -- --bench ${bench_args[@]+"${bench_args[@]}"} 2>&1 | grep --line-buffered -E '^(\||Linguini bench|Averages|Opening|Left out|Done|\(no stream)' | tee "$out"
 }
 bench_args=("$@")
 
-if [[ -n ${WAYLAND_DISPLAY:-} || -n ${DISPLAY:-} ]]; then
+if [[ $(uname) == Darwin || -n ${WAYLAND_DISPLAY:-} || -n ${DISPLAY:-} ]]; then
 	run
 	exit
 fi

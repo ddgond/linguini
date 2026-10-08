@@ -55,6 +55,17 @@ func test_fish_model() -> void:
 	main.queue_free()
 
 
+func test_auto_quality() -> void:
+	check(Quality.level_for(RenderingDevice.DEVICE_TYPE_DISCRETE_GPU, "NVIDIA GeForce RTX 3070") == Quality.Level.HIGH, "Auto: High on a dedicated GPU")
+	check(Quality.level_for(RenderingDevice.DEVICE_TYPE_INTEGRATED_GPU, "Intel(R) Graphics (ADL-N)") == Quality.Level.LOW, "Auto: Low on an Intel iGPU")
+	check(Quality.level_for(RenderingDevice.DEVICE_TYPE_CPU, "llvmpipe (LLVM 19.1.7, 256 bits)") == Quality.Level.LOW, "Auto: Low in software")
+	check(Quality.level_for(RenderingDevice.DEVICE_TYPE_INTEGRATED_GPU, "Apple M3 Pro (Apple9)") == Quality.Level.MEDIUM, "Auto: Medium on an M3 Pro (Metal)")
+	check(Quality.level_for(RenderingDevice.DEVICE_TYPE_INTEGRATED_GPU, "Apple M1 Max") == Quality.Level.MEDIUM, "Auto: Medium on an M1 Max (Vulkan's name)")
+	check(Quality.level_for(RenderingDevice.DEVICE_TYPE_INTEGRATED_GPU, "Apple M4 Ultra") == Quality.Level.MEDIUM, "Auto: Medium on an Ultra")
+	check(Quality.level_for(RenderingDevice.DEVICE_TYPE_INTEGRATED_GPU, "Apple M2 (Apple8)") == Quality.Level.LOW, "Auto: Low on a base M2")
+	check(Quality.level_for(RenderingDevice.DEVICE_TYPE_INTEGRATED_GPU, "Apple M10 (Apple20)") == Quality.Level.LOW, "Auto: Low on a base chip, whatever its number")
+
+
 func test_quality_presets() -> void:
 	var original: String = Quality.setting
 	var original_mood: String = Mood.current
